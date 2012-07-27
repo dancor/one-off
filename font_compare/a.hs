@@ -49,4 +49,6 @@ main = do
   putStrLn $ "f2 has " ++ show (length $ filter id r2) ++ " chars"
   putStrLn $ "f1 has " ++ show (length $ filter id r1Only) ++ " chars not in f2"
   putStrLn $ "f2 has " ++ show (length $ filter id r2Only) ++ " chars not in f1"
-  putStrLn $ map chr $ map fst $ filter snd $ zip [0..] r1Only
+  putStr $ unlines $
+    splitEvery 40 $ 
+    map chr $ map fst $ filter snd $ zip [0..] r1Only
