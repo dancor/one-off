@@ -3,8 +3,8 @@
 showBinary :: Int -> String
 showBinary x = showIntAtBase 2 intToDigit x ""
 
-hexDigToInt :: Char -> Int
-hexDigToInt d = fst $ head $ readHex [d]
+hexToInt :: String -> Int
+hexToInt = fst . head . readHex
 
 hexToBits 0 = [0,0,0,0]
 hexToBits 1 = [0,0,0,1]
@@ -23,32 +23,33 @@ hexToBits 13 = [1,1,0,1]
 hexToBits 14 = [1,1,1,0]
 hexToBits 15 = [1,1,1,1]
 
-fontBits a = do
+hexStrToBits :: String -> [Int]
+hexStrToBits = concatMap (hexToBits . hexToInt . (:[]))
+
+onesToIndices :: [Int] -> [Int]
+onesToIndices = map fst . filter ((== 1) . snd) . zip [0..]
+
+fontOrds :: String -> IO (Set.Set Int)
+fontOrds a = do
   out <- lines <$> readProcess "fc-query" [a] ""
   return $
-    map (== 1) $
-    concat $
-    map hexToBits $
-    map hexDigToInt $
-    concat $ concat $ 
-    map (drop 1) $ map words $ 
-    filter (
-      (\ x -> length x > 0 && 
-      all (`elem` (['0'..'9'] ++ ['a'..'f'])) x) . takeWhile (/= ':') . 
-        dropWhile isSpace)
-    out
+    Set.fromList $
+    concatMap (\ (a, b) -> map (32 * 8 * a +) $ onesToIndices b) $
+    map (\ x ->
+      (hexToInt $ take 4 x,
+      concatMap (reverse . hexStrToBits) $ words $ drop 6 x)) $
+    map (drop 1) $
+    filter (all (`elem` " \t:0123456789abcdef")) out
 
 main = do
   [f1, f2] <- getArgs
-  r1 <- fontBits f1
-  r2 <- fontBits f2
+  r1 <- fontOrds f1
+  r2 <- fontOrds f2
   let
-    r1Only = zipWith (\ a b -> a && not b) r1 r2
-    r2Only = zipWith (\ a b -> b && not a) r1 r2
-  putStrLn $ "f1 has " ++ show (length $ filter id r1) ++ " chars"
-  putStrLn $ "f2 has " ++ show (length $ filter id r2) ++ " chars"
-  putStrLn $ "f1 has " ++ show (length $ filter id r1Only) ++ " chars not in f2"
-  putStrLn $ "f2 has " ++ show (length $ filter id r2Only) ++ " chars not in f1"
-  putStr $ unlines $
-    splitEvery 40 $ 
-    map chr $ map fst $ filter snd $ zip [0..] r1Only
+    r1Only = Set.difference r1 r2
+    r2Only = Set.difference r2 r1
+  putStrLn $ "f1 has " ++ show (Set.size r1) ++ " chars"
+  putStrLn $ "f2 has " ++ show (Set.size r2) ++ " chars"
+  putStrLn $ "f1 has " ++ show (Set.size r1Only) ++ " chars not in f2"
+  putStrLn $ "f2 has " ++ show (Set.size r2Only) ++ " chars not in f1"
+  putStr $ unlines $ map show $ Set.toList r1Only
