@@ -1,10 +1,10 @@
 #include <h>
 
--- XX shell escape a
--- actually just use stdin
 say :: String -> IO ()
 say a = do
-  forkIO . HSH.runIO $ "echo " ++ a ++ " | espeak 2> /dev/null"
+  (_exitCode, _out, _err) <- readProcessWithExitCode "espeak" [] a
+  -- my espeak always says errors but works.  i guess we could check exit code
+  -- at least.
   return ()
 
 printSay :: String -> IO ()
