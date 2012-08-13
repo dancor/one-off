@@ -1,0 +1,1 @@
+rhs HIIT.hs 1 300 0 && rhs HIIT.hs 25 6 18 && rhs HIIT.hs 1 0 300
