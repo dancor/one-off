@@ -1,0 +1,12 @@
+name:            syb3paper
+version:         0.1
+license:         BSD3
+license-file:    LICENSE
+author:          dan corson <danl@alum.mit.edu>
+synopsis:        no-extra-typing command-line/config-file program options
+build-type:      Simple
+build-depends:   base           < 5
+               , syb-with-class < 0.7
+
+exposed-modules: Syb3Paper
+hs-source-dirs:  src

@@ -1,4 +1,6 @@
-This is working example code from:
+This is basically a little tutorial to using syb-with-class.
+
+It's working example code from:
 "Scrap your boilerplate with class: extensible generic functions,
 Ralf Laemmel and Simon Peyton Jones, submitted to ICFP 2005."
 at
