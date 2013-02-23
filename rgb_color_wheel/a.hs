@@ -1,5 +1,4 @@
 import Data.Fixed
-import Data.List
 
 data Pt
     = Pt
@@ -15,24 +14,9 @@ data Circ
     }
     deriving Show
 
-circHighGivenPtXR :: Pt -> Double -> Double -> Circ
-circHighGivenPtXR (Pt px py) ctrX r =
-    Circ (Pt ctrX ctrY) r
-  where
-    ctrY = py + sqrt (r^2 - (px - ctrX)^2)
-
-circXToAngle :: Circ -> Double -> Double
-circXToAngle (Circ (Pt ctrX ctrY) r) x =
-    acos $ (x - ctrX) / r
-
 circAngleToPt :: Circ -> Double -> Pt
 circAngleToPt (Circ (Pt ctrX ctrY) r) a =
     Pt (ctrX + r * cos a) (ctrY + r * sin a)
-
-circNPtsAngleToAngle :: Circ -> Int -> Double -> Double -> [Pt]
-circNPtsAngleToAngle circ n a1 a2 =
-    map (circAngleToPt circ . (a1 +) . (((a2 - a1) / fromIntegral n) *) .
-        fromIntegral) [0 .. n]
 
 showPt :: Pt -> String
 showPt (Pt x y) = show x ++ "," ++ show y
@@ -42,10 +26,7 @@ fillPoints fillColor (pt:pts) =
     ["  <path d=\"M" ++ showPt pt ++
         concat [" L" ++ showPt p | p <- pts] ++
         "\" fill=\"" ++ fillColor ++ "\" />"]
-        -- "\" fill=\"" ++ fillColor ++ "\" stroke=\"#000000\" />"]
-
-yAdd :: Double -> Pt -> Pt
-yAdd dy (Pt x y) = Pt x (y + dy)
+fillPoints _ _ = error "fillPoints usage"
 
 hsvToRgb :: Double -> Double -> Double -> String
 hsvToRgb hue sat val =
@@ -55,13 +36,14 @@ hsvToRgb hue sat val =
     h' = hue / 60
     x = c * (1 - abs (h' `mod'` 2 - 1))
     (r, g, b) =
-        case floor h' of
+        case floor h' :: Int of
           0 -> (c, x, 0)
           1 -> (x, c, 0)
           2 -> (0, c, x)
           3 -> (0, x, c)
           4 -> (x, 0, c)
           5 -> (c, 0, x)
+          _ -> error "floor h'"
     m = val - c
     (r', g', b') = (r + m, g + m, b + m)
     (r'', g'', b'') = (100 * r', 100 * g', 100 * b')
@@ -71,10 +53,9 @@ levPetalCount 1 = 6
 levPetalCount n = 6 * 2 ^ (n - 2)
 
 flowerLevelToHalfPetalAngle :: Int -> Double
-flowerLevelToHalfPetalAngle n = pi / 6 / 2 ^ fromIntegral (n - 1)
+flowerLevelToHalfPetalAngle n = pi / 6 / 2 ^ (n - 1)
 
 flowerAngleToRadius :: Double -> Double
--- flowerAngleToRadius a = 1 - sin (5 * pi / 6 - a * 2) / 2
 flowerAngleToRadius a = 1 / 2 / sin (5 * pi / 6 - a)
 
 flowerPetal :: Double -> Int -> (String, [Pt])
@@ -99,6 +80,7 @@ flowerPetal pointAngle level = (,)
     r = fullR * flowerAngleToRadius a
     mainCirc = Circ (Pt xOffset yOffset) r
 
+main :: IO ()
 main = do
     putStr . unlines $
         ["<?xml version=\"1.0\" standalone=\"no\"?>"
@@ -115,16 +97,5 @@ main = do
           | n <- [1 .. levPetalCount lev]
           ])
           [1..10] ++
-{-
-        concatMap
-            (\ lev ->
-                concatMap (uncurry fillPoints)
-                [ flowerPetal (pi * ((fromIntegral n) + 0.5) / 3 /
-                  (fromIntegral lev)) lev
-                | n <- [0..(6 * lev - 1)]
-                ]
-            )
-            [1..3] ++
--}
         ["</svg>"
         ]
