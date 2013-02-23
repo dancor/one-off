@@ -61,7 +61,6 @@ flowerAngleToRadius a = 1 / 2 / sin (5 * pi / 6 - a)
 flowerPetal :: Double -> Int -> (String, [Pt])
 flowerPetal pointAngle level = (,)
     (hsvToRgb (360 * pointAngle / 2 / pi) 1 1)
-    $
     [ circAngleToPt (mainCirc {circRadius = innerRadius}) pointAngle
     , circAngleToPt mainCirc (pointAngle + a)
     , circAngleToPt (mainCirc {circRadius = fullR}) pointAngle
