@@ -43,7 +43,7 @@ hsvToRgb hue sat val =
           3 -> (0, x, c)
           4 -> (x, 0, c)
           5 -> (c, 0, x)
-          _ -> error "floor h'"
+          _ -> error "hue < 0 or >= 360"
     m = val - c
     (r', g', b') = (r + m, g + m, b + m)
     (r'', g'', b'') = (100 * r', 100 * g', 100 * b')
