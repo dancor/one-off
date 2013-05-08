@@ -1,7 +1,7 @@
 #include <h>
 
-// Replace the second column with your keymap.
-// This is Colmak.
+-- Replace the second column with your keymap.
+-- This is Colmak.
 
 doRepl :: Char -> Char
 
@@ -45,7 +45,7 @@ main = do
     ls <- lines <$> readFile "wubi-jidian86.txt"
     let (header, table) = break (== "BEGIN_TABLE") ls
         tableInnards = tail $ init table
-        semicolonLine = ";\t；\t0"
-    writeFile "w" . unlines $
+        semicolonLine = "o\t；\t0"
+    writeFile "wubi-jidian86-user.txt" . unlines $
         header ++ [head table, semicolonLine] ++
         map doRepls tableInnards ++ [last table]
