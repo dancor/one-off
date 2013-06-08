@@ -1,0 +1,40 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"> 
+<svg viewBox = "0 0 1019 800" version = "1.1">
+  <path d="M2,59
+           a2438,2438 0 0,1 1016,0
+           l-26,122
+           a2313,2313 0 0,0 -964,0
+           l-26,-122
+          "
+        fill="#f1f1db" stroke="#dddddd" />
+  <path d="M2,209
+           a2438,2438 0 0,1 1016,0
+           l-26,122
+           a2313,2313 0 0,0 -964,0
+           l-26,-122
+          "
+        fill="#f1f1db" stroke="#dddddd" />
+  <path d="M2,359
+           a2438,2438 0 0,1 1016,0
+           l-26,122
+           a2313,2313 0 0,0 -964,0
+           l-26,-122
+          "
+        fill="#f1f1db" stroke="#dddddd" />
+  <path d="M2,509
+           a2438,2438 0 0,1 1016,0
+           l-26,122
+           a2313,2313 0 0,0 -964,0
+           l-26,-122
+          "
+        fill="#f1f1db" stroke="#dddddd" />
+  <path d="M2,659
+           a2438,2438 0 0,1 1016,0
+           l-26,122
+           a2313,2313 0 0,0 -964,0
+           l-26,-122
+          "
+        fill="#f1f1db" stroke="#dddddd" />
+</svg>

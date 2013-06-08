@@ -1,4 +1,4 @@
-install: install-transl install-2008-transl
+install: install-transl install-2008-transl install-plain install-2008-plain
 
 
 install-transl: obj/wubi86-user.db
@@ -27,3 +27,9 @@ obj/wubi2008-user.db: obj/wubi2008-user.txt
 
 obj/wubi2008-user.txt: obj/transl src/wubi2008.txt
 	cat src/wubi2008.txt | obj/transl > obj/wubi2008-user.txt
+
+install-2008-plain: obj/wubi2008.db
+	sudo cp obj/wubi2008.db /usr/share/ibus-table/tables
+
+obj/wubi2008.db: src/wubi2008.txt
+	mkdir -p obj && cd obj && ibus-table-createdb -s ../src/wubi2008.txt

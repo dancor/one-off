@@ -53,7 +53,7 @@ DEF_FULL_WIDTH_LETTER = FALSE
 MAX_KEY_LENGTH = 4
 
 ### Valid input chars.
-VALID_INPUT_CHARS = abcdefghijklmnopqrstuvwxyz
+VALID_INPUT_CHARS = abcdefghijklmnopqrstuvwxyz;
 
 ### Whether user are allow to define their own phrase, default is true
 USER_CAN_DEFINE_PHRASE = TRUE 

@@ -41,11 +41,16 @@ doRepls l = map doRepl code ++ rest
   where
     (code, rest) = break (== '\t') l
 
+headerMod l
+    | l == "VALID_INPUT_CHARS = abcdefghijklmnopqrstuvwxyz" =
+        l ++ ";"
+    | otherwise = l
+
 main = do
     ls <- lines <$> getContents
     let (header, table) = break (== "BEGIN_TABLE") ls
         tableInnards = tail $ init table
         semicolonLine = "o\t；\t0"
     putStr . unlines $
-        header ++ [head table, semicolonLine] ++
+        map headerMod header ++ [head table, semicolonLine] ++
         map doRepls tableInnards ++ [last table]
