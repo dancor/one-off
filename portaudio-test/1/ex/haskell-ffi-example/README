@@ -1,0 +1,7 @@
+This is a simple example of how Haskell FFI works. You can read more about
+it at:
+
+http://blog.acolyte.co.za/articles/2007/01/01/simple-demonstration-of-haskell-ffi
+
+--
+Danie Roux *shuffle* Adore Unix -- danie.roux@acolyte.co.za
