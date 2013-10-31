@@ -33,3 +33,11 @@ install-2008-plain: obj/wubi2008.db
 
 obj/wubi2008.db: src/wubi2008.txt
 	mkdir -p obj && cd obj && ibus-table-createdb -s ../src/wubi2008.txt
+
+
+fcitx: obj/wubi2008.mb src/fcitx/wubi2008.conf
+	sudo mv obj/wubi2008.mb /usr/share/fcitx/table && \
+	  sudo cp src/fcitx/wubi2008.conf /usr/share/fcitx/table
+
+obj/wubi2008.mb: src/fcitx/wubi2008.txt
+	txt2mb src/fcitx/wubi2008.txt obj/wubi2008.mb
