@@ -21,11 +21,8 @@ wds2 = [
   "BUS",   "BAT",    "PIANO","BOMB",  "BRA",   "PILL",  "BADGE", "PIG",     "BEEHIVE","POPE"
   ]
 
-majMemSysFromInt :: Int -> [String]
-majMemSysFromInt x = 
-  if length digits `mod` 2 == 1
-    then (wds1 !! read [d0]) : f ds
-    else f digits
-  where
-  digits@(d0:ds) = show x
-  f = map ((wds2 !!) . read) . chunksOf 2
+majMemSys :: String -> [String]
+majMemSys digits@(d0:ds) = if length digits `mod` 2 == 1
+  then (wds1 !! read [d0]) : f ds
+  else f digits
+  where f = map ((wds2 !!) . read) . chunksOf 2
