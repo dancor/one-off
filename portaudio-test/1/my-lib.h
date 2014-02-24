@@ -1,1 +1,0 @@
-int lol(int x);
