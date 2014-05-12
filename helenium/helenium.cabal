@@ -16,3 +16,4 @@ build-depends:
 executable:      helenium
 main-is:         Helenium.hs
 hs-source-dirs:  src
+ghc-Options:     -Wall

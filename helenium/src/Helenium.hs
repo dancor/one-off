@@ -24,6 +24,7 @@ parseFilename filename = Sheep theFirst theLast filename
     (theFirst, rest) = splitAt 5 goodStart
     theLast = take 5 $ drop 1 rest
 
+sIsLoop :: Sheep -> Bool
 sIsLoop s = sFirst s == sLast s
 
 sheepToNet :: Set.Set String -> [(String, String)] -> Map.Map String [String]
@@ -32,6 +33,7 @@ sheepToNet loopIdSet tranIds =
     filter (\(x, y) -> x `Set.member` loopIdSet && y `Set.member` loopIdSet)
     tranIds
 
+bigNoth :: (Ord a) => Maybe a -> Maybe a -> Ordering
 bigNoth Nothing Nothing = EQ
 bigNoth Nothing _ = GT
 bigNoth _ Nothing = LT
@@ -44,54 +46,66 @@ randPerm xs g = (xs !! n : perm, g3)
     (n, g2) = randomR (0, length xs - 1) g
     (perm, g3) = randPerm (take n xs ++ drop (n + 1) xs) g2
 
-startNet pIn eDir loopMap tranMap net loopRecency = do
+startNet
+    :: (Handle, Handle, Handle)
+    -> FilePath
+    -> Map.Map String FilePath
+    -> Map.Map (String, String) FilePath
+    -> Map.Map String [String]
+    -> Map.Map String (Maybe Int)
+    -> IO a
+startNet gfxP eDir loopMap tranMap net loopRecency = do
     randList <- getStdRandom $ randPerm (Map.toList loopRecency)
     let loopChoice = fst $ maximumBy (bigNoth `on` snd) randList
-    spanNet pIn eDir loopMap tranMap net loopChoice loopRecency
+    spanNet gfxP eDir loopMap tranMap net loopChoice loopRecency
 
+exhaust :: Handle -> IO ()
 exhaust h = do
     ready <- hReady h
     when ready $ do
-      l <- hGetLine h
-      --putStrLn l
-      exhaust h
+        _ <- hGetLine h
+        exhaust h
 
+waitForDemuxEof :: Handle -> IO ()
 waitForDemuxEof h = do
     l <- hGetLine h
-    --putStrLn l
-    --unless (l == "  DEMUXER: ds_fill_buffer: EOF reached (stream: video)\n") $
     unless ("EOF" `isInfixOf` l) $
         waitForDemuxEof h
 
-spanNet pIn@(pInn, pOut, pErr, pId) eDir loopMap tranMap net loopChoice loopRecency = do
+spanNet
+    :: (Handle, Handle, Handle)
+    -> FilePath
+    -> Map.Map String FilePath
+    -> Map.Map (String, String) FilePath
+    -> Map.Map String [String]
+    -> String
+    -> Map.Map String (Maybe Int)
+    -> IO a
+spanNet gfxP@(pIn, pOut, pErr) eDir loopMap tranMap net loopChoice
+        loopRecency = do
     let Just loopFilename = Map.lookup loopChoice loopMap
-        reper 0 = return ()
-        reper n = do
-            hPutStrLn pInn $ "loadfile " ++ eDir </> loopFilename
-            --putStrLn $ "loadfile " ++ eDir </> loopFilename
-            hFlush pInn
-            waitForDemuxEof pOut
-            exhaust pErr
-            reper (n - 1)
-    reper 6
+    replicateM_ 6 $ do
+        hPutStrLn pIn $ "loadfile " ++ eDir </> loopFilename
+        hFlush pIn
+        waitForDemuxEof pOut
+        exhaust pErr
     case Map.lookup loopChoice net of
       Nothing -> do
           hPutStr stderr "Unexpected sheep dead-end, restarting sheep net."
-          startNet pIn eDir loopMap tranMap net loopRecency
+          startNet gfxP eDir loopMap tranMap net loopRecency
       Just tranList -> do
           let tranRecencies = zip tranList $
                   catMaybes [Map.lookup tran loopRecency | tran <- tranList]
           randList <- getStdRandom $ randPerm tranRecencies
           let tranChoice = fst $ maximumBy (bigNoth `on` snd) randList
               Just tranFilename = Map.lookup (loopChoice, tranChoice) tranMap
-          hPutStrLn pInn $ "loadfile " ++ eDir </> tranFilename
-          --putStrLn $ "loadfile " ++ eDir </> tranFilename
-          hFlush pInn
+          hPutStrLn pIn $ "loadfile " ++ eDir </> tranFilename
+          hFlush pIn
           waitForDemuxEof pOut
           exhaust pErr
           let myUpdater Nothing = Just 1
               myUpdater (Just x) = Just (x + 1)
-          spanNet pIn eDir loopMap tranMap net tranChoice $
+          spanNet gfxP eDir loopMap tranMap net tranChoice $
               Map.adjust myUpdater loopChoice loopRecency
 
 main :: IO ()
@@ -103,19 +117,14 @@ main = do
     let loopMap = Map.fromList $ map (\s -> (sFirst s, sFilename s)) loops
         tranMap = Map.fromList $
             map (\s -> ((sFirst s, sLast s), sFilename s)) trans
-
-        -- We only consider loops that aren't dead-ends.
         loopIdSet = Set.fromList (Map.keys loopMap)
-        -- Actually, seems like there are fewer complex loops (such
-        -- as 2-cycles) if we leave the dead-ends and just have those
-        -- occasional jumps.
-            -- `Set.intersection` Set.fromList (map fst $ Map.keys tranMap)
-
         net = sheepToNet loopIdSet (Map.keys tranMap)
         loopRecency = Map.fromList $
             zip (Set.toList loopIdSet) (repeat Nothing)
-    --mapM_ print $ Map.toList net
     putStrLn $ show (Set.size loopIdSet) ++ " sheep loops."
-    let opts = words "-fs -fixed-vo -really-quiet -slave -idle -nolirc -msgmodule -msglevel demuxer=9:statusline=0"
-    (pIn, pOut, pErr, pId) <- runInteractiveProcess "/usr/bin/mplayer" opts Nothing Nothing
-    startNet (pIn, pOut, pErr, pId) eDir loopMap tranMap net loopRecency
+    let opts =
+            [ "-fs", "-fixed-vo", "-really-quiet", "-slave", "-idle"
+            , "-nolirc", "-msgmodule", "-msglevel", "demuxer=9:statusline=0"]
+    (pIn, pOut, pErr, _) <-
+        runInteractiveProcess "/usr/bin/mplayer" opts Nothing Nothing
+    startNet (pIn, pOut, pErr) eDir loopMap tranMap net loopRecency
