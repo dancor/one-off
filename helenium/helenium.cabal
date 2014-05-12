@@ -1,0 +1,18 @@
+name:            helenium
+version:         0.1
+license:         BSD3
+license-file:    LICENSE
+author:          dan corson <danl@alum.mit.edu>
+synopsis:        haskell player for electricsheep
+build-type:      Simple
+build-depends:
+    base
+  , containers
+  , directory
+  , filepath
+  , process
+  , random
+
+executable:      helenium
+main-is:         Helenium.hs
+hs-source-dirs:  src

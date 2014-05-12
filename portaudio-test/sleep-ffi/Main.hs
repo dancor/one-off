@@ -1,8 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
-
-import Foreign
-
-foreign import ccall "lol.h lol"
+foreign import ccall safe "lol.h lol"
     lol :: IO ()
 
 main :: IO ()
