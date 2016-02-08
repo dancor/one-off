@@ -16,6 +16,9 @@ void main(int argc, char *argv[]) {
         unsigned long long c_min = ceil(cbrt((double)a3b3 / 2));
         for (unsigned long long c = c_min; c <= a - 1; c++) {
             unsigned long long d3 = a3b3 - c * c * c;
+            if (d3 % 4 == 2) {
+                continue;
+            }
             unsigned long long d = round(cbrt((double)d3));
             if (d * d * d == d3) {
                 printf("(%lld,%lld,%lld,%lld)\n", a, b, c, d);
@@ -24,7 +27,7 @@ void main(int argc, char *argv[]) {
     }
 
     gettimeofday(&tv2, NULL);
-    fprintf(stderr, "%lld: %fs\n", a,
+    fprintf(stderr, "%s: %fs\n", argv[1],
         (double)(tv2.tv_sec - tv1.tv_sec) +
         (double)(tv2.tv_usec - tv1.tv_usec) / 1000000);
 }

@@ -16,9 +16,11 @@ void main(int argc, char *argv[]) {
         unsigned long long c_min = ceil(cbrt((double)a3b3 / 2));
         for (unsigned long long c = c_min; c <= a - 1; c++) {
             unsigned long long d3 = a3b3 - c * c * c;
-            if (d3 % 4 == 2) {
-                continue;
-            }
+            if (d3 % 4 == 2) continue;
+            if (d3 % 8 == 4) continue;
+            if (d3 % 32 == 16) continue;
+            if (d3 % 64 == 32) continue;
+            if (d3 % 256 == 128) continue;
             unsigned long long d = round(cbrt((double)d3));
             if (d * d * d == d3) {
                 printf("(%lld,%lld,%lld,%lld)\n", a, b, c, d);
