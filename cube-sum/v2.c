@@ -27,7 +27,7 @@ void main(int argc, char *argv[]) {
     }
 
     gettimeofday(&tv2, NULL);
-    fprintf(stderr, "%lld: %fs\n", a,
+    fprintf(stderr, "%s: %fs\n", argv[1],
         (double)(tv2.tv_sec - tv1.tv_sec) +
         (double)(tv2.tv_usec - tv1.tv_usec) / 1000000);
 }
