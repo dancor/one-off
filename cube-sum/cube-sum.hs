@@ -39,16 +39,23 @@ givenABC h a b a3b3 c = fmap ((,,,) a b c) <$>
 readMb :: Read a => String -> Maybe a
 readMb s = fmap fst . listToMaybe $ reads s
 
+pool :: IO ()
+pool h = do
+    -- h <- genH cubeMax
+    h <- genH 99986
+    error "todo"
+    return ()
+
 main :: IO ()
 main = do
     args <- getArgs
-    let usage = "cube-sum [integer-value-of-a]"
-    a <- case args of
-      [] -> return 12
+    let usage = "cube-sum [integer-value-of-a|pool]"
+    case args of
+      ["pool"] -> pool
       [nStr] -> case readMb nStr of
-        Just n -> return n
+        Just a -> do
+          h <- genH a
+          res <- givenA h a
+          mapM_ print res
         _ -> error usage
       _ -> error usage
-    h <- genH a
-    res <- givenA h a
-    mapM_ print res
