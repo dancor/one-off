@@ -1,7 +1,10 @@
 #include <math.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
+
+typedef uint64_t n_t;
 
 void main(int argc, char *argv[]) {
     struct my_struct *s;
@@ -9,21 +12,21 @@ void main(int argc, char *argv[]) {
 
     gettimeofday(&tv1, NULL);
 
-    unsigned long long a = atoll(argv[1]);
-    unsigned long long a3 = a * a * a;
-    for (unsigned long long b = 1; b <= a - 2; b++) {
-        unsigned long long a3b3 = a3 + b * b * b;
-        unsigned long long c_min = ceil(cbrt((double)a3b3 / 2));
-        for (unsigned long long c = c_min; c <= a - 1; c++) {
-            unsigned long long d3 = a3b3 - c * c * c;
+    n_t a = atoll(argv[1]);
+    n_t a3 = a * a * a;
+    for (n_t b = 1; b <= a - 2; b++) {
+        n_t a3b3 = a3 + b * b * b;
+        n_t c_min = ceil(cbrt((double)a3b3 / 2));
+        for (n_t c = c_min; c <= a - 1; c++) {
+            n_t d3 = a3b3 - c * c * c;
             if (d3 % 4 == 2) continue;
             if (d3 % 8 == 4) continue;
             if (d3 % 32 == 16) continue;
             if (d3 % 64 == 32) continue;
             if (d3 % 256 == 128) continue;
-            unsigned long long d = round(cbrt((double)d3));
+            n_t d = round(cbrt((double)d3));
             if (d * d * d == d3) {
-                printf("(%lld,%lld,%lld,%lld)\n", a, b, c, d);
+                printf("(%lud,%lud,%lud,%lud)\n", a, b, c, d);
             }
         }
     }
