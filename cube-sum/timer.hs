@@ -1,5 +1,7 @@
 import Control.Applicative
 import Control.Monad
+import Data.List
+import Data.List.Split
 import System.Process
 
 -- doRun :: Int -> IO 
@@ -9,10 +11,15 @@ oneRun c = do
     (_, _, errStr) <- readProcessWithExitCode "sh" ["-c", c] ""
     return $ read $ init $ words errStr !! 1
 
-avgRun :: Int -> String -> IO Double
-avgRun n c = (/ fromIntegral n) . sum <$> replicateM n (oneRun c)
+compRun :: Int -> [String] -> IO ()
+compRun n cs = do
+    timeLine <- mapM oneRun $ concat $ replicate n cs
+    let csNum = length cs
+        timeMatrix = transpose $ chunksOf csNum timeLine
+        totTimes = map sum timeMatrix
+    mapM_ print totTimes
 
 main = do
-    avgRun 10 "./v1 9999 > o1" >>= print
-    avgRun 10 "./v2 9999 > o2" >>= print
+    system "make v1 && make v2"
+    compRun 10 ["./v1 9999 > o1", "./v2 9999 > o2"]
     system "diff o1 o2"
