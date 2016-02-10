@@ -1,31 +1,32 @@
+#include <CL/opencl.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <CL/opencl.h>
+#include <unistd.h>
 
 typedef uint64_t n_t;
 
 cl_device_id create_device_id() {
-   cl_platform_id platform;
-   cl_device_id device_id;
-   int err;
-
-   err = clGetPlatformIDs(1, &platform, NULL);
-   if (err < 0) {
-      perror("Couldn't identify a platform");
-      exit(1);
-   }
-   err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
-   if (err == CL_DEVICE_NOT_FOUND) {
-      err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
-   }
-   if (err < 0) {
-      perror("Couldn't access any devices");
-      exit(1);
-   }
-   return device_id;
+    cl_platform_id platform;
+    cl_device_id device_id;
+    int err;
+ 
+    err = clGetPlatformIDs(1, &platform, NULL);
+    if (err < 0) {
+       perror("Couldn't identify a platform");
+       exit(1);
+    }
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
+    if (err == CL_DEVICE_NOT_FOUND) {
+       err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
+    }
+    if (err < 0) {
+       perror("Couldn't access any devices");
+       exit(1);
+    }
+    return device_id;
 }
 
 cl_program build_program(cl_context context, cl_device_id device_id,
@@ -166,9 +167,9 @@ void main(int argc, char *argv[]) {
         perror("Couldn't read the buffer");
         exit(1);
     }
-    for (int b = 1, i = 0; b <= a - 2; b++, i += 2) {
-        if (out[i] == 0) continue;
-        printf("(%u,%u,%u,%u)\n", a, b, out[i], out[i + 1]);
+    for (int b = 1; b <= a - 2; b++) {
+        if (out[2 * b] == 0) continue;
+        printf("(%u,%u,%u,%u)\n", a, b, out[2 * b], out[2 * b + 1]);
     }
 
     /*
