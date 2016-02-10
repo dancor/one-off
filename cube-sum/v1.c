@@ -19,11 +19,23 @@ void main(int argc, char *argv[]) {
         n_t c_min = ceil(cbrt((float)a3b3 / 2));
         for (n_t c = c_min; c <= a - 1; c++) {
             n_t d3 = a3b3 - c * c * c;
+
             if (d3 % 4 == 2) continue;
+            // 1.2x speedup
             if (d3 % 8 == 4) continue;
+
+            /*
+            // 1.06x speedup
             if (d3 % 32 == 16) continue;
             if (d3 % 64 == 32) continue;
+
             if (d3 % 256 == 128) continue;
+            if (d3 % 512 == 256) continue;
+
+            if (d3 % 2048 == 1024) continue;
+            if (d3 % 4096 == 2048) continue;
+            */
+
             n_t d = round(cbrt((float)d3));
             if (d * d * d == d3) {
                 printf("(%lu,%lu,%lu,%lu)\n", a, b, c, d);

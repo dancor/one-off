@@ -24,9 +24,9 @@ void main(int argc, char *argv[]) {
             if (d3 % 8 == 4) continue;
 
             if (d3 % 32 == 16) continue;
+            /*
             if (d3 % 64 == 32) continue;
 
-            /*
             if (d3 % 256 == 128) continue;
             if (d3 % 512 == 256) continue;
 
