@@ -61,7 +61,7 @@ cl_program build_program(cl_context context, cl_device_id device_id,
     if (err < 0) {
         clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
             0, NULL, &log_size);
-        program_log = (char*) malloc(log_size + 1);
+        program_log = (char*)malloc(log_size + 1);
         program_log[log_size] = '\0';
         clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
             log_size + 1, program_log, NULL);
@@ -79,20 +79,34 @@ void main(int argc, char *argv[]) {
     cl_program program;
     cl_kernel kernel;
     cl_command_queue comm_q;
-    size_t local_size = 1;
-    size_t global_size = 1;
-    cl_int num_groups = global_size / local_size;
-    int in_size = 1;
-    int max_out_rows_per_in = 1024;
-    int max_out_rows = max_out_rows_per_in * in_size;
-    int out_size = 4 * max_out_rows;
-    uint32_t in[in_size];
-    uint32_t out[out_size];
+    //int max_out_rows_per_in = 1;
+    //int max_out_rows = max_out_rows_per_in * in_size;
+    uint32_t a;
+    int in_size;
+    int out_size;
+    uint32_t *in;
+    uint32_t *out;
     cl_mem in_buffer;
     cl_mem out_buffer;
     int err = 0;
+    size_t local_size = 1;
+    size_t global_size;
+    //cl_int num_groups = global_size / local_size;
 
     gettimeofday(&tv1, NULL);
+
+    a = atoi(argv[1]);
+    global_size = a - 2;
+    in_size = a + 1;
+    out_size = 2 * in_size;
+
+    in = (uint32_t*)malloc(in_size * sizeof(uint32_t));
+    in[0] = atoi(argv[1]);
+    for (uint32_t b = 1; b <= a - 2; b++) {
+        in[b] = b;
+    }
+
+    out = (uint32_t*)malloc(out_size * sizeof(uint32_t));
 
     device_id = create_device_id();
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
@@ -112,7 +126,7 @@ void main(int argc, char *argv[]) {
         perror("Couldn't create a kernel");
         exit(1);
     }
-    in[0] = atoi(argv[1]);
+
     in_buffer = clCreateBuffer(context,
             CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
             in_size * sizeof(uint32_t), in, &err);
@@ -152,9 +166,9 @@ void main(int argc, char *argv[]) {
         perror("Couldn't read the buffer");
         exit(1);
     }
-    for (int i = 0, j = 0; i < max_out_rows; i++, j += 4) {
-        if (out[j] == 0) break;
-        printf("(%u,%u,%u,%u)\n", out[j], out[j + 1], out[j + 2], out[j + 3]);
+    for (int b = 1, i = 0; b <= a - 2; b++, i += 2) {
+        if (out[i] == 0) continue;
+        printf("(%u,%u,%u,%u)\n", a, b, out[i], out[i + 1]);
     }
 
     /*
