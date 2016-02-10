@@ -6,20 +6,22 @@ import System.Process
 
 -- doRun :: Int -> IO 
 
-oneRun :: String -> IO Double
-oneRun c = do
-    (_, _, errStr) <- readProcessWithExitCode "sh" ["-c", c] ""
+oneRun :: Int -> Int -> IO Double
+oneRun progN arg = do
+    (_, _, errStr) <- readProcessWithExitCode "sh"
+        ["-c", "./v" ++ show progN ++ " " ++ show arg ++ " > o" ++ show progN]
+        ""
     return $ read $ init $ words errStr !! 1
 
-compRun :: Int -> [String] -> IO [Double]
-compRun n cs = do
-    timeLine <- mapM oneRun $ concat $ replicate n cs
-    let csNum = length cs
-        timeMatrix = transpose $ chunksOf csNum timeLine
+compRun :: [Int] -> [Int] -> IO [Double]
+compRun progNs args = do
+    timeLine <- sequence [oneRun progN arg | arg <- args, progN <- progNs]
+    let timeMatrix = transpose $ chunksOf (length progNs) timeLine
     return $ map sum timeMatrix
 
 main = do
     system "make v1 && make v2"
-    rs <- compRun 300 ["./v1 999 > o1", "./v2 999 > o2"]
+    -- 300 runs of different numbers
+    rs <- compRun [1, 2] [700 .. 999]
     mapM_ print $ map (/ (minimum rs)) rs
     system "diff o1 o2"
