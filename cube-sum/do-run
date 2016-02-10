@@ -1,0 +1,2 @@
+#!/bin/sh
+exec rhs gen-run-list.hs | threadpool -n 5
