@@ -21,7 +21,8 @@ compRun progNs args = do
 
 main = do
     system "make v1 && make v2"
-    -- 300 runs of different numbers
-    rs <- compRun [1, 2] [700 .. 999]
+
+    rs <- compRun [1, 2] [19998 .. 19999]
+
     mapM_ print $ map (/ (minimum rs)) rs
     system "diff o1 o2"
