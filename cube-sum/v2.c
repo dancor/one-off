@@ -43,6 +43,8 @@ void main(int argc, char *argv[]) {
         for (n_t c = c_min; c <= a - 1; c++) {
             n_t d3 = a3b3 - c * c * c;
 
+            if (cache[d3 % cache_len] == 0) continue;
+
             if (d3 % 4 == 2) continue;
             if (d3 % 8 == 4) continue;
 
@@ -52,7 +54,6 @@ void main(int argc, char *argv[]) {
             if (d3 % 256 == 128) continue;
             if (d3 % 512 == 256) continue;
 
-            if (cache[d3 % cache_len] == 0) continue;
             n_t d = round(cbrt((float)d3));
             if (d * d * d == d3) {
                 hits++;
