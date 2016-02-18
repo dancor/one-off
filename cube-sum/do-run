@@ -1,2 +1,2 @@
 #!/bin/sh
-exec rhs gen-run-list.hs | threadpool -n 4
+exec rhs gen-run-list.hs | threadpool -n 8
