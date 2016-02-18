@@ -11,16 +11,13 @@ typedef uint8_t cache_t;
 
 void main(int argc, char *argv[]) {
     struct my_struct *s;
-    struct timeval tv1, tv2;
+    struct timeval tv1, tv2, tv3;
     cache_t *cache;
-    // 1 GB
-    int cache_len = 134217728 * 8;
-    // cache_pow 27 
+    //int cache_len = 1073741824; // 1 GiB
+    //int cache_len = 536870912; // 500 MiB
+    int cache_len = 1048576; // 1 MiB
 
-    //int misses = 0;
-    //int hits = 0;
-
-    gettimeofday(&tv1, NULL);
+    gettimeofday(&tv2, NULL);
 
     cache = (cache_t*)malloc(cache_len * sizeof(cache_t));
     memset(cache, 0, cache_len * sizeof(cache_t));
@@ -31,17 +28,9 @@ void main(int argc, char *argv[]) {
     for (n_t x = 1; x <= a; x++) {
         n_t x3 = x * x * x;
         cache[x3 % cache_len] = 1;
-        /*
-        uint32_t cache_i = x3 % cache_len;
-        if (cache[cache_i] == 0) {
-            cache[cache_i] = 1;
-        } else {
-            cache[cache_i] = 2;
-            //printf("Collision: %lu, %lu\n", x, cache[cache_i]);
-        }
-        */
     }
 
+    //gettimeofday(&tv2, NULL);
 
     for (n_t b = 1; b <= a - 2; b++) {
         n_t a3b3 = a3 + b * b * b;
@@ -53,19 +42,20 @@ void main(int argc, char *argv[]) {
 
             n_t d = round(cbrt((float)d3));
             if (d * d * d == d3) {
-                //hits++;
                 n_t d = round(cbrt((float)d3));
                 printf("(%lu,%lu,%lu,%lu)\n", a, b, c, d);
             } else {
-                //misses++;
             }
         }
     }
-    //printf("%d hits\n", hits);
-    //printf("%d misses\n", misses);
 
-    gettimeofday(&tv2, NULL);
+    gettimeofday(&tv3, NULL);
+    /*
     fprintf(stderr, "%s: %fs\n", argv[1],
         (double)(tv2.tv_sec - tv1.tv_sec) +
         (double)(tv2.tv_usec - tv1.tv_usec) / 1000000);
+    */
+    fprintf(stderr, "%s: %fs\n", argv[1],
+        (double)(tv3.tv_sec - tv2.tv_sec) +
+        (double)(tv3.tv_usec - tv2.tv_usec) / 1000000);
 }

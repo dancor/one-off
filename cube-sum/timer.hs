@@ -20,9 +20,9 @@ compRun progNs args = do
     return $ map sum timeMatrix
 
 main = do
-    system "make v1 && make v2"
+    --system "make v1 && make v2"
 
-    rs <- compRun [1, 2] [19998 .. 19999]
+    rs <- compRun [1, 2] [13000 .. 13010]
 
     mapM_ print $ map (/ (minimum rs)) rs
     system "diff o1 o2"

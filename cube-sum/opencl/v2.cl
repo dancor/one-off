@@ -16,11 +16,9 @@ __kernel void cube_sums(__global uint* in, __global uint* out) {
         if (d * d * d == d3) {
             out[2 * b] = c;
             out[2 * b + 1] = d;
-            barrier(CLK_LOCAL_MEM_FENCE);
             return;
         }
     }
-    barrier(CLK_LOCAL_MEM_FENCE);
     out[2 * b] = 0;
     out[2 * b + 1] = 0;
 }
