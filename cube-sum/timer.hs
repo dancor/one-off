@@ -22,7 +22,7 @@ compRun progNs args = do
 main = do
     --system "make v1 && make v2"
 
-    rs <- compRun [1, 2] [150000 .. 150001]
+    rs <- compRun [1, 2] [0150000 .. 0150000]
 
     mapM_ print $ map (/ (minimum rs)) rs
     system "diff o1 o2"

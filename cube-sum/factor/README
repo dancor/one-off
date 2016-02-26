@@ -1,0 +1,18 @@
+Given a and b (with a > b), let
+S := a + b
+D := a - b
+
+Note that:
+(a^3 + b^3) = S (a^2 - ab + b^2)
+D^2 = a^2 - 2ab + b^2
+S^2 = a^2 + 2ab + b^2
+
+So:
+a^3 + b^3 = S (D^2 + 3 S^2)
+
+So we factor a3b3 and for each possible S dividing it,
+we see if an integer D results.
+
+
+We also know that S < 4 (a^3 + b^3) ^ (1/3) which we could use
+to limit the divisors we need to check. (proof of inequality from a > b?)
