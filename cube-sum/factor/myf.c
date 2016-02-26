@@ -19,6 +19,8 @@ this program.  If not, see https://www.gnu.org/licenses/.  */
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <math.h>
+#include <sys/time.h>
 
 #include "gmp.h"
 
@@ -338,16 +340,13 @@ void factor(n_t n, struct factors *factors) {
     }
 }
 
-void go(n_t n) {
+void with_ab(n_t a, n_t a3, n_t b) {
     struct factors factors;
+    n_t a3b3 = a3 + b * b * b;
     n_t div = 1;
-    n_t rest = n;
+    n_t rest = 4 * a3b3;
 
-    factor(n, &factors);
-    for (uint8_t j = 0; j < factors.nfactors; j++) {
-        printf(" %lu^%d", factors.p[j], factors.e[j]);
-    }
-    puts("");
+    factor(rest, &factors);
 
     int e_counter[factors.nfactors]; 
     for (int i = 0; i < factors.nfactors; i++) {
@@ -377,15 +376,53 @@ void go(n_t n) {
         if (div >= rest) {
             continue;
         }
-        printf("%d * %d\n", div, rest);
+        n_t div2 = div * div;
+        if (rest < div2) {
+            continue;
+        }
+        n_t trip_d2 = rest - div2;
+        if (trip_d2 % 3 != 0) {
+            continue;
+        }
+        n_t d2 = trip_d2 / 3;
+        n_t d = round(sqrt((double)d2));
+        if (d >= div) {
+            continue;
+        }
+        if (d * d != d2) {
+            continue;
+        }
+        n_t c = (div + d) / 2;
+        if (c >= a) {
+            continue;
+        }
+        n_t real_d = (div - d) / 2;
+        if (a3b3 != c * c * c + real_d * real_d * real_d) {
+            continue;
+        }
+        printf("%lu,%lu,%lu,%lu\n", a, b, c, real_d);
     }
   e_counter_done:
 
     factor_clear(&factors);
 }
 
-int main (int argc, char *argv[]) {
-    for (int i = 1; i < argc; i++) {
-        go(atoll(argv[i]));
+void with_a(n_t a) {
+    n_t a3 = a * a * a;
+    for (n_t b = 1; b < a; b++) {
+        with_ab(a, a3, b);
     }
+}
+
+int main (int argc, char *argv[]) {
+    struct timeval tv1, tv2;
+
+    gettimeofday(&tv1, NULL);
+    for (int i = 1; i < argc; i++) {
+        with_a(atoll(argv[i]));
+    }
+    gettimeofday(&tv2, NULL);
+    fprintf(stderr, "%s: %fs\n", argv[1],
+        (double)(tv2.tv_sec - tv1.tv_sec) +
+        (double)(tv2.tv_usec - tv1.tv_usec) / 1000000);
 }

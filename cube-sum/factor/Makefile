@@ -1,2 +1,2 @@
 myf: myf.c
-	gcc -o myf myf.c -lgmp -O3
+	gcc -o myf myf.c -lgmp -lm -O3
