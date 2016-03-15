@@ -340,6 +340,19 @@ void factor(n_t n, struct factors *factors) {
     }
 }
 
+
+int n_pow(n_t n, n_t e) {
+    int ret = 1;
+    while (e) {
+        if ((e & 1) == 1) {
+            ret *= n;
+        }
+        n *= n;
+        e >>= 1;
+    }
+    return ret;
+}
+
 void with_ab(n_t a, n_t a3, n_t b) {
     struct factors factors;
     n_t a3b3 = a3 + b * b * b;
@@ -359,11 +372,9 @@ void with_ab(n_t a, n_t a3, n_t b) {
                 if (i == factors.nfactors - 1) {
                     goto e_counter_done;
                 }
-                //div /= factors.p[i] ^ factors.e[i];
-                for (int j = 0; j < factors.e[i]; j++) {
-                    div /= factors.p[i];
-                    rest *= factors.p[i];
-                }
+                n_t change = n_pow(factors.p[i], factors.e[i]);
+                div /= change;
+                rest *= change;
                 e_counter[i] = 0;
             } else {
                 div *= factors.p[i];
@@ -399,22 +410,6 @@ void with_ab(n_t a, n_t a3, n_t b) {
             continue;
         }
         n_t real_d = (div - d) / 2;
-        /*
-        if (a3b3 != c * c * c + real_d * real_d * real_d) {
-            printf("a: %lu\n", a);
-            printf("b: %lu\n", b);
-            printf("4*a^3*b^3: %lu\n", 4 * a3b3);
-            printf("div: %lu\n", div);
-            printf("rest: %lu\n", rest);
-            printf("trip_d2: %lu\n", trip_d2);
-            printf("d2: %lu\n", d2);
-            printf("d: %lu\n", d);
-            printf("c: %lu\n", c);
-            printf("real_d: %lu\n", real_d);
-            exit(-1);
-            continue;
-        }
-        */
         printf("%lu,%lu,%lu,%lu\n", a, b, c, real_d);
     }
   e_counter_done:
