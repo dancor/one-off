@@ -1,2 +1,2 @@
 #!/bin/sh
-exec rhs gen-run-list.hs | threadpool -n 2
+exec runhaskell gen-run-list.hs | threadpool -n 4
