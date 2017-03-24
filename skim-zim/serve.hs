@@ -19,8 +19,7 @@ main = do
     [fp] <- getArgs
     scotty 3000 $ do
       get "/" (redirectToZimMainPage fp)
-      get (regex "^/(./.*)$") (serveZimUrl fp)
-      notFound $ text "Invalid URL!"
+      notFound (serveZimUrl fp)
 
 redirectToZimMainPage :: FilePath -> ActionM ()
 redirectToZimMainPage fp = do
@@ -109,7 +108,7 @@ procContent input = TS.renderTags $ preH2 ++ concat modifiedKeptH2s
 
 serveZimUrl :: FilePath -> ActionM ()
 serveZimUrl fp = do
-    url <- (encodeUtf8 . toStrict) <$> param "1"
+    url <- (BS.tail . encodeUtf8 . toStrict) <$> param "path"
     res <- liftIO $ fp `getContent` Url url
     case res of
       Nothing -> do
