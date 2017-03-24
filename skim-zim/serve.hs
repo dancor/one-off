@@ -5,6 +5,7 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Search as BSLS
+import Data.List
 import Data.Maybe
 import Data.Monoid
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -93,15 +94,21 @@ wtf2 :: BSL.ByteString
 wtf2 = " "
 -}
 
--- future note: if no h2 entries remain, actually remove entry from zim file.
-procContent :: BSL.ByteString -> BSL.ByteString
-procContent input = TS.renderTags $ preH2 ++ concat modifiedKeptH2s
+-- Modify the wiktionary article html to only keep the h2 headings that
+-- match the languages-of-interest. Also move any English h2 heading from
+-- the top to the bottom.
+-- 
+-- If in the future we actually modify the .zim file we can actually remove
+-- articles where no h2 entries remain.
+procArticle :: BSL.ByteString -> BSL.ByteString
+procArticle html = TS.renderTags $ preH2 ++ concat modifiedKeptH2s
   where
     (preH2, h2s, _) =
         headerMiddersFooter isH2Id (== TS.TagComment "htdig_noindex")
-        (TS.parseTags input)
-    keptH2s = filter ((`elem` keepLangs) . h2IdLang . head) h2s
-    modifiedKeptH2s = map modifyH2 keptH2s
+        (TS.parseTags html)
+    (engH2s, nonEngKeptH2s) = partition ((== "English") . h2IdLang . head) $
+        filter ((`elem` keepLangs) . h2IdLang . head) h2s
+    modifiedKeptH2s = map modifyH2 $ nonEngKeptH2s ++ engH2s
     modifyH2 h2 = modifyRegions (== TS.TagOpen "li" []) (== TS.TagClose "li")
         (\li -> if keepLi li then li else []) h2
     keepLi = (\x -> isNothing x || fromJust x `elem` keepLangs) . liLang
@@ -115,8 +122,8 @@ serveZimUrl fp = do
         liftIO . putStrLn $ "Invalid URL: " ++ show url
         status status404
         text $ "Invalid URL!"
-      Just (mimeType, content) -> do
+      Just (mimeType, html) -> do
         liftIO . putStrLn $ "Serving: " ++ show url
         setHeader "Content-Type" (fromStrict $ decodeUtf8 mimeType)
         -- This doesn't process e.g.: -/s/style.css -j/head.js -j/body.js
-        raw $ if "-" `BS.isPrefixOf` url then content else procContent content
+        raw $ if "-" `BS.isPrefixOf` url then html else procArticle html
