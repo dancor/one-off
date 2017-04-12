@@ -3,6 +3,7 @@
 import Codec.Archive.Zim.Parser (getMainPageUrl, getContent, Url(..))
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Search as BSLS
 import Data.List
@@ -34,6 +35,7 @@ redirectToZimMainPage fp = do
 keepLangs =
     [ "English"
     , "German"
+    , "Greek"
     , "Mandarin"
     , "Middle English"
     , "Old English"
@@ -68,13 +70,6 @@ headerMiddersFooter startsAMidder startsFooter xs =
     (h, rest) = break startsAMidder xs
     (m, f) = break startsFooter rest
 
-{-
-modMids :: (a -> Bool) -> (a -> Bool) -> ([a] -> [a]) -> [a] -> [a]
-modMids startsMid startsFoot modF xs = concat (h : map modF ms) ++ f
-  where
-    (h, ms, f) = headMidsFoot startsMid startsFoot xs
--}
-
 modifyRegions :: (a -> Bool) -> (a -> Bool) -> ([a] -> [a]) -> [a] -> [a]
 modifyRegions startsARegion endsARegion f xs = pre ++
     if null endAndRest
@@ -86,13 +81,15 @@ modifyRegions startsARegion endsARegion f xs = pre ++
     end:rest = endAndRest
     region = regionMinusEnd ++ [end]
 
-{-
-wtf1 :: BS.ByteString
-wtf1 = "�"
-
-wtf2 :: BSL.ByteString
-wtf2 = " "
--}
+-- Bare \160 appear after running eswikt zim html through tagsoup for
+-- nonbreaking space characters. But that's not the right utf8. So we fix it.
+--
+-- I don't know if the error is in tagsoup, zim-parser, or the zim file.
+fixNbsp :: BSL.ByteString -> BSL.ByteString
+fixNbsp = BSLS.replace nbspFrom nbspTo
+  where
+    nbspFrom = BSC.pack "\160"
+    nbspTo = BSC.pack "\194\160"
 
 -- Modify the wiktionary article html to only keep the h2 headings that
 -- match the languages-of-interest. Also move any English h2 heading from
@@ -101,14 +98,17 @@ wtf2 = " "
 -- If in the future we actually modify the .zim file we can actually remove
 -- articles where no h2 entries remain.
 procArticle :: BSL.ByteString -> BSL.ByteString
-procArticle html = TS.renderTags $ preH2 ++ concat modifiedKeptH2s
+procArticle html =
+    fixNbsp . TS.renderTags $ preH2 ++ concat modifiedKeptH2s
   where
     (preH2, h2s, _) =
         headerMiddersFooter isH2Id (== TS.TagComment "htdig_noindex")
         (TS.parseTags html)
     (engH2s, nonEngKeptH2s) = partition ((== "English") . h2IdLang . head) $
         filter ((`elem` keepLangs) . h2IdLang . head) h2s
-    modifiedKeptH2s = map modifyH2 $ nonEngKeptH2s ++ engH2s
+    (spaH2s, otherKeptH2s) = partition ((== "Spanish") . h2IdLang . head)
+        nonEngKeptH2s
+    modifiedKeptH2s = map modifyH2 $ spaH2s ++ otherKeptH2s ++ engH2s
     modifyH2 h2 = modifyRegions (== TS.TagOpen "li" []) (== TS.TagClose "li")
         (\li -> if keepLi li then li else []) h2
     keepLi = (\x -> isNothing x || fromJust x `elem` keepLangs) . liLang
