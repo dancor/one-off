@@ -5,6 +5,7 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy.Char8 as BSLC
 import qualified Data.ByteString.Lazy.Search as BSLS
 import Data.List
 import Data.Maybe
@@ -18,19 +19,17 @@ import Web.Scotty
 
 main :: IO ()
 main = do
-    [fp] <- getArgs
+    fps <- getArgs
     scotty 3000 $ do
-      get "/" (redirectToZimMainPage fp)
-      notFound (serveZimUrl fp)
+      get "/" (redirectToZimMainPage fps)
+      notFound (serveZimUrl fps)
 
-redirectToZimMainPage :: FilePath -> ActionM ()
-redirectToZimMainPage fp = do
-    res <- liftIO $ getMainPageUrl fp
+redirectToZimMainPage :: [FilePath] -> ActionM ()
+redirectToZimMainPage fps = do
+    res <- liftIO $ fmap catMaybes $ mapM getMainPageUrl fps
     case res of
-      Nothing -> do
-        status status404
-        text "This ZIM file has no main page specified!"
-      Just (Url url) -> redirect . fromStrict $ decodeUtf8 url
+      Url url : _ -> redirect . fromStrict $ decodeUtf8 url
+      _ -> status status404 >> text "Could not find ZIM file main page."
 
 keepLangs =
     [ "English"
@@ -99,9 +98,9 @@ fixNbsp = BSLS.replace nbspFrom nbspTo
 -- articles where no h2 entries remain.
 procArticle :: BSL.ByteString -> BSL.ByteString
 procArticle html =
-    fixNbsp . TS.renderTags $ preH2 ++ concat modifiedKeptH2s
+    fixNbsp . TS.renderTags $ preH2 ++ concat modifiedKeptH2s ++ theEnd
   where
-    (preH2, h2s, _) =
+    (preH2, h2s, theEnd) =
         headerMiddersFooter isH2Id (== TS.TagComment "htdig_noindex")
         (TS.parseTags html)
     (engH2s, nonEngKeptH2s) = partition ((== "English") . h2IdLang . head) $
@@ -113,17 +112,22 @@ procArticle html =
         (\li -> if keepLi li then li else []) h2
     keepLi = (\x -> isNothing x || fromJust x `elem` keepLangs) . liLang
 
-serveZimUrl :: FilePath -> ActionM ()
-serveZimUrl fp = do
+killToHtml :: BSL.ByteString -> BSL.ByteString
+killToHtml = id
+-- killToHtml = BSLC.dropWhile (/= '>') . snd . BSLS.breakAfter "<body"
+
+serveZimUrl :: [FilePath] -> ActionM ()
+serveZimUrl fps = do
     url <- (BS.tail . encodeUtf8 . toStrict) <$> param "path"
-    res <- liftIO $ fp `getContent` Url url
+    res <- liftIO $ fmap catMaybes $ mapM (`getContent` Url url) fps
     case res of
-      Nothing -> do
-        liftIO . putStrLn $ "Invalid URL: " ++ show url
-        status status404
-        text $ "Invalid URL!"
-      Just (mimeType, html) -> do
+      (mimeType, html) : rest -> do
         liftIO . putStrLn $ "Serving: " ++ show url
         setHeader "Content-Type" (fromStrict $ decodeUtf8 mimeType)
         -- This doesn't process e.g.: -/s/style.css -j/head.js -j/body.js
-        raw $ if "-" `BS.isPrefixOf` url then html else procArticle html
+        raw $ if "-" `BS.isPrefixOf` url then html else
+          procArticle html <> BSL.concat (map (killToHtml . snd) rest)
+      _ -> do
+        liftIO . putStrLn $ "Invalid URL: " ++ show url
+        status status404
+        text $ "Invalid URL!"
