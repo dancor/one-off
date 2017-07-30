@@ -37,20 +37,19 @@ doRepl 'm' = 'm'
 
 doRepl x = error $ show x
 
+doRepls :: String -> String
 doRepls l = map doRepl code ++ rest
   where
-    (code, rest) = break (== '\t') l
+    (code, rest) = break (== ' ') l
 
+headerMod :: String -> String
 headerMod l
-    | l == "VALID_INPUT_CHARS = abcdefghijklmnopqrstuvwxyz" =
-        l ++ ";"
+    | l == "KeyCode=abcdefghijklmnopqrstuvwxy" =
+           "KeyCode=abcdefghijklmnpqrstuvwxy;"
     | otherwise = l
 
+main :: IO ()
 main = do
     ls <- lines <$> getContents
-    let (header, table) = break (== "BEGIN_TABLE") ls
-        tableInnards = tail $ init table
-        semicolonLine = "o\t；\t0"
-    putStr . unlines $
-        map headerMod header ++ [head table, semicolonLine] ++
-        map doRepls tableInnards ++ [last table]
+    let (header, table) = break (== "a 工") ls
+    putStr . unlines $ map headerMod header ++ map doRepls table
