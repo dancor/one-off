@@ -118,14 +118,17 @@ killToHtml = id
 
 serveZimUrl :: [FilePath] -> ActionM ()
 serveZimUrl fps = do
-    url <- (BS.tail . encodeUtf8 . toStrict) <$> param "path"
+    urlOrig <- (BS.tail . encodeUtf8 . toStrict) <$> param "path"
+    let (url, forceNoSkim) = if "raw/" `BS.isPrefixOf` urlOrig
+          then (BS.drop 4 urlOrig, True)
+          else (urlOrig, False)
     res <- liftIO $ fmap catMaybes $ mapM (`getContent` Url url) fps
     case res of
       (mimeType, html) : rest -> do
         liftIO . putStrLn $ "Serving: " ++ show url
         setHeader "Content-Type" (fromStrict $ decodeUtf8 mimeType)
-        -- This doesn't process e.g.: -/s/style.css -j/head.js -j/body.js
-        raw $ if "-" `BS.isPrefixOf` url then html else
+        -- These shouldn't be skimmed: -/s/style.css -j/head.js -j/body.js
+        raw $ if forceNoSkim || "-" `BS.isPrefixOf` url then html else
           procArticle html <> BSL.concat (map (killToHtml . snd) rest)
       _ -> do
         liftIO . putStrLn $ "Invalid URL: " ++ show url
