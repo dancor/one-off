@@ -3,15 +3,16 @@
 import Codec.Archive.Zim.Parser (getMainPageUrl, getContent, Url(..))
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC
-import qualified Data.ByteString.Lazy.Search as BSLS
 import Data.List
 import Data.Maybe
 import Data.Monoid
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Text.Lazy (toStrict, fromStrict)
+import qualified Data.Text.Lazy as DTL
+import qualified Data.Text.Lazy.Encoding as DTLE
+import Data.Word
 import Network.HTTP.Types.Status (status404)
 import System.Environment (getArgs)
 import qualified Text.HTML.TagSoup as TS
@@ -31,10 +32,12 @@ redirectToZimMainPage fps = do
       Url url : _ -> redirect . fromStrict $ decodeUtf8 url
       _ -> status status404 >> text "Could not find ZIM file main page."
 
+keepLangs :: [BSL.ByteString]
 keepLangs =
     [ "English"
     , "German"
     , "Greek"
+    , "Chinese"
     , "Mandarin"
     , "Middle English"
     , "Old English"
@@ -45,17 +48,18 @@ keepLangs =
     , "Translingual"
     ]
 
+isH2Id :: TS.Tag BSL.ByteString -> Bool
 isH2Id (TS.TagOpen "h2" (("id", _):_)) = True
 isH2Id _ = False
 
-isTranslationsCell (TS.TagOpen "table" (("class","translations"):_)) = True
-isTranslationsCell _ = False
-
+h2IdLang :: TS.Tag BSL.ByteString -> BSL.ByteString
 h2IdLang (TS.TagOpen "h2" (("id", lang):_)) = lang
 h2IdLang _ = error "h2IdLang x without isH2Id x"
 
+liLang :: [TS.Tag BSLC.ByteString] -> Maybe BSLC.ByteString
 liLang = listToMaybe . catMaybes . map liTagLang
 
+liTagLang :: TS.Tag BSLC.ByteString -> Maybe BSLC.ByteString
 liTagLang (TS.TagText t) =
     if " " `BSL.isPrefixOf` t && ": " `BSL.isSuffixOf` t
       then Just . BSL.tail $ BSL.take (BSL.length t - 2) t
@@ -80,29 +84,20 @@ modifyRegions startsARegion endsARegion f xs = pre ++
     end:rest = endAndRest
     region = regionMinusEnd ++ [end]
 
--- Bare \160 appear after running eswikt zim html through tagsoup for
--- nonbreaking space characters. But that's not the right utf8. So we fix it.
---
--- I don't know if the error is in tagsoup, zim-parser, or the zim file.
-fixNbsp :: BSL.ByteString -> BSL.ByteString
-fixNbsp = BSLS.replace nbspFrom nbspTo
-  where
-    nbspFrom = BSC.pack "\160"
-    nbspTo = BSC.pack "\194\160"
-
 -- Modify the wiktionary article html to only keep the h2 headings that
 -- match the languages-of-interest. Also move any English h2 heading from
 -- the top to the bottom.
 -- 
 -- If in the future we actually modify the .zim file we can actually remove
 -- articles where no h2 entries remain.
-procArticle :: BSL.ByteString -> BSL.ByteString
-procArticle html =
-    fixNbsp . TS.renderTags $ preH2 ++ concat modifiedKeptH2s ++ theEnd
+procArticle :: BSL.ByteString -> DTL.Text
+procArticle zimHtml =
+    DTLE.decodeUtf8With errLol . TS.renderTags $
+    preH2 ++ concat modifiedKeptH2s ++ theEnd
   where
     (preH2, h2s, theEnd) =
         headerMiddersFooter isH2Id (== TS.TagComment "htdig_noindex")
-        (TS.parseTags html)
+        (TS.parseTags zimHtml)
     (engH2s, nonEngKeptH2s) = partition ((== "English") . h2IdLang . head) $
         filter ((`elem` keepLangs) . h2IdLang . head) h2s
     (spaH2s, otherKeptH2s) = partition ((== "Spanish") . h2IdLang . head)
@@ -112,9 +107,8 @@ procArticle html =
         (\li -> if keepLi li then li else []) h2
     keepLi = (\x -> isNothing x || fromJust x `elem` keepLangs) . liLang
 
-killToHtml :: BSL.ByteString -> BSL.ByteString
-killToHtml = id
--- killToHtml = BSLC.dropWhile (/= '>') . snd . BSLS.breakAfter "<body"
+errLol :: String -> Maybe Word8 -> Maybe Char
+errLol _ _ = Nothing
 
 serveZimUrl :: [FilePath] -> ActionM ()
 serveZimUrl fps = do
@@ -124,12 +118,28 @@ serveZimUrl fps = do
           else (urlOrig, False)
     res <- liftIO $ fmap catMaybes $ mapM (`getContent` Url url) fps
     case res of
-      (mimeType, html) : rest -> do
+      (mimeType, zimHtml) : rest -> do
         liftIO . putStrLn $ "Serving: " ++ show url
         setHeader "Content-Type" (fromStrict $ decodeUtf8 mimeType)
+
         -- These shouldn't be skimmed: -/s/style.css -j/head.js -j/body.js
-        raw $ if forceNoSkim || "-" `BS.isPrefixOf` url then html else
-          procArticle html <> BSL.concat (map (killToHtml . snd) rest)
+        if forceNoSkim || "-" `BS.isPrefixOf` url
+          then raw zimHtml
+          else html $ procArticle zimHtml <>
+              DTLE.decodeUtf8With errLol (BSL.concat $ map snd rest)
+
+        {-
+        when (url == "A/\232\143\156\229\150\174.html") $ liftIO $ do
+            BSLC.writeFile "/home/danl/the-html" zimHtml
+            writeFile "/home/danl/the-tags" $
+                unlines $ map show $ TS.parseTags zimHtml
+            DTLI.writeFile "/home/danl/the-res" $
+                DTLE.decodeUtf8With errLol $ 
+                --BSLC.filter (`notElem` ("\xa0\x40\x69\x64" :: String)) $
+                --BSLC.map (\x -> if x == '\x40' then '@' else x) $
+                --BSLC.map (\x -> if x == '\xa0' then '@' else x) $
+                TS.renderTags $ TS.parseTags zimHtml
+                -}
       _ -> do
         liftIO . putStrLn $ "Invalid URL: " ++ show url
         status status404
