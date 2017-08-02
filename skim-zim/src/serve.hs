@@ -73,6 +73,7 @@ headerMiddersFooter startsAMidder startsFooter xs =
     (h, rest) = break startsAMidder xs
     (m, f) = break startsFooter rest
 
+-- Perform a modification to list segments defined by start and end tests.
 modifyRegions :: (a -> Bool) -> (a -> Bool) -> ([a] -> [a]) -> [a] -> [a]
 modifyRegions startsARegion endsARegion f xs = pre ++
     if null endAndRest
@@ -103,8 +104,16 @@ procArticle zimHtml =
     (spaH2s, otherKeptH2s) = partition ((== "Spanish") . h2IdLang . head)
         nonEngKeptH2s
     modifiedKeptH2s = map modifyH2 $ spaH2s ++ otherKeptH2s ++ engH2s
-    modifyH2 h2 = modifyRegions (== TS.TagOpen "li" []) (== TS.TagClose "li")
-        (\li -> if keepLi li then li else []) h2
+    modifyH2 h2 =
+        modifyRegions
+            (== TS.TagOpen "h3" [("id","Glyph_origin")])
+            (== TS.TagClose "table")
+            (\_ -> []) $
+        modifyRegions
+            (== TS.TagOpen "li" [])
+            (== TS.TagClose "li")
+            (\li -> if keepLi li then li else [])
+        h2
     keepLi = (\x -> isNothing x || fromJust x `elem` keepLangs) . liLang
 
 errLol :: String -> Maybe Word8 -> Maybe Char
