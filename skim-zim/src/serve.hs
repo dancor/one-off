@@ -34,7 +34,8 @@ redirectToZimMainPage fps = do
 
 keepLangs :: [BSL.ByteString]
 keepLangs =
-    [ "English"
+    [ "Arabic"
+    , "English"
     , "German"
     , "Greek"
     , "Chinese"
