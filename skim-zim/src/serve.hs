@@ -39,12 +39,14 @@ keepLangs =
     , "German"
     , "Greek"
     , "Chinese"
+    , "Hindi"
     , "Mandarin"
     , "Middle English"
     , "Old English"
     , "Proto-Indo-European"  -- maybe just all Proto- ?
     , "Proto-Germanic"
     , "Proto-Sino-Tibetan"
+    -- , "Sanskrit"
     , "Spanish"
     , "Translingual"
     ]

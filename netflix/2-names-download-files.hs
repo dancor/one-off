@@ -33,9 +33,8 @@ doWget flatTitle = do
 
 getTitle title = do
     let flatTitle = flattenTitle title
-    mFileExists <- doesFileExist $ "m" </> flatTitle
-    tvFileExists <- doesFileExist $ "tv" </> flatTitle
-    if mFileExists || tvFileExists
+    isCached <- doesFileExist $ "cached" </> flatTitle
+    if isCached
       then putStrLn $ "Cached: " ++ flatTitle
       else doWget flatTitle
 
