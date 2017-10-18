@@ -48,18 +48,9 @@ switchColor :: Color -> Color
 switchColor Black = White
 switchColor White = Black
 
-decodeColor :: Int -> Either Int Color
-decodeColor 10000 = Right Black
-decodeColor 20000 = Right White
-decodeColor x = Left x
-
-encodeColor :: Either Int Color -> Int
-encodeColor (Right Black) = 10000
-encodeColor (Right White) = 20000
-encodeColor (Left x) = x
-
 ePut :: Engine -> String -> IO ()
-ePut e = hPutStrLn (eInH e)
+-- ePut e = hPutStrLn (eInH e)
+ePut e s = putStrLn s >> hPutStrLn (eInH e) s
 
 ePlayMove :: Engine -> Move -> IO ()
 ePlayMove e (Move color column row) = do
@@ -172,112 +163,68 @@ readCoord (columnCh:rowStr) =
       _ -> Nothing
 readCoord _ = Nothing
 
-readColor :: String -> Maybe Color
-readColor s = case s of
-  "b" -> Just Black
-  "B" -> Just Black
-  "w" -> Just White
-  "W" -> Just White
+readColor :: String -> Maybe (Color, String)
+readColor (x:xs) = case x of
+  'b' -> Just (Black, xs)
+  'B' -> Just (Black, xs)
+  'w' -> Just (White, xs)
+  'W' -> Just (White, xs)
   _ -> Nothing
+readColor _ = Nothing
 
-getMove :: IO (Maybe (Either Color Move))
-getMove = do
-    putStr "Your move: "
+data GetMove
+    = GotQuit
+    | EngineMove Color
+    | Got Move
+
+getMove :: Color -> IO GetMove
+getMove defColor = do
+    putStr $ "Your move (" ++ show defColor ++ "): "
     hFlush stdout
     s <- getLine
     let unknown = do
             putStrLn "I could not read your move. Please try again (e.g. D4)."
-            getMove
+            getMove defColor
     case s of
-      "q" -> return Nothing
-      "quit" -> return Nothing
-      "exit" -> return Nothing
-      "eb" -> return $ Just $ Left Black
-      "eB" -> return $ Just $ Left Black
-      "ew" -> return $ Just $ Left White
-      "eW" -> return $ Just $ Left White
-      colorCh:coordStr -> case (readColor [colorCh], readCoord coordStr) of
-        (Just color, Just (column, row)) ->
-          return $ Just $ Right $ Move color column row
+      "q"    -> return GotQuit
+      "quit" -> return GotQuit
+      "exit" -> return GotQuit
+      "e" -> return $ EngineMove defColor
+      'e':s2 -> case readColor s2 of
+        Just (color, "") -> return $ EngineMove color
         _ -> unknown
-      _ -> unknown
+      _ -> case readColor s of
+        Just (color, s2) -> case readCoord s2 of
+          Just (column, row) -> return $ Got $ Move color column row
+          _ -> unknown
+        _ -> case readCoord s of
+          Just (column, row) -> return $ Got $ Move defColor column row
+          _ -> unknown
 
-{-
-playEngine :: Engine -> Board -> IO ()
-playEngine e b = do
-    showBoard b >>= putStrLn
-    gotMove <- getMove
-    print gotMove
-    case gotMove of
-      Just (Right move) -> do
-          ePlayMove e move
-          bPlayMove b move
-          playEngine e b
-      Just (Left color) -> do
-          eGenMove e color
-          let waitForAns = do
-                  l <- hGetLine (eOutH e)
-                  case l of
-                    "= " -> waitForAns
-                    '=':' ':coordSq -> do
-                        let Just (column, row) = readCoord coordSq
-                        return $ Move White column row
-                    _ -> waitForAns
-          move <- waitForAns
-          print move
-          bPlayMove b move
-          playEngine e b
-      _ -> return ()
-    
-playRestartingEngine :: Board -> IO ()
-playRestartingEngine b = do
-    showBoard b >>= putStrLn
-    gotMove <- getMove
-    print gotMove
-    case gotMove of
-      Just (Right move) -> bPlayMove b move >> playRestartingEngine b
-      Just (Left color) -> do
-          move <- withEngine $ \e -> do
-              eSetBoard e b
-              eGenMove e color
-              let waitForAns = do
-                      l <- hGetLine (eOutH e)
-                      case l of
-                        "= " -> waitForAns
-                        '=':' ':coordSq -> do
-                            let Just (column, row) = readCoord coordSq
-                            return $ Move White column row
-                        _ -> waitForAns
-              waitForAns
-          print move
-          bPlayMove b move >> playRestartingEngine b
-      _ -> return ()
--}
-
-playRestartingEngine :: [Move] -> IO ()
-playRestartingEngine moves = do
+playRestartingEngine :: Color -> [Move] -> IO ()
+playRestartingEngine color moves = do
     b <- newBoard
     mapM_ (bPlayMove b) moves
     showBoard b >>= putStrLn
-    gotMove <- getMove
-    print gotMove
+    gotMove <- getMove color
     case gotMove of
-      Just (Right move) -> playRestartingEngine (moves ++ [move])
-      Just (Left color) -> do
+      Got move ->
+          playRestartingEngine (switchColor $ mColor move) (moves ++ [move])
+      EngineMove eColor -> do
           move <- withEngine $ \e -> do
               eSetMoves e moves
-              eGenMove e color
+              eGenMove e eColor
               let waitForAns = do
                       l <- hGetLine (eOutH e)
                       case l of
                         "= " -> waitForAns
                         '=':' ':coordSq -> do
                             let Just (column, row) = readCoord coordSq
-                            return $ Move White column row
+                            return $ Move eColor column row
                         _ -> waitForAns
               waitForAns
           print move
-          playRestartingEngine (moves ++ [move])
+          playRestartingEngine (switchColor eColor) (moves ++ [move])
       _ -> return ()
 
 withEngine :: (Engine -> IO a) -> IO a
@@ -304,20 +251,4 @@ bPlayMove b m = bWrite b (mColumn m) (mRow m) (Just $ mColor m)
 main :: IO ()
 main = do
     args <- getArgs
-    playRestartingEngine []
-
-    -- withEngine $ \e -> playEngine e b
-    {-
-    withEngine $ \e -> forM_ args $ \arg -> do
-        moves <- map parseMove . filter (";" `isPrefixOf`) . lines <$>
-            readFile arg
-
-        let color = case colorLine of
-              "●" -> 10000
-              "℗" -> 20000
-              _ -> error "Failed to read whose turn it is."
-            myBd = readBoard ls
-        putStrLn colorLine
-        putStrLn $ showBoard myBd
-        evalAllMoves engIn engErr myBd color
-    -}
+    playRestartingEngine Black []
