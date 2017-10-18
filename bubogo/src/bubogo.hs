@@ -176,6 +176,7 @@ data GetMove
     = GotQuit
     | EngineMove Color
     | Got Move
+    | GotUndo
 
 getMove :: Color -> IO GetMove
 getMove defColor = do
@@ -193,6 +194,8 @@ getMove defColor = do
       'e':s2 -> case readColor s2 of
         Just (color, "") -> return $ EngineMove color
         _ -> unknown
+      "u"    -> return GotUndo
+      "undo" -> return GotUndo
       _ -> case readColor s of
         Just (color, s2) -> case readCoord s2 of
           Just (column, row) -> return $ Got $ Move color column row
@@ -225,7 +228,12 @@ playRestartingEngine color moves = do
               waitForAns
           print move
           playRestartingEngine (switchColor eColor) (moves ++ [move])
-      _ -> return ()
+      GotUndo -> case moves of
+        [] -> playRestartingEngine Black []
+        _ ->
+          let l = length moves - 1 in
+          playRestartingEngine (mColor $ moves !! l) (take l moves) 
+      GotQuit -> return ()
 
 withEngine :: (Engine -> IO a) -> IO a
 withEngine f = withCreateProcess (
