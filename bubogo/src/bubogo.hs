@@ -42,7 +42,7 @@ colorLtr White = "w"
 
 columnStr, rowStr :: Int -> String
 columnStr col = [chr (col + ord 'A' + if col >= 8 then 1 else 0)]
-rowStr row = show (row + 1)
+rowStr row = show (19 - row)
 
 switchColor :: Color -> Color
 switchColor Black = White
@@ -76,6 +76,9 @@ eSetBoard e b = do
         case sqHas of
           Just color -> ePlayMove e (Move color column row)
           _ -> return ()
+
+eSetMoves :: Engine -> [Move] -> IO ()
+eSetMoves e moves = ePut e "clear_board" >> mapM_ (ePlayMove e) moves
 
 eGenMove :: Engine -> Color -> IO ()
 eGenMove e color = do
@@ -177,20 +180,41 @@ readColor s = case s of
   "W" -> Just White
   _ -> Nothing
 
-getMove :: Board -> Engine -> IO (Maybe Move)
-getMove b e = do
+getMove :: IO (Maybe (Either Color Move))
+getMove = do
     putStr "Your move: "
     hFlush stdout
     s <- getLine
     let unknown = do
             putStrLn "I could not read your move. Please try again (e.g. D4)."
-            getMove b e
+            getMove
     case s of
       "q" -> return Nothing
       "quit" -> return Nothing
       "exit" -> return Nothing
-      'e':extra -> do
-          eGenMove e White
+      "eb" -> return $ Just $ Left Black
+      "eB" -> return $ Just $ Left Black
+      "ew" -> return $ Just $ Left White
+      "eW" -> return $ Just $ Left White
+      colorCh:coordStr -> case (readColor [colorCh], readCoord coordStr) of
+        (Just color, Just (column, row)) ->
+          return $ Just $ Right $ Move color column row
+        _ -> unknown
+      _ -> unknown
+
+{-
+playEngine :: Engine -> Board -> IO ()
+playEngine e b = do
+    showBoard b >>= putStrLn
+    gotMove <- getMove
+    print gotMove
+    case gotMove of
+      Just (Right move) -> do
+          ePlayMove e move
+          bPlayMove b move
+          playEngine e b
+      Just (Left color) -> do
+          eGenMove e color
           let waitForAns = do
                   l <- hGetLine (eOutH e)
                   case l of
@@ -200,27 +224,61 @@ getMove b e = do
                         return $ Move White column row
                     _ -> waitForAns
           move <- waitForAns
-          bPlayMove b move
-          showBoard b >>= putStrLn
-          getMove b e
-      colorCh:coordStr -> case (readColor [colorCh], readCoord coordStr) of
-        (Just color, Just (column, row)) ->
-          return $ Just $ Move color column row
-        _ -> unknown
-      _ -> unknown
-
-playEngine :: Engine -> Board -> IO ()
-playEngine e b = do
-    showBoard b >>= putStrLn
-    moveMb <- getMove b e
-    print moveMb
-    case moveMb of
-      Just move -> do
-          ePlayMove e move
+          print move
           bPlayMove b move
           playEngine e b
       _ -> return ()
     
+playRestartingEngine :: Board -> IO ()
+playRestartingEngine b = do
+    showBoard b >>= putStrLn
+    gotMove <- getMove
+    print gotMove
+    case gotMove of
+      Just (Right move) -> bPlayMove b move >> playRestartingEngine b
+      Just (Left color) -> do
+          move <- withEngine $ \e -> do
+              eSetBoard e b
+              eGenMove e color
+              let waitForAns = do
+                      l <- hGetLine (eOutH e)
+                      case l of
+                        "= " -> waitForAns
+                        '=':' ':coordSq -> do
+                            let Just (column, row) = readCoord coordSq
+                            return $ Move White column row
+                        _ -> waitForAns
+              waitForAns
+          print move
+          bPlayMove b move >> playRestartingEngine b
+      _ -> return ()
+-}
+
+playRestartingEngine :: [Move] -> IO ()
+playRestartingEngine moves = do
+    b <- newBoard
+    mapM_ (bPlayMove b) moves
+    showBoard b >>= putStrLn
+    gotMove <- getMove
+    print gotMove
+    case gotMove of
+      Just (Right move) -> playRestartingEngine (moves ++ [move])
+      Just (Left color) -> do
+          move <- withEngine $ \e -> do
+              eSetMoves e moves
+              eGenMove e color
+              let waitForAns = do
+                      l <- hGetLine (eOutH e)
+                      case l of
+                        "= " -> waitForAns
+                        '=':' ':coordSq -> do
+                            let Just (column, row) = readCoord coordSq
+                            return $ Move White column row
+                        _ -> waitForAns
+              waitForAns
+          print move
+          playRestartingEngine (moves ++ [move])
+      _ -> return ()
 
 withEngine :: (Engine -> IO a) -> IO a
 withEngine f = withCreateProcess (
@@ -246,8 +304,9 @@ bPlayMove b m = bWrite b (mColumn m) (mRow m) (Just $ mColor m)
 main :: IO ()
 main = do
     args <- getArgs
-    b <- newBoard
-    withEngine $ \e -> playEngine e b
+    playRestartingEngine []
+
+    -- withEngine $ \e -> playEngine e b
     {-
     withEngine $ \e -> forM_ args $ \arg -> do
         moves <- map parseMove . filter (";" `isPrefixOf`) . lines <$>
