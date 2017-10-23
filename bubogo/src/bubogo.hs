@@ -19,13 +19,19 @@ data Engine = Engine
 
 data Color = Black | White deriving (Eq, Show)
 
-data Move = Move
-  { mColor  :: !Color
-  , mColumn :: !Int
-  , mRow    :: !Int
+data Coord = Coord
+  { cColumn :: !Int
+  , cRow    :: !Int
   } deriving Show
 
-type Board = MVec.IOVector (Maybe Color)
+data Move = Move
+  { mColor :: !Color
+  , mCoord :: !Coord
+  } deriving Show
+
+type BoardOf a = MVec.IOVector a
+
+type Board = BoardOf (Maybe Color)
 
 getEval :: Handle -> IO String
 getEval engErr = do
@@ -44,16 +50,16 @@ columnStr, rowStr :: Int -> String
 columnStr col = [chr (col + ord 'A' + if col >= 8 then 1 else 0)]
 rowStr row = show (19 - row)
 
-switchColor :: Color -> Color
-switchColor Black = White
-switchColor White = Black
+otherColor :: Color -> Color
+otherColor Black = White
+otherColor White = Black
 
 ePut :: Engine -> String -> IO ()
 ePut e = hPutStrLn (eInH e)
 --ePut e s = putStrLn s >> hPutStrLn (eInH e) s
 
 ePlayMove :: Engine -> Move -> IO ()
-ePlayMove e (Move color column row) = do
+ePlayMove e (Move color (Coord column row)) = do
     when (color == White) $ ePut e "play pass"
     ePut e $
         "play " ++ colorLtr color ++ " " ++ columnStr column ++ rowStr row
@@ -62,10 +68,10 @@ ePlayMove e (Move color column row) = do
 eSetBoard :: Engine -> Board -> IO ()
 eSetBoard e b = do
     ePut e "clear_board"
-    forM_ [0..18] $ \row -> forM_ [0..18] $ \column -> do
-        sqHas <- bRead b column row
+    forM_ allCoords $ \c -> do
+        sqHas <- bRead b c
         case sqHas of
-          Just color -> ePlayMove e (Move color column row)
+          Just color -> ePlayMove e (Move color c)
           _ -> return ()
 
 eSetMoves :: Engine -> [Move] -> IO ()
@@ -80,19 +86,20 @@ eGenMove e color = do
 
 evalAllMoves :: Engine -> Board -> Color -> IO ()
 evalAllMoves e b color = do
-    let doSq column row = do
+    let doSq c = do
             eSetBoard e b
-            ePlayMove e (Move color column row)
-            eGenMove e (switchColor color)
+            ePlayMove e (Move color c)
+            eGenMove e (otherColor color)
             eval <- getEval $ eErrH e
             putStr $ show $ 9 - min 9 (floor $ read eval / 10)
     forM_ [0..18] $ \row -> do
         forM_ [0..18] $ \column -> do
-            sqHas <- bRead b column row
+            let c = Coord column row
+            sqHas <- bRead b c
             case sqHas of
               Just Black -> putStr "●"
               Just White -> putStr "℗"
-              _ -> doSq column row
+              _ -> doSq c
         putStrLn ""
 
 readBoard :: Board -> [String] -> IO ()
@@ -100,7 +107,7 @@ readBoard b = zipWithM_ readRow [0..18] . take 19 . tail
   where
     readRow row =
         zipWithM_ (readSq row) [0..18] . take 19 . everyOther . drop 2
-    readSq row column = bWrite b column row . decode
+    readSq row column = bWrite b (Coord column row) . decode
     everyOther (x:_:xs) = x : everyOther xs
     everyOther _ = []
     decode '●' = Just Black
@@ -148,7 +155,7 @@ showBoard bd = do
 readMb :: Read a => String -> Maybe a
 readMb s = fmap fst . listToMaybe $ reads s
 
-readCoord :: String -> Maybe (Int, Int)
+readCoord :: String -> Maybe Coord
 readCoord (columnCh:rowStr) =
     let columnMb
           | 'A' <= columnCh && columnCh <= 'T' && columnCh /= 'I'
@@ -159,51 +166,61 @@ readCoord (columnCh:rowStr) =
           = Nothing
         rowMb = readMb rowStr
     in case (columnMb, rowMb) of
-      (Just column, Just row) -> Just (column, 19 - row)
+      (Just column, Just row) -> Just $ Coord column (19 - row)
       _ -> Nothing
 readCoord _ = Nothing
 
-readColor :: String -> Maybe (Color, String)
-readColor (x:xs) = case x of
-  'b' -> Just (Black, xs)
-  'B' -> Just (Black, xs)
-  'w' -> Just (White, xs)
-  'W' -> Just (White, xs)
-  _ -> Nothing
-readColor _ = Nothing
+coordParser :: Psec.Parser Coord
+coordParser = do
+    columnCh <- Psec.anyChar
+    let columnMb
+            | 'A' <= columnCh && columnCh <= 'T' && columnCh /= 'I'
+            = Just $ ord columnCh - ord 'A' - if columnCh > 'I' then 1 else 0
+            | 'a' <= columnCh && columnCh <= 't' && columnCh /= 'i'
+            = Just $ ord columnCh - ord 'a' - if columnCh > 'i' then 1 else 0
+            | otherwise
+            = Nothing
+    case columnMb of
+      Just column -> do 
+        rowPreFlip <- read <$> Psec.many1 Psec.digit
+        return $ Coord column (19 - rowPreFlip)
+      Nothing -> fail "Bad column"
+
+colorParser :: Psec.Parser Color
+colorParser = Psec.choice
+  [ Psec.char 'b' >> return Black
+  , Psec.char 'B' >> return Black
+  , Psec.char 'w' >> return White
+  , Psec.char 'W' >> return White
+  ]
 
 data GetMove
     = GotQuit
     | EngineMove Color
     | Got Move
     | GotUndo
+    deriving Show
 
-readMove :: Color -> String -> Maybe GetMove
-readMove defColor s = case s of
-  "q"    -> Just GotQuit
-  "quit" -> Just GotQuit
-  "exit" -> Just GotQuit
-  "e" -> Just $ EngineMove defColor
-  'e':s2 -> case readColor s2 of
-    Just (color, "") -> Just $ EngineMove color
-    _ -> Nothing
-  "u"    -> Just GotUndo
-  "undo" -> Just GotUndo
-  _ -> case readColor s of
-    Just (color, s2) -> case readCoord s2 of
-      Just (column, row) -> Just $ Got $ Move color column row
-      _ -> Nothing
-    _ -> case readCoord s of
-      Just (column, row) -> Just $ Got $ Move defColor column row
-      _ -> Nothing
+moveParser :: Color -> Psec.Parser GetMove
+moveParser defColor = Psec.choice
+  [ Psec.try $ Psec.string "undo" >> return GotUndo          <* Psec.eof
+  , Psec.try $ Psec.string "u"    >> return GotUndo          <* Psec.eof
+  , Psec.try $ Got <$> liftM2 Move colorParser coordParser   <* Psec.eof
+  , Psec.try $ (Got . Move defColor) <$> coordParser         <* Psec.eof
+  , Psec.try $ Psec.char 'e' >> EngineMove <$> colorParser   <* Psec.eof
+  , Psec.try $ Psec.char 'e' >> return (EngineMove defColor) <* Psec.eof
+  , Psec.try $ Psec.string "quit" >> return GotQuit          <* Psec.eof
+  , Psec.try $ Psec.string "q"    >> return GotQuit          <* Psec.eof
+  ,            Psec.string "exit" >> return GotQuit          <* Psec.eof
+  ]
 
 getMove :: Color -> IO [GetMove]
 getMove defColor = do
     putStr $ "Your move (" ++ show defColor ++ "): "
     hFlush stdout
     moveStrs <- words <$> getLine
-    case sequence (map (readMove defColor) moveStrs) of
-      Just ret -> return ret
+    case sequence (map (Psec.parse (moveParser defColor) "") moveStrs) of
+      Right ret -> return ret
       _ -> do
         putStrLn "I could not read your move. Please try again (e.g. D4)."
         getMove defColor
@@ -211,28 +228,34 @@ getMove defColor = do
 playRestartingEngine :: Color -> [Move] -> [GetMove] -> IO ()
 playRestartingEngine color moves queuedGots = case queuedGots of
   [] -> do
-    b <- newBoard
+    b <- newBoardOf Nothing
     mapM_ (bPlayMove b) moves
     showBoard b >>= putStrLn
     getMove color >>= playRestartingEngine color moves
   (queuedGot:rest) -> case queuedGot of
     Got move -> playRestartingEngine
-      (switchColor $ mColor move) (moves ++ [move]) rest
+      (otherColor $ mColor move) (moves ++ [move]) rest
     EngineMove eColor -> do
-      move <- withEngine $ \e -> do
+      moveMb <- withEngine $ \e -> do
           eSetMoves e moves
           eGenMove e eColor
           let waitForAns = do
                   l <- hGetLine (eOutH e)
                   case l of
                     "= " -> waitForAns
-                    '=':' ':coordSq -> do
-                        let Just (column, row) = readCoord coordSq
-                        return $ Move eColor column row
+                    "= resign" -> do
+                        putStrLn "Engine resigns."
+                        return Nothing
+                    '=':' ':s -> do
+                        case Psec.parse coordParser "" s of
+                          Right c -> return $ Just $ Move eColor c
+                          _ -> do
+                              putStrLn "Could not understand engine move."
+                              return Nothing
                     _ -> waitForAns
           waitForAns
-      print move
-      playRestartingEngine (switchColor eColor) (moves ++ [move]) rest
+      playRestartingEngine (otherColor eColor)
+          (moves ++ maybeToList moveMb) rest
     GotUndo -> case moves of
       [] -> playRestartingEngine Black [] rest
       _ ->
@@ -246,20 +269,80 @@ withEngine f = withCreateProcess (
     {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}) $
     \(Just inH) (Just outH) (Just errH) _engProc -> f (Engine inH outH errH)
 
-newBoard :: IO Board
-newBoard = MVec.replicate (19 * 19) Nothing
+newBoardOf :: a -> IO (BoardOf a)
+newBoardOf = MVec.replicate (19 * 19)
 
-bIndex :: Int -> Int -> Int
-bIndex column row = 19 * row + column
+bIndex :: Coord -> Int
+bIndex (Coord column row) = 19 * row + column
 
-bRead :: Board -> Int -> Int -> IO (Maybe Color)
-bRead b column row = MVec.read b (bIndex column row)
+bRead :: BoardOf a -> Coord -> IO a
+bRead b = MVec.read b . bIndex
 
-bWrite :: Board -> Int -> Int -> Maybe Color -> IO ()
-bWrite b column row v = MVec.write b (bIndex column row) v
+bWrite :: BoardOf a -> Coord -> a -> IO ()
+bWrite b = MVec.write b . bIndex
+
+-- It is assumed that the Board has Color at Coord.
+getChain :: Board -> Color -> Coord -> IO (BoardOf Bool)
+getChain b color c = do
+    chain <- newBoardOf False
+    growChain b chain color c
+    return chain
+
+growChain :: Board -> BoardOf Bool -> Color -> Coord -> IO ()
+growChain b chain color c = do
+    alreadySeen <- bRead chain c
+    unless alreadySeen $ do
+        v <- bRead b c
+        when (v == Just color) $ do
+            bWrite chain c True
+            mapM_ (growChain b chain color) $ coordNeighbors c
+
+coordNeighbors :: Coord -> [Coord]
+coordNeighbors (Coord column row) = concat
+    [ if column ==  0 then [] else [Coord (column - 1) row]
+    , if column == 18 then [] else [Coord (column + 1) row]
+    , if row    ==  0 then [] else [Coord column (row - 1)]
+    , if row    == 18 then [] else [Coord column (row + 1)]
+    ] 
+
+orM :: [IO Bool] -> IO Bool
+orM [] = return False
+orM (x:xs) = do
+    r <- x
+    if r then return True else orM xs
+
+anyM :: (a -> IO Bool) -> [a] -> IO Bool
+anyM f xs = orM (map f xs)
+
+allCoords :: [Coord]
+allCoords = [Coord column row | column <- [0..18], row <- [0..18]]
+
+chainCoords :: BoardOf Bool -> IO [Coord]
+chainCoords chain = catMaybes <$> mapM isIn allCoords
+  where
+    isIn c = do
+        inChain <- bRead chain c
+        return $ if inChain then Just c else Nothing
+
+chainHasLiberties :: Board -> BoardOf Bool -> IO Bool
+chainHasLiberties b chain = anyM cHasLib =<< chainCoords chain
+  where cHasLib = anyM (fmap isNothing . bRead b) . coordNeighbors
+
+captureChain :: Board -> BoardOf Bool -> IO ()
+captureChain b chain = mapM_ (\c -> bWrite b c Nothing) =<< chainCoords chain
+
+tryCapture :: Board -> Color -> Coord -> IO ()
+tryCapture b capturedColor c = do
+    v <- bRead b c
+    when (v == Just capturedColor) $ do
+        chain <- getChain b capturedColor c
+        hasLib <- chainHasLiberties b chain
+        unless hasLib $ captureChain b chain
 
 bPlayMove :: Board -> Move -> IO ()
-bPlayMove b m = bWrite b (mColumn m) (mRow m) (Just $ mColor m)
+bPlayMove b (Move color c) = do
+    bWrite b c (Just color)
+    mapM_ (tryCapture b (otherColor color)) $ coordNeighbors c
 
 main :: IO ()
 main = do
