@@ -3,5 +3,6 @@
 - Save the page (saving page source doesn't work)
 - ~ 1 netflix-page.html another/netflix-page.html yet-another/netflix-page.html
 - ~ 2 netflix-page.txt another/netflix-page.txt yet-another/netflix-page.txt
-- ~ 3 netflix-page.txt seen.txt > watch-list.txt
-- ~ 4 < netflix-page.txt
+- # Do 3 for each page:
+- ~ 3 netflix-page1.txt seen.txt > watch-list1.txt
+- ~ 4 netflix-page.txt another/netflix-page.txt yet-another/netflix-page.txt
