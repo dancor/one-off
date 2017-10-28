@@ -1,7 +1,7 @@
 - Load https://www.netflix.com/browse/audio/es?so=yr
 - Press End over and over until you get to the bottom of the page.
 - Save the page (saving page source doesn't work)
-- ~ 1 netflix-page.html > files.txt
-- ~ 2 < files.txt
-- ~ 3 files.txt seen.txt > watch-list.txt
-- ~ 4 < files.txt
+- ~ 1 netflix-page.html another/netflix-page.html yet-another/netflix-page.html
+- ~ 2 netflix-page.txt another/netflix-page.txt yet-another/netflix-page.txt
+- ~ 3 netflix-page.txt seen.txt > watch-list.txt
+- ~ 4 < netflix-page.txt
