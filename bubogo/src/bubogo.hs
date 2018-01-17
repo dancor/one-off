@@ -1,3 +1,6 @@
+{-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 -- The higher the digit the better for the player about to play.
 -- 9 means 90+% estimated chance of winning.
 
@@ -8,8 +11,11 @@
 --   who is next
 -- - use "play pass" to get around these issues
 
-{-# LANGUAGE ParallelListComp #-}
 #include <h>
+
+import Board
+import Color
+import Coord
 
 data Engine = Engine
   { eInH  :: !Handle
@@ -17,19 +23,10 @@ data Engine = Engine
   , eErrH :: !Handle
   }
 
-data Color = Black | White deriving (Eq, Show)
-
-data Coord = Coord
-  { cColumn :: !Int
-  , cRow    :: !Int
-  } deriving Show
-
 data Move = Move
   { mColor :: !Color
   , mCoord :: !Coord
-  } deriving Show
-
-type BoardOf a = MVec.IOVector a
+  } deriving (Eq, Show)
 
 type Board = BoardOf (Maybe Color)
 
@@ -46,9 +43,11 @@ colorLtr :: Color -> String
 colorLtr Black = "b"
 colorLtr White = "w"
 
-columnStr, rowStr :: Int -> String
-columnStr col = [chr (col + ord 'A' + if col >= 8 then 1 else 0)]
-rowStr row = show (19 - row)
+columnStr :: Int -> String
+columnStr x = [chr (x + ord 'A' + if x >= 8 then 1 else 0)]
+
+rowStr :: Int -> String
+rowStr y = show (19 - y)
 
 otherColor :: Color -> Color
 otherColor Black = White
@@ -114,44 +113,6 @@ readBoard b = zipWithM_ readRow [0..18] . take 19 . tail
     decode '℗' = Just White
     decode _ = Nothing
 
-showBoard :: Board -> IO String
-showBoard bd = do
-    v <- Vec.freeze bd
-    return $ intercalate "\n" $
-        [headerFooter] ++
-        zipWith doLine blankBoardLines (chunksOf 19 $ Vec.toList v) ++
-        [headerFooter]
-  where
-    doSq _ (Just Black) = '●'
-    doSq _ (Just White) = '℗'
-    doSq bg _ = bg
-    doLine :: String -> [Maybe Color] -> String
-    doLine blankL l =
-        zipWith doSq blankL ([n, n] ++ intercalate [n] (map (:[]) l) ++ [n, n])
-    n = Nothing
-    headerFooter = "  A B C D E F G H J K L M N O P Q R S T"
-    blankBoardLines =
-        [ "19┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐19"
-        , "18├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤18"
-        , "17├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤17"
-        , "16├─┼─┼─·─┼─┼─┼─┼─┼─·─┼─┼─┼─┼─┼─·─┼─┼─┤16"
-        , "15├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤15"
-        , "14├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤14"
-        , "13├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤13"
-        , "12├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤12"
-        , "11├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤11"
-        , "10├─┼─┼─·─┼─┼─┼─┼─┼─·─┼─┼─┼─┼─┼─·─┼─┼─┤10"
-        , " 9├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤9"
-        , " 8├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤8"
-        , " 7├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤7"
-        , " 6├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤6"
-        , " 5├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤5"
-        , " 4├─┼─┼─·─┼─┼─┼─┼─┼─·─┼─┼─┼─┼─┼─·─┼─┼─┤4"
-        , " 3├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤3"
-        , " 2├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤2"
-        , " 1└─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘1"
-        ]
-
 readMb :: Read a => String -> Maybe a
 readMb s = fmap fst . listToMaybe $ reads s
 
@@ -197,6 +158,7 @@ colorParser = Psec.choice
 data GetMove
     = GotQuit
     | EngineMove Color
+    | EngineGame Color
     | Got Move
     | GotUndo
     deriving Show
@@ -209,6 +171,7 @@ moveParser defColor = Psec.choice
   , Psec.try $ (Got . Move defColor) <$> coordParser         <* Psec.eof
   , Psec.try $ Psec.char 'e' >> EngineMove <$> colorParser   <* Psec.eof
   , Psec.try $ Psec.char 'e' >> return (EngineMove defColor) <* Psec.eof
+  , Psec.try $ Psec.char 'E' >> return (EngineGame defColor) <* Psec.eof
   , Psec.try $ Psec.string "quit" >> return GotQuit          <* Psec.eof
   , Psec.try $ Psec.string "q"    >> return GotQuit          <* Psec.eof
   ,            Psec.string "exit" >> return GotQuit          <* Psec.eof
@@ -224,62 +187,107 @@ getMove defColor = do
       _ -> do
         putStrLn "I could not read your move. Please try again (e.g. D4)."
         getMove defColor
-      
+
+eAwaitMove :: Engine -> Color -> IO (Maybe Move)
+eAwaitMove e color = do
+    mvCoordMb <- eAwaitMoves e color
+    case mvCoordMb of
+      Just mv -> return $ Just $ head mv
+      Nothing -> return Nothing
+
+eAwaitMoves :: Engine -> Color -> IO (Maybe [Move])
+eAwaitMoves = eAwaitMovesAccum []
+
+eAwaitMovesAccum :: [Coord] -> Engine -> Color -> IO (Maybe [Move])
+eAwaitMovesAccum coords e color = do
+    errReady <- hReady (eErrH e)
+    l <- if errReady then hGetLine (eErrH e) else hGetLine (eOutH e)
+    case l of
+      n:':':' ':rest -> do
+        putStrLn rest
+        let (coordComma:gameEqN:percent:_) = words rest
+            Just coord = readCoord $ takeWhile (/= ',') coordComma
+        if n >= '1' && n <= '9'
+          then eAwaitMovesAccum (coords ++ [coord]) e color
+          else eAwaitMovesAccum coords e color
+      "= " -> eAwaitMovesAccum coords e color
+      "= resign" -> do
+          putStrLn "Engine resigns."
+          return Nothing
+      '=':' ':s -> do
+          case Psec.parse coordParser "" s of
+            Right _coord -> return $ Just (map (Move color) coords)
+            _ -> do
+                putStrLn "Could not understand engine move."
+                return Nothing
+      _ -> eAwaitMovesAccum coords e color
+
+bPlayMoves :: Board -> [Move] -> IO ()
+bPlayMoves b = mapM_ (bPlayMove b)
+
 playRestartingEngine :: Color -> [Move] -> [GetMove] -> IO ()
-playRestartingEngine color moves queuedGots = case queuedGots of
-  [] -> do
+playRestartingEngine color moves queuedGots = do
     b <- newBoardOf Nothing
-    mapM_ (bPlayMove b) moves
+    bPlayMoves b moves
     showBoard b >>= putStrLn
-    getMove color >>= playRestartingEngine color moves
-  (queuedGot:rest) -> case queuedGot of
-    Got move -> playRestartingEngine
-      (otherColor $ mColor move) (moves ++ [move]) rest
-    EngineMove eColor -> do
-      moveMb <- withEngine $ \e -> do
-          eSetMoves e moves
-          eGenMove e eColor
-          let waitForAns = do
-                  l <- hGetLine (eOutH e)
-                  case l of
-                    "= " -> waitForAns
-                    "= resign" -> do
-                        putStrLn "Engine resigns."
-                        return Nothing
-                    '=':' ':s -> do
-                        case Psec.parse coordParser "" s of
-                          Right c -> return $ Just $ Move eColor c
-                          _ -> do
-                              putStrLn "Could not understand engine move."
-                              return Nothing
-                    _ -> waitForAns
-          waitForAns
-      playRestartingEngine (otherColor eColor)
-          (moves ++ maybeToList moveMb) rest
-    GotUndo -> case moves of
-      [] -> playRestartingEngine Black [] rest
-      _ ->
-        let l = length moves - 1 in
-        playRestartingEngine (mColor $ moves !! l) (take l moves) rest
-    GotQuit -> return ()
+    hFlush stdout
+    case queuedGots of
+      [] -> do
+        getMove color >>= playRestartingEngine color moves
+      (queuedGot:rest) -> case queuedGot of
+        Got move -> playRestartingEngine
+          (otherColor $ mColor move) (moves ++ [move]) rest
+        EngineMove eColor -> do
+          moveMb <- withEngine $ \e -> do
+              eSetMoves e moves
+              eGenMove e eColor
+              eAwaitMove e eColor
+          playRestartingEngine (otherColor eColor)
+              (moves ++ maybeToList moveMb) rest
+        EngineGame eColor -> do
+          moveMb <- withEngine $ \e -> do
+              eSetMoves e moves
+              eGenMove e eColor
+              eAwaitMove e eColor
+          case moveMb of
+            Nothing -> playRestartingEngine (otherColor eColor) moves rest
+            Just move -> playRestartingEngine (otherColor eColor)
+              (moves ++ [move]) (EngineGame (otherColor eColor) : rest)
+        GotUndo -> case moves of
+          [] -> playRestartingEngine Black [] rest
+          _ ->
+            let l = length moves - 1 in
+            playRestartingEngine (mColor $ moves !! l) (take l moves) rest
+        GotQuit -> return ()
+
+gradeGame :: [Move] -> [Move] -> IO ()
+gradeGame _ [] = return ()
+gradeGame prevMoves (move:moves) = do
+    let color = mColor move
+    eMvsMb <- withEngine $ \e -> do
+        eSetMoves e prevMoves
+        eGenMove e color
+        eAwaitMoves e color
+    case eMvsMb of
+      Nothing -> putStrLn "Engine did not return a move!"
+      Just eMvs -> do
+        mapM_ print eMvs
+        b <- newBoardOf Nothing
+        bPlayMoves b prevMoves
+        bFrozen <- Vec.freeze b
+        b2 <- Vec.thaw $ Vec.map (fmap Right) bFrozen
+        zipWithM_ (\n coord -> bWrite b2 coord (Just $ Left n))
+            [1 :: Int ..] $
+            map mCoord eMvs
+        showBoard b2 >>= putStrLn
+        hFlush stdout
+    gradeGame (prevMoves ++ [move]) moves
 
 withEngine :: (Engine -> IO a) -> IO a
 withEngine f = withCreateProcess (
     (proc "my-go-engine" [])
     {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}) $
     \(Just inH) (Just outH) (Just errH) _engProc -> f (Engine inH outH errH)
-
-newBoardOf :: a -> IO (BoardOf a)
-newBoardOf = MVec.replicate (19 * 19)
-
-bIndex :: Coord -> Int
-bIndex (Coord column row) = 19 * row + column
-
-bRead :: BoardOf a -> Coord -> IO a
-bRead b = MVec.read b . bIndex
-
-bWrite :: BoardOf a -> Coord -> a -> IO ()
-bWrite b = MVec.write b . bIndex
 
 -- It is assumed that the Board has Color at Coord.
 getChain :: Board -> Color -> Coord -> IO (BoardOf Bool)
@@ -344,7 +352,31 @@ bPlayMove b (Move color c) = do
     bWrite b c (Just color)
     mapM_ (tryCapture b (otherColor color)) $ coordNeighbors c
 
+readSgfMoves :: String -> [Move]
+readSgfMoves = catMaybes . map readSgfMoveLineMb . lines
+  where
+    readSgfLtr :: Char -> Maybe Int
+    readSgfLtr ltr =
+      if 'a' <= ltr && ltr <= 't'
+        then Just (ord ltr - ord 'a')
+        else Nothing
+    readSgfMoveLineMb :: String -> Maybe Move
+    readSgfMoveLineMb (';':cLtr:'[':columnLtr:rowLtr:']':_) = do
+      c <- case cLtr of
+        'B' -> Just Black
+        'W' -> Just White
+        _ -> Nothing
+      row <- readSgfLtr rowLtr
+      column <- readSgfLtr columnLtr
+      return $ Move c (Coord column row)
+    readSgfMoveLineMb _ = Nothing
+
 main :: IO ()
 main = do
-    args <- getArgs
-    playRestartingEngine Black [] []
+    mvs <- readSgfMoves <$>
+        readFile "/home/danl/go-games/Dandelion-beats-dancor.sgf"
+    gradeGame [] mvs
+    -- mapM_ print mvs
+    --
+    -- args <- getArgs
+    -- playRestartingEngine Black [] []
