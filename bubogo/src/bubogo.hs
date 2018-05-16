@@ -16,19 +16,13 @@
 import Board
 import Color
 import Coord
+import Move
 
 data Engine = Engine
   { eInH  :: !Handle
   , eOutH :: !Handle
   , eErrH :: !Handle
   }
-
-data Move = Move
-  { mColor :: !Color
-  , mCoord :: !Coord
-  } deriving (Eq, Show)
-
-type Board = BoardOf (Maybe Color)
 
 getEval :: Handle -> IO String
 getEval engErr = do
@@ -39,23 +33,11 @@ getEval engErr = do
         -- putStrLn l
         getEval engErr
 
-colorLtr :: Color -> String
-colorLtr Black = "b"
-colorLtr White = "w"
-
-columnStr :: Int -> String
-columnStr x = [chr (x + ord 'A' + if x >= 8 then 1 else 0)]
-
-rowStr :: Int -> String
-rowStr y = show (19 - y)
-
-otherColor :: Color -> Color
-otherColor Black = White
-otherColor White = Black
-
 ePut :: Engine -> String -> IO ()
-ePut e = hPutStrLn (eInH e)
---ePut e s = putStrLn s >> hPutStrLn (eInH e) s
+-- ePut e = hPutStrLn (eInH e)
+ePut e s = do
+    --putStrLn ("IN: " ++ s)
+    hPutStrLn (eInH e) s
 
 ePlayMove :: Engine -> Move -> IO ()
 ePlayMove e (Move color (Coord column row)) = do
@@ -113,48 +95,6 @@ readBoard b = zipWithM_ readRow [0..18] . take 19 . tail
     decode '℗' = Just White
     decode _ = Nothing
 
-readMb :: Read a => String -> Maybe a
-readMb s = fmap fst . listToMaybe $ reads s
-
-readCoord :: String -> Maybe Coord
-readCoord (columnCh:rowStr) =
-    let columnMb
-          | 'A' <= columnCh && columnCh <= 'T' && columnCh /= 'I'
-          = Just (ord columnCh - ord 'A' - if columnCh > 'I' then 1 else 0)
-          | 'a' <= columnCh && columnCh <= 't' && columnCh /= 'i'
-          = Just (ord columnCh - ord 'a' - if columnCh > 'i' then 1 else 0)
-          | otherwise
-          = Nothing
-        rowMb = readMb rowStr
-    in case (columnMb, rowMb) of
-      (Just column, Just row) -> Just $ Coord column (19 - row)
-      _ -> Nothing
-readCoord _ = Nothing
-
-coordParser :: Psec.Parser Coord
-coordParser = do
-    columnCh <- Psec.anyChar
-    let columnMb
-            | 'A' <= columnCh && columnCh <= 'T' && columnCh /= 'I'
-            = Just $ ord columnCh - ord 'A' - if columnCh > 'I' then 1 else 0
-            | 'a' <= columnCh && columnCh <= 't' && columnCh /= 'i'
-            = Just $ ord columnCh - ord 'a' - if columnCh > 'i' then 1 else 0
-            | otherwise
-            = Nothing
-    case columnMb of
-      Just column -> do 
-        rowPreFlip <- read <$> Psec.many1 Psec.digit
-        return $ Coord column (19 - rowPreFlip)
-      Nothing -> fail "Bad column"
-
-colorParser :: Psec.Parser Color
-colorParser = Psec.choice
-  [ Psec.char 'b' >> return Black
-  , Psec.char 'B' >> return Black
-  , Psec.char 'w' >> return White
-  , Psec.char 'W' >> return White
-  ]
-
 data GetMove
     = GotQuit
     | EngineMove Color
@@ -200,16 +140,9 @@ eAwaitMoves = eAwaitMovesAccum []
 
 eAwaitMovesAccum :: [Coord] -> Engine -> Color -> IO (Maybe [Move])
 eAwaitMovesAccum coords e color = do
-    errReady <- hReady (eErrH e)
-    l <- if errReady then hGetLine (eErrH e) else hGetLine (eOutH e)
+    l <- hGetLine (eOutH e)
+    -- putStrLn $ "OUT: " ++ l
     case l of
-      n:':':' ':rest -> do
-        putStrLn rest
-        let (coordComma:gameEqN:percent:_) = words rest
-            Just coord = readCoord $ takeWhile (/= ',') coordComma
-        if n >= '1' && n <= '9'
-          then eAwaitMovesAccum (coords ++ [coord]) e color
-          else eAwaitMovesAccum coords e color
       "= " -> eAwaitMovesAccum coords e color
       "= resign" -> do
           putStrLn "Engine resigns."
@@ -220,10 +153,28 @@ eAwaitMovesAccum coords e color = do
             _ -> do
                 putStrLn "Could not understand engine move."
                 return Nothing
+      n:':':' ':rest -> do
+        putStrLn rest
+        let (coordComma:gameEqN:percent:_) = words rest
+            Just coord = readCoord $ takeWhile (/= ',') coordComma
+        if n >= '1' && n <= '9'
+          then eAwaitMovesAccum (coords ++ [coord]) e color
+          else eAwaitMovesAccum coords e color
       _ -> eAwaitMovesAccum coords e color
 
 bPlayMoves :: Board -> [Move] -> IO ()
 bPlayMoves b = mapM_ (bPlayMove b)
+
+withEngine :: (Engine -> IO a) -> IO a
+withEngine f = withCreateProcess (
+    (proc "my-go-engine" [])
+    {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}) $
+    -- \(Just inH) (Just outH) (Just errH) _engProc -> f (Engine inH outH errH)
+    \(Just inH) (Just outH) (Just errH) _engProc -> do
+        hSetBuffering inH NoBuffering
+        hSetBuffering outH NoBuffering
+        hSetBuffering errH NoBuffering
+        f (Engine inH outH errH)
 
 playRestartingEngine :: Color -> [Move] -> [GetMove] -> IO ()
 playRestartingEngine color moves queuedGots = do
@@ -263,6 +214,7 @@ playRestartingEngine color moves queuedGots = do
 gradeGame :: [Move] -> [Move] -> IO ()
 gradeGame _ [] = return ()
 gradeGame prevMoves (move:moves) = do
+    putStrLn $ showMove move
     let color = mColor move
     eMvsMb <- withEngine $ \e -> do
         eSetMoves e prevMoves
@@ -271,23 +223,16 @@ gradeGame prevMoves (move:moves) = do
     case eMvsMb of
       Nothing -> putStrLn "Engine did not return a move!"
       Just eMvs -> do
-        mapM_ print eMvs
         b <- newBoardOf Nothing
         bPlayMoves b prevMoves
         bFrozen <- Vec.freeze b
         b2 <- Vec.thaw $ Vec.map (fmap Right) bFrozen
         zipWithM_ (\n coord -> bWrite b2 coord (Just $ Left n))
-            [1 :: Int ..] $
-            map mCoord eMvs
+            [0 :: Int ..] $
+            map mCoord (move : eMvs)
         showBoard b2 >>= putStrLn
         hFlush stdout
     gradeGame (prevMoves ++ [move]) moves
-
-withEngine :: (Engine -> IO a) -> IO a
-withEngine f = withCreateProcess (
-    (proc "my-go-engine" [])
-    {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}) $
-    \(Just inH) (Just outH) (Just errH) _engProc -> f (Engine inH outH errH)
 
 -- It is assumed that the Board has Color at Coord.
 getChain :: Board -> Color -> Coord -> IO (BoardOf Bool)
@@ -305,14 +250,6 @@ growChain b chain color c = do
             bWrite chain c True
             mapM_ (growChain b chain color) $ coordNeighbors c
 
-coordNeighbors :: Coord -> [Coord]
-coordNeighbors (Coord column row) = concat
-    [ if column ==  0 then [] else [Coord (column - 1) row]
-    , if column == 18 then [] else [Coord (column + 1) row]
-    , if row    ==  0 then [] else [Coord column (row - 1)]
-    , if row    == 18 then [] else [Coord column (row + 1)]
-    ] 
-
 orM :: [IO Bool] -> IO Bool
 orM [] = return False
 orM (x:xs) = do
@@ -321,9 +258,6 @@ orM (x:xs) = do
 
 anyM :: (a -> IO Bool) -> [a] -> IO Bool
 anyM f xs = orM (map f xs)
-
-allCoords :: [Coord]
-allCoords = [Coord column row | column <- [0..18], row <- [0..18]]
 
 chainCoords :: BoardOf Bool -> IO [Coord]
 chainCoords chain = catMaybes <$> mapM isIn allCoords
@@ -371,11 +305,18 @@ readSgfMoves = catMaybes . map readSgfMoveLineMb . lines
       return $ Move c (Coord column row)
     readSgfMoveLineMb _ = Nothing
 
+doFile :: FilePath -> IO ()
+doFile f = do
+    putStrLn "-----------------------"
+    putStrLn f
+    putStrLn "-----------------------"
+    mvs <- readSgfMoves <$> readFile f
+    gradeGame [] mvs
+
 main :: IO ()
 main = do
-    mvs <- readSgfMoves <$>
-        readFile "/home/danl/go-games/Dandelion-beats-dancor.sgf"
-    gradeGame [] mvs
+    args <- getArgs
+    mapM_ doFile args
     -- mapM_ print mvs
     --
     -- args <- getArgs

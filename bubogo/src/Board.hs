@@ -10,6 +10,8 @@ import Coord
 
 type BoardOf a = MVec.IOVector a
 
+type Board = BoardOf (Maybe Color)
+
 newBoardOf :: a -> IO (BoardOf a)
 newBoardOf = MVec.replicate (19 * 19)
 

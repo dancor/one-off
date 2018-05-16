@@ -46,6 +46,7 @@ keepLangs =
     , "Proto-Indo-European"  -- maybe just all Proto- ?
     , "Proto-Germanic"
     , "Proto-Sino-Tibetan"
+    , "Portuguese"
     -- , "Sanskrit"
     , "Spanish"
     , "Translingual"
