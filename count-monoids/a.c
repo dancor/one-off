@@ -1,5 +1,9 @@
 // We will find monoids. We use additive notation for the monoid operation,
 // since 0 as identity is convenient with 0 indexed arrays.
+//
+// This program doesn't yet exclude isomorphic copies. The 11 addition tables
+// that it finds for 3-element monoids only correspond to 7 distinct monoids,
+// for example.
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -12,11 +16,13 @@ bool check_associative() {
   // check a + (b + c) = (a + b) + c for all a,b,c
   // this is automatically true when a = b = c
   // it is also automatically true if a or b or c is the identity element
-  for (int a = 0; a < n; a++) {
-    for (int b = 0; b < n; b++) {
-      for (int c = 0; c < n; c++) {
+  for (int a = 1; a < n; a++) {
+    for (int b = 1; b < n; b++) {
+      int fab = f[a][b];
+      for (int c = 1; c < n; c++) {
         if (a == b && a == c) continue;
-        if (f[a][f[b][c]] != f[f[a][b]][c]) {
+        int fbc = f[b][c];
+        if (f[a][fbc] != f[fab][c]) {
           //printf("Not associative on: %d %d %d", a, b, c);
           return false;
         }
@@ -24,6 +30,14 @@ bool check_associative() {
     }
   }
   return true;
+}
+
+void clear_grid() {
+  for (int y = 1; y < n; y++) {
+    for (int x = 1; x < n; x++) {
+      f[y][x] = 0;
+    }
+  }
 }
 
 bool increment_grid() {
@@ -44,11 +58,7 @@ int main() {
     f[0][i] = i;
     f[i][0] = i;
   }
-  for (int y = 1; y < n; y++) {
-    for (int x = 1; x < n; x++) {
-      f[y][x] = 0;
-    }
-  }
+  clear_grid();
   int count = 0;
   do {
     if (!check_associative()) {
