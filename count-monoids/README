@@ -1,0 +1,7 @@
+Upperbound of number of monoids with 5 elements: (takes about 20 minutes)
+
+Count: 4170
+1295.27user 0.00system 21:35.23elapsed 100%CPU (0avgtext+0avgdata 1532maxresident)k
+0inputs+0outputs (0major+61minor)pagefaults 0swaps
+
+6 elements takes over 2 hours..

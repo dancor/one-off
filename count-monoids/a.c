@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 // n is the number of monoid elements.
-#define n 3
+#define n 8
 int f[n][n];
 
 bool check_associative() {
@@ -65,7 +65,7 @@ int main() {
       continue;
     }
     count++;
-    //continue;
+    continue;
     for (int y = 0; y < n; y++) {
       for (int x = 0; x < n; x++) {
         printf("%d ", f[y][x]);
