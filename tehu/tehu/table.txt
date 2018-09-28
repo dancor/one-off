@@ -1,1 +1,0 @@
-create table tehu (unix_time integer primary key asc, temperature integer, humidity integer);

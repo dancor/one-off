@@ -11,7 +11,10 @@ heat_pin = 22
 cool_off_minimum_wait_secs = 180
 
 cool_on_humidity = 55
-cool_off_humidity = 54
+cool_off_humidity = cool_on_humidity - 1
+
+# This will be set from the database which is checked every minute
+extra_cool_10x = None
 
 pi = pigpio.pi()
 s = DHT22.sensor(pi, tehu_pin)
@@ -34,20 +37,24 @@ while True:
     te = s.temperature()
     hu = s.humidity()
 
-    t = time.time()
+    t = round(time.time())
     if cool_on:
-        if hu <= cool_off_humidity:
+        if (extra_cool_10x == None or 10 * te <= extra_cool_10x - 10) and \
+           hu <= cool_off_humidity:
             cool_on = update_cool(False)
             last_cool_off_time = t
     else:
         if t >= last_cool_off_time + cool_off_minimum_wait_secs and \
-           hu >= cool_on_humidity:
+           (hu >= cool_on_humidity or 
+            (extra_cool_10x != None and 10 * te >= extra_cool_10x)
+           ):
             cool_on = update_cool(True)
 
     conn = sqlite3.connect("tehu.db")
     c = conn.cursor()
+
     values = \
-	( round(t)
+	( t
 	, round(10 * te)
 	, round(10 * hu)
         , int(cool_on)
@@ -56,6 +63,12 @@ while True:
         "INSERT INTO tehu (unix_time, temperature, humidity, cool_on) " +
         "VALUES (?, ?, ?, ?)", values)
     conn.commit()
+
+    c.execute(
+        "SELECT MIN(temperature) FROM extra_cool WHERE " +
+        "start_time < ? AND end_time > ?", (t, t))
+    extra_cool_10x = c.fetchone()
+
     conn.close()
 
     time.sleep(59)
