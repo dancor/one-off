@@ -1,0 +1,12 @@
+[Unit]
+Description=Temperature/humidity checker
+
+[Install]
+WantedBy=graphical.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/nehu
+ExecStart=/usr/bin/python3 nehu.py
+Restart=always

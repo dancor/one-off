@@ -1,0 +1,3 @@
+CREATE TABLE tehu (unix_time INTEGER PRIMARY KEY ASC, temperature INTEGER, humidity INTEGER, cool_on INTEGER);
+CREATE TABLE extra_cool (start_time INTEGER PRIMARY KEY ASC, end_time INTEGER, temperature INTEGER);
+CREATE TABLE user (username TEXT PRIMARY KEY, bcrypt TEXT, bad_tries INTEGER);
