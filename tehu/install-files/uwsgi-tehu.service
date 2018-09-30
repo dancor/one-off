@@ -7,6 +7,6 @@ WantedBy=graphical.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/nehu
+WorkingDirectory=/home/pi/tehu
 ExecStart=/usr/bin/uwsgi --plugin python3 --socket 127.0.0.1:3031 --wsgi-file root.py --master --processes 1 --threads 1 --stats 0.0.0.0:9191
 Restart=always
