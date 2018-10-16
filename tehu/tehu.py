@@ -1,6 +1,6 @@
+import apsw
 import DHT22
 import pigpio
-import sqlite3
 import time
 
 tehu_pin = 4
@@ -50,7 +50,7 @@ while True:
            ):
             cool_on = update_cool(True)
 
-    conn = sqlite3.connect("tehu.db")
+    conn = apsw.Connection("tehu.db")
     c = conn.cursor()
 
     values = \
@@ -62,7 +62,6 @@ while True:
     c.execute(
         "INSERT INTO tehu (unix_time, temperature, humidity, cool_on) " +
         "VALUES (?, ?, ?, ?)", values)
-    conn.commit()
 
     c.execute(
         "SELECT MIN(temperature) FROM extra_cool WHERE " +

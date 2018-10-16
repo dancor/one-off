@@ -1,6 +1,6 @@
 from passlib.hash import bcrypt
 import cherrypy
-import sqlite3
+import apsw
 
 SESSION_KEY = '_cp_username'
 
@@ -8,9 +8,10 @@ def check_credentials(username, password):
     """Verifies credentials for username and password.
     Returns None on success or a string describing the error on failure"""
 
-    conn = sqlite3.connect("tehu.db")
+    conn = apsw.Connection("tehu.db")
+    c = conn.cursor()
     c.execute("BEGIN TRANSACTION")
-    c.execute("SELECT bcrypt, successive_login_failures FROM users " + 
+    c.execute("SELECT bcrypt, successive_login_failures FROM user " + 
         "WHERE username = ?", (username,))
     row = c.fetchone()
     if row == None:
@@ -18,18 +19,20 @@ def check_credentials(username, password):
         conn.close()
         return u"Incorrect username or password."
     h, successive_login_failures = row
+    if successive_login_failures >= 5:
+        c.execute("COMMIT TRANSACTION")
+        conn.close()
+        return u"Too many failed logins. Please contact web support."
     if bcrypt.verify(password, h):
-        c.execute("UPDATE users SET successive_login_failures = ? " +
+        c.execute("UPDATE user SET successive_login_failures = ? " +
             "WHERE username = ?", (0, username))
         c.execute("COMMIT TRANSACTION")
-        c.commit()
         conn.close()
         return None
     else:
-        c.execute("UPDATE users SET successive_login_failures = ? " +
+        c.execute("UPDATE user SET successive_login_failures = ? " +
             "WHERE username = ?", (successive_login_failures + 1, username))
         c.execute("COMMIT TRANSACTION")
-        c.commit()
         conn.close()
         return u"Incorrect username or password."
     
