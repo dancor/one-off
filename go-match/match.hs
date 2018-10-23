@@ -40,11 +40,17 @@ colorLtr White = "w"
 otherColor Black = White
 otherColor White = Black
 
-tournament e1 e2 = do
-    res <- zipWithM (gamePlays e1 e2) (cycle [Black, White])
-        (take 100 $ cycle [True, False])
-    putStrLn ""
-    putStrLn $ "e1 won " ++ show (length $ filter id res) ++ " games."
+tournament e1 e2 totalNumToPlay e1Wins e2Wins = do
+    print $ "SCORE: " ++ show e1Wins ++ " to " ++ show e2Wins
+    when (e1Wins + e2Wins < totalNumToPlay) $ do
+        let (e1Color, isE1Turn) = if even (e1Wins + e2Wins)
+              then (Black, True)
+              else (White, False)
+        res <- gamePlays e1 e2  e1Color isE1Turn
+        let (e1Wins', e2Wins') = if res
+              then (e1Wins + 1, e2Wins)
+              else (e1Wins, e2Wins + 1)
+        tournament e1 e2 totalNumToPlay e1Wins' e2Wins'
 
 gamePlays e1 e2 e1Color isE1Turn = do
     let e2Color = otherColor e1Color
@@ -66,4 +72,4 @@ gamePlays e1 e2 e1Color isE1Turn = do
 main = do
     e1 <- launch e1Cmd
     e2 <- launch e2Cmd
-    tournament e1 e2
+    tournament e1 e2 1000 0 0
