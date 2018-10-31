@@ -15,11 +15,17 @@ cleanDef =
     DT.replace "<\24418>" "S.V." .
     DT.replace "<\21475>" "COLL." .
     DT.replace "<\21103>" "ADV." .
-    DT.replace "<\36830>" "CONJ."
+    DT.replace "<\36830>" "CONJ." .
+    DT.replace "&lt;" "<" .
+    DT.replace "&gt;" ">" .
+    DT.replace "&nbsp;" " "
 
-procLine :: Int -> DT.Text -> (DT.Text, [Ci])
-procLine n l = (pinyin, [Ci n hanzi (cleanDef def)])
-  where hanzi:pinyin:def:_ = DT.splitOn "\t" l
+procLine :: Int -> DT.Text -> [(DT.Text, [Ci])]
+procLine n l = [(p, [Ci n hanzi d]) | (p, d) <- zip pinyins defs]
+  where
+    hanzi:pinyin:def:_ = DT.splitOn "\t" l
+    pinyins = DT.splitOn " \\ " pinyin
+    defs = map cleanDef $ DT.splitOn " \\ " def
 
 --procEl :: [(Int, DT.Text, DT.Text)] -> Maybe (Int, [(DT.Text, DT.Text)])
 --procEl l = if any over2300 l then Just $ map bcOfAbc $ reverse l else Nothing
@@ -31,7 +37,7 @@ procEl l = Just (minimum $ map aOfAbc l, reverse l)
 
 main = do
     m <- sortBy (compare `on` ciNum . head . snd) .
-        HMS.toList . HMS.map reverse . HMS.fromListWith (++) .
+        HMS.toList . HMS.map reverse . HMS.fromListWith (++) . concat .
         zipWith procLine [1..] . DT.lines . DTE.decodeUtf8 . BSL.toStrict <$>
         HSH.run ("bzcat" :: String, ["all.txt.bz2" :: String])
     BSL.writeFile "homonymSets.js" . ("var homonymSets = " <>) . (<> ";\n") .
