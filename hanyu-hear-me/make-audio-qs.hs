@@ -8,21 +8,6 @@ data Ci = Ci {
 instance Ae.ToJSON Ci
 instance Ae.FromJSON Ci
 
-type HomonymSet = (DT.Text, [Ci])
-
-type HomonymSets = [HomonymSet]
-
-jencCi :: Ci -> DT.Text
-jencCi (Ci n h d) = "{n:" <> DT.pack (show n) <> ",h:\"" <> h <> "\",d:\"" <>
-    DT.replace "\"" "\\\"" (DT.replace "\\" "\\\\" d) <> "\"}"
-
-jencHomonymSet :: HomonymSet -> DT.Text
-jencHomonymSet (pinyin, cis) = "\"" <> pinyin <> "\":[" <> 
-    DT.intercalate "," (map jencCi cis) <> "]"
-
-jencHomonymSets :: HomonymSets -> DT.Text
-jencHomonymSets hs = "{" <> DT.intercalate "," (map jencHomonymSet hs) <> "}"
-
 cleanDef =
     DT.replace "<\21160>" "V." .
     DT.replace "<\21517>" "N." .
