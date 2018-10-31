@@ -1,0 +1,1 @@
+cat homonym-sets.js lz-string.min.js compress.js | nodejs > homonym-sets-lz.js

@@ -1,0 +1,2 @@
+#!/bin/sh
+scp -P 31846 a.html homonymSets.js pi@d.hopto.org:/var/www/html/

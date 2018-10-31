@@ -1,5 +1,6 @@
-<html><head><title>Hanyu hear me</title></head><body style="background:black;">
-<script src="homonymSets.js">
+<html><head><title>Hanyu hear me</title>
+<script src="lz-string.min.js"></script>
+<script src="homonym-sets-lz.js"></script>
 <script>
 function speak(text, lang) {
     var u = new SpeechSynthesisUtterance();
@@ -14,6 +15,7 @@ function espeak(text) {
     return speak(text, 'en-US');
 }
 // later add daily stats: tries today
+var homonymSets = JSON.parse(LZString.decompressFromBase64(homonymSetsLz));
 var waitSecsIfWrong = 600;
 var daySecs = 86400;
 var workDaySecs = 28800;
@@ -25,16 +27,17 @@ var pinyin;
 var cis;
 var waitDaysIfCorrect;
 function speakQ() {
-    var eText = "";
-    for (var c in pinyin) eText += pinyin[c] + " ";
-    espeak(eText);
+    var eText = ""; for (var c in pinyin) eText += pinyin[c] + " ";
+    espeak("Pinyin is " + eText);
     zspeak(cis[0].ciHanzi);
     espeak(cis.length + " words");
 }
 function speakAns() {
+    var eText = ""; for (var c in pinyin) eText += pinyin[c] + " ";
+    espeak("Pinyin was " + eText);
     for (var i = 0; i < cis.length; i++) {
        var i1 = i + 1;
-       espeak("Word " + i1);
+       espeak("Word " + i1 + " of " + cis.length);
        espeak(cis[i].ciDef);
     }
 }
@@ -97,6 +100,7 @@ function answer(correct) {
     newQ();
 }
 </script>
+</head><body style="background:black;">
 <form name="form" onsubmit="return false">
 <input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="Play" onclick="play()">
 <br>

@@ -20,11 +20,20 @@ cleanDef =
     DT.replace "&gt;" ">" .
     DT.replace "&nbsp;" " "
 
+set33To23 :: DT.Text -> DT.Text
+set33To23 s = if DT.null threeAndRest || DT.null sndThreeAndRest then s else
+    beforeThree <> "2" <> beforeSndThree <> set33To23 sndThreeAndRest 
+  where
+    (beforeThree, threeAndRest) = DT.break (== '3') s
+    (beforeSndThree, sndThreeAndRest) =
+        DT.break (== '3') $ DT.tail threeAndRest
+
+
 procLine :: Int -> DT.Text -> [(DT.Text, [Ci])]
 procLine n l = [(p, [Ci n hanzi d]) | (p, d) <- zip pinyins defs]
   where
     hanzi:pinyin:def:_ = DT.splitOn "\t" l
-    pinyins = DT.splitOn " \\ " pinyin
+    pinyins = map set33To23 $ DT.splitOn " \\ " pinyin
     defs = map cleanDef $ DT.splitOn " \\ " def
 
 --procEl :: [(Int, DT.Text, DT.Text)] -> Maybe (Int, [(DT.Text, DT.Text)])
