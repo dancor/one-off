@@ -47,7 +47,7 @@ procEl l = Just (minimum $ map aOfAbc l, reverse l)
 main = do
     m <- sortBy (compare `on` ciNum . head . snd) .
         HMS.toList . HMS.map reverse . HMS.fromListWith (++) .
-        zipWith procLine [1..] . DT.lines <$> DTI.readFile "all.txt"
-    BSL.writeFile "out" . ("var homonymSets = " <>) . (<> ";\n") .
-        Ae.encode $
-        filter (any (> 2300) . map ciNum . snd) m
+        zipWith procLine [1..] . DT.lines . DTE.decodeUtf8 . BSL.toStrict <$>
+        HSH.run ("bzcat" :: String, ["all.txt.bz2" :: String])
+    BSL.writeFile "homonymSets.js" . ("var homonymSets = " <>) . (<> ";\n") .
+        Ae.encode $ filter (any (> 2300) . map ciNum . snd) m
