@@ -1,0 +1,107 @@
+<html><head><title>Hanyu hear me</title></head><body style="background:black;">
+<script src="homonymSets.js">
+<script>
+function speak(text, lang) {
+    var u = new SpeechSynthesisUtterance();
+    u.text = text;
+    u.lang = lang;
+    speechSynthesis.speak(u);
+}
+function zspeak(text) {
+    return speak(text, 'zh-CN');
+}
+function espeak(text) {
+    return speak(text, 'en-US');
+}
+// later add daily stats: tries today
+var waitSecsIfWrong = 600;
+var daySecs = 86400;
+var workDaySecs = 28800;
+var awaitStart = 0;
+var awaitPlayAns = 1;
+var awaitAns = 2;
+var stage = awaitStart;
+var pinyin;
+var cis;
+var waitDaysIfCorrect;
+function speakQ() {
+    var eText = "";
+    for (var c in pinyin) eText += pinyin[c] + " ";
+    espeak(eText);
+    zspeak(cis[0].ciHanzi);
+    espeak(cis.length + " words");
+}
+function speakAns() {
+    for (var i = 0; i < cis.length; i++) {
+       var i1 = i + 1;
+       espeak("Word " + i1);
+       espeak(cis[i].ciDef);
+    }
+}
+function newQ() {
+    var nowSecs = Math.round(Date.now() / 1000);
+    for (var curHSetI = 0; curHSetI < homonymSets.length; curHSetI++) {
+        [pinyin, cis] = homonymSets[curHSetI];
+        var curRecord = localStorage[pinyin];
+        if (curRecord) {
+            var nextSecs;
+            [waitDaysIfCorrect, nextSecs] = JSON.parse(curRecord);
+            if (nowSecs >= nextSecs) break;
+        } else {
+            waitDaysIfCorrect = 1;
+            break;
+        }
+    }
+    if (curHSetI == homonymSets.length) {
+        stage = awaitStart;
+        document.form.button1.value = "Play";
+        document.form.button2.value = "";
+        document.form.button3.value = "";
+        espeak("Congratulations, you are done for now.");
+        return;
+    }
+    stage = awaitPlayAns;
+    document.form.button1.value = "Repeat";
+    document.form.button2.value = "Solution";
+    document.form.button3.value = "Solution";
+    speakQ();
+}
+function play() {
+    if (stage == awaitStart)        newQ();
+    else if (stage == awaitPlayAns) speakQ();
+    else if (stage == awaitAns)     speakAns();
+}
+function answer(correct) {
+    if (stage == awaitPlayAns) {
+        stage = awaitAns;
+        //document.form.button1.value = "Repeat";
+        document.form.button2.value = "Right";
+        document.form.button3.value = "Wrong";
+        speakAns();
+        return;
+    }
+
+    if (stage != awaitAns) return;
+    var nowSecs = Math.round(Date.now() / 1000);
+    //console.log(nowSecs + " nowSecs");
+    var nextSecs;
+    if (correct) {
+        nextSecs = nowSecs + (waitDaysIfCorrect - 1) * daySecs + workDaySecs;
+        nextWaitDaysIfCorrect = 2 * waitDaysIfCorrect;
+    } else {
+        nextSecs = nowSecs + waitSecsIfWrong;
+        nextWaitDaysIfCorrect = 1;
+    }
+    //console.log("Stored nextSecs " + nextSecs);
+    localStorage[pinyin] = JSON.stringify([nextWaitDaysIfCorrect, nextSecs]);
+    newQ();
+}
+</script>
+<form name="form" onsubmit="return false">
+<input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="Play" onclick="play()">
+<br>
+<input type="button" name="button2" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="" onclick="answer(true)">
+<br>
+<input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="" onclick="answer(false)">
+</form>
+</body></html>
