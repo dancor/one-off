@@ -14,22 +14,23 @@ function subGet(i, v) {
 function subPut(i) {
         return localStorage[subId + i];
 }
-if (!('_version' in localStorage) || !(localStorage['_version'] >= 1)) {
+if (!('_version' in localStorage) || !(localStorage['_version'] >= 2)) {
     localStorage.clear();
-    localStorage['_version'] = 1;
+    localStorage['_version'] = 2;
 }
 
-function speak(text, lang) {
+function speak(text, lang, rate) {
     var u = new SpeechSynthesisUtterance();
     u.text = text;
     u.lang = lang;
+    u.rate = rate;
     speechSynthesis.speak(u);
 }
 function zspeak(text) {
-    return speak(text, 'zh-CN');
+    return speak(text, 'zh-CN', 0.5);
 }
 function espeak(text) {
-    return speak(text, 'en-US');
+    return speak(text, 'en-US', 1);
 }
 function play() {
     if (stage == awaitStart)        newQ();

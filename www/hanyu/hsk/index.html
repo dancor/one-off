@@ -25,7 +25,7 @@ function newQ() {
     var nowSecs = Math.round(Date.now() / 1000);
     for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
         [pinyin, cis] = entries[curHSetI];
-        var curRecord = subGet(pinyin);
+        var curRecord = localStorage[subId + pinyin];
         if (curRecord) {
             var nextSecs;
             [waitDaysIfCorrect, nextSecs] = JSON.parse(curRecord);
@@ -46,19 +46,19 @@ function newQ() {
     stage = awaitPlayAns;
     document.form.button1.value = "Repeat";
     document.form.button2.value = "Solution";
-    document.form.button3.value = "Solution";
+    document.form.button3.value = "Know it; Next";
     speakQ();
 }
 function answer(correct) {
-    if (stage == awaitPlayAns) {
+    if (stage == awaitPlayAns && !correct) {
         stage = awaitAns;
-        document.form.button2.value = "Right";
-        document.form.button3.value = "Wrong";
+        document.form.button2.value = "Wrong";
+        document.form.button3.value = "Right";
         speakAns();
         return;
     }
 
-    if (stage != awaitAns) return;
+    if (stage == awaitStart) return;
     var nowSecs = Math.round(Date.now() / 1000);
     var nextSecs;
     if (correct) {
@@ -68,16 +68,17 @@ function answer(correct) {
         nextSecs = nowSecs + waitSecsIfWrong;
         nextWaitDaysIfCorrect = 1;
     }
-    subPut(pinyin, JSON.stringify([nextWaitDaysIfCorrect, nextSecs]));
+    localStorage[subId + pinyin] =
+        JSON.stringify([nextWaitDaysIfCorrect, nextSecs]);
     newQ();
 }
 </script>
 </head><body style="background:black;">
 <form name="form" onsubmit="return false">
-<input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="Play" onclick="play()">
+<input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: black; color: transparent;" value="Play" onclick="play()">
 <br>
-<input type="button" name="button2" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="" onclick="answer(true)">
+<input type="button" name="button2" style="height:33%; width:100%; font-size:80px; background-color: black; color: transparent;" value="" onclick="answer(false)">
 <br>
-<input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="" onclick="answer(false)">
+<input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: black; color: transparent;" value="" onclick="answer(true)">
 </form>
 </body></html>
