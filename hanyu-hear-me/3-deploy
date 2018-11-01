@@ -1,2 +1,0 @@
-#!/bin/sh
-scp -P 31846 a.html lz-string.min.js homonym-sets-lz.js pi@d.hopto.org:/var/www/html/

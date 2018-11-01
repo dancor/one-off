@@ -1,0 +1,8 @@
+#!/bin/sh
+
+#scp -P 31846 hsk/index.html hsk/entries-lz.js pi@d.hopto.org:/var/www/html/hanyu/hsk
+#scp -P 31846 tatoeba/index.html tatoeba/entries-lz.js pi@d.hopto.org:/var/www/html/hanyu/tatoeba
+
+scp -P 31846 index.html trispeak.js pi@d.hopto.org:/var/www/html/hanyu
+scp -P 31846 hsk/index.html pi@d.hopto.org:/var/www/html/hanyu/hsk
+scp -P 31846 tatoeba/index.html pi@d.hopto.org:/var/www/html/hanyu/tatoeba

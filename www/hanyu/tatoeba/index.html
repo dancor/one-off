@@ -1,0 +1,81 @@
+<html><head><title>Hanyu hear me</title>
+<script src="../../lz-string.min.js"></script>
+<script src="entries-lz.js" charset="utf-8"></script>
+<script src="../trispeak.js"></script>
+<script>
+var subId = 't';
+var entryId;
+var eText;
+var zText;
+function speakQ() {
+    espeak("The Chinese is:");
+    zspeak(zText);
+}
+function speakAns() {
+    espeak("For the Chinese:");
+    zspeak(zText);
+    espeak("The English is:");
+    espeak(eText);
+}
+function newQ() {
+    var nowSecs = Math.round(Date.now() / 1000);
+    for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
+        [entryId, zText, eText] = entries[curHSetI];
+        console.log(zText);
+        console.log(eText);
+        var curRecord = subGet(entryId);
+        if (curRecord) {
+            var nextSecs;
+            [waitDaysIfCorrect, nextSecs] = JSON.parse(curRecord);
+            if (nowSecs >= nextSecs) break;
+        } else {
+            waitDaysIfCorrect = 1;
+            break;
+        }
+    }
+    if (curHSetI == entries.length) {
+        stage = awaitStart;
+        document.form.button1.value = "Play";
+        document.form.button2.value = "";
+        document.form.button3.value = "";
+        espeak("Congratulations, you are done for now.");
+        return;
+    }
+    stage = awaitPlayAns;
+    document.form.button1.value = "Repeat";
+    document.form.button2.value = "Solution";
+    document.form.button3.value = "Solution";
+    speakQ();
+}
+function answer(correct) {
+    if (stage == awaitPlayAns) {
+        stage = awaitAns;
+        document.form.button2.value = "Right";
+        document.form.button3.value = "Wrong";
+        speakAns();
+        return;
+    }
+
+    if (stage != awaitAns) return;
+    var nowSecs = Math.round(Date.now() / 1000);
+    var nextSecs;
+    if (correct) {
+        nextSecs = nowSecs + (waitDaysIfCorrect - 1) * daySecs + workDaySecs;
+        nextWaitDaysIfCorrect = 2 * waitDaysIfCorrect;
+    } else {
+        nextSecs = nowSecs + waitSecsIfWrong;
+        nextWaitDaysIfCorrect = 1;
+    }
+    subPut(entryId, JSON.stringify([nextWaitDaysIfCorrect, nextSecs]));
+    newQ();
+}
+</script>
+</head><body style="background:black;">
+<form name="form" onsubmit="return false">
+<input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="Play" onclick="play()">
+<br>
+<input type="button" name="button2" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="" onclick="answer(true)">
+<br>
+<input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: black; color: white;" value="" onclick="answer(false)">
+</form>
+</body></html>

@@ -5,8 +5,18 @@ data Ci = Ci {
     ciHanzi :: DT.Text,
     ciDef :: DT.Text} deriving (Show, Generic)
 
-instance Ae.ToJSON Ci
-instance Ae.FromJSON Ci
+textToJson t =
+    "\"" <> DT.replace "\"" "\\\"" (DT.replace "\\" "\\\\" t) <> "\""
+
+ciToJson (Ci n h d) = "[" <>
+    DT.pack (show n) <> "," <> textToJson h <> "," <> textToJson d <> "]"
+
+cisToJson cis = "[" <> DT.intercalate "," (map ciToJson cis) <> "]"
+
+homonymSetToJson (h, cis) = "[" <> textToJson h <> "," <> cisToJson cis <> "]"
+
+homonymSetsToJson hs = "[" <>
+    DT.intercalate "," (map homonymSetToJson hs)  <> "]"
 
 cleanDef =
     DT.replace "<\21160>" "V." .
@@ -20,6 +30,7 @@ cleanDef =
     DT.replace "&gt;" ">" .
     DT.replace "&nbsp;" " "
 
+-- FIXME: fix this
 set33To23 :: DT.Text -> DT.Text
 set33To23 s = if DT.null threeAndRest || DT.null sndThreeAndRest then s else
     beforeThree <> "2" <> beforeSndThree <> set33To23 sndThreeAndRest 
@@ -27,7 +38,6 @@ set33To23 s = if DT.null threeAndRest || DT.null sndThreeAndRest then s else
     (beforeThree, threeAndRest) = DT.break (== '3') s
     (beforeSndThree, sndThreeAndRest) =
         DT.break (== '3') $ DT.tail threeAndRest
-
 
 procLine :: Int -> DT.Text -> [(DT.Text, [Ci])]
 procLine n l = [(p, [Ci n hanzi d]) | (p, d) <- zip pinyins defs]
@@ -49,5 +59,5 @@ main = do
         HMS.toList . HMS.map reverse . HMS.fromListWith (++) . concat .
         zipWith procLine [1..] . DT.lines . DTE.decodeUtf8 . BSL.toStrict <$>
         HSH.run ("bzcat" :: String, ["all.txt.bz2" :: String])
-    BSL.writeFile "homonymSets.js" . ("var homonymSets = " <>) . (<> ";\n") .
-        Ae.encode $ filter (any (> 2300) . map ciNum . snd) m
+    DTI.writeFile "entries.js" $ "var entries = " <>
+        homonymSetsToJson (filter (any (> 2300) . map ciNum . snd) m) <> ";"
