@@ -5,14 +5,39 @@
 <script>
 var subId = 't';
 var entryId;
-var eText;
 var zText;
+var pyText;
+var eText;
 function speakQ() {
+    speechSynthesis.cancel();
     espeak("The Chinese is:");
     zspeak(zText);
 }
+function colorPinyin(p) {
+    var ret = '';
+    var accumSyllable = '';
+    var colorMap = {
+        '1': '#faa', '2': '#afa', '3': '#acf', '4': '#faf', '5': '#aaa'};
+    for (var i = 0; i < p.length; i++) {
+        if (p[i] >= 'a' && p[i] <= 'z' ||
+            p[i] >= 'A' && p[i] <= 'Z') {
+            accumSyllable += p[i];
+        } else if (p[i] >= '1' && p[i] <= '5') {
+            ret += "<span style='color:" + colorMap[p[i]] + ";'>" +
+                accumSyllable + p[i] + "</div>";
+            accumSyllable = '';
+        } else {
+            ret += "<span style='color:" + colorMap['5'] + ";'>" +
+                accumSyllable + p[i] + "</div>";
+            accumSyllable = '';
+        }
+    }
+    return ret;
+}
 function speakAns() {
-    document.getElementById('info').innerHTML = zText;
+    document.getElementById('info').innerHTML =
+        zText + ' ' + colorPinyin(pyText) + ' ' + eText;
+    speechSynthesis.cancel();
     espeak("For the Chinese:");
     zspeak(zText);
     espeak("The English is:");
@@ -21,7 +46,7 @@ function speakAns() {
 function newQ() {
     var nowSecs = Math.round(Date.now() / 1000);
     for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
-        [entryId, zText, eText] = entries[curHSetI];
+        [entryId, zText, pyText, eText] = entries[curHSetI];
         var curRecord = localStorage[subId + entryId];
         if (curRecord) {
             var nextSecs;

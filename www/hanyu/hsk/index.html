@@ -8,12 +8,14 @@ var pinyin;
 var cis;
 function speakQ() {
     var eText = ""; for (var c in pinyin) eText += pinyin[c] + " ";
+    speechSynthesis.cancel();
     espeak("Pinyin is " + eText);
     zspeak(cis[0][1]);
     espeak(cis.length + " words");
 }
 function speakAns() {
     var eText = ""; for (var c in pinyin) eText += pinyin[c] + " ";
+    speechSynthesis.cancel();
     espeak("Pinyin was " + eText);
     for (var i = 0; i < cis.length; i++) {
        var i1 = i + 1;
