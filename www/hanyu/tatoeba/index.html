@@ -63,7 +63,7 @@ function speakAns() {
 }
 function newQ() {
     var nowSecs = Math.round(Date.now() / 1000);
-    for (var curHSetI = 200; curHSetI < entries.length; curHSetI++) {
+    for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
         [entryId, wordInfos, eText] = entries[curHSetI];
         zText = '';
         for (var i = 0; i < wordInfos.length; i++) {
