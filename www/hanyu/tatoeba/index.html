@@ -7,10 +7,14 @@ var subId = 't';
 var entryId;
 var zText;
 var pyText;
+var glossText;
 var eText;
+var nextSecs;
+var oldEntryId;
+var oldValue;
 function speakQ() {
     speechSynthesis.cancel();
-    espeak("The Chinese is:");
+    //espeak("The Chinese is:");
     zspeak(zText);
 }
 function colorPinyin(p) {
@@ -24,11 +28,11 @@ function colorPinyin(p) {
             accumSyllable += p[i];
         } else if (p[i] >= '1' && p[i] <= '5') {
             ret += "<span style='color:" + colorMap[p[i]] + ";'>" +
-                accumSyllable + p[i] + "</div>";
+                accumSyllable + p[i] + "</span>";
             accumSyllable = '';
         } else {
             ret += "<span style='color:" + colorMap['5'] + ";'>" +
-                accumSyllable + p[i] + "</div>";
+                accumSyllable + p[i] + "</span>";
             accumSyllable = '';
         }
     }
@@ -36,24 +40,29 @@ function colorPinyin(p) {
 }
 function speakAns() {
     document.getElementById('info').innerHTML =
-        zText + ' ' + colorPinyin(pyText) + ' ' + eText;
+        '<span style="text-shadow: 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000;">' + zText +
+        '<div style="font-size: 50%; color: #aaa">' + glossText + '</div>' +
+        '<div style="font-size: 55%">' + colorPinyin(pyText) + '</div>' +
+        '<div style="font-size: 50%; color: #ff8">' + eText + '</div>' +
+        '</span>';
     speechSynthesis.cancel();
-    espeak("For the Chinese:");
-    zspeak(zText);
-    espeak("The English is:");
     espeak(eText);
+    zspeak(zText);
+
+    //espeak("For the Chinese:");
+    //espeak("The English is:");
 }
 function newQ() {
     var nowSecs = Math.round(Date.now() / 1000);
     for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
-        [entryId, zText, pyText, eText] = entries[curHSetI];
+        [entryId, zText, pyText, glossText, eText] = entries[curHSetI];
         var curRecord = localStorage[subId + entryId];
         if (curRecord) {
-            var nextSecs;
             [waitDaysIfCorrect, nextSecs] = JSON.parse(curRecord);
             if (nowSecs >= nextSecs) break;
         } else {
             waitDaysIfCorrect = 1;
+            nextSecs = 0;
             break;
         }
     }
@@ -68,22 +77,36 @@ function newQ() {
     stage = awaitPlayAns;
     document.form.button1.value = "Repeat";
     document.form.button2.value = "Solution";
-    document.form.button3.value = "Know it; Next";
+    if (oldEntryId) {
+        document.form.button3.value = "Undo";
+    } else {
+        document.form.button3.value = "";
+    }
     speakQ();
 }
 function answer(correct) {
-    if (stage == awaitPlayAns && !correct) {
-        stage = awaitAns;
-        document.form.button2.value = "Wrong";
-        document.form.button3.value = "Right";
-        speakAns();
+    if (stage == awaitPlayAns) {
+        if (correct) {
+            // this is "undo"
+            if (oldEntryId) {
+                localStorage[subId + oldEntryId] = JSON.stringify(oldValue);
+                oldEntryId = '';
+                newQ();
+            }
+        } else {
+            stage = awaitAns;
+            document.form.button2.value = "Wrong";
+            document.form.button3.value = "Right";
+            speakAns();
+        }
         return;
     }
 
     if (stage == awaitStart) return;
     document.getElementById('info').innerHTML = '';
     var nowSecs = Math.round(Date.now() / 1000);
-    var nextSecs;
+    oldEntryId = entryId;
+    oldValue = [waitDaysIfCorrect, nextSecs];
     if (correct) {
         nextSecs = nowSecs + (waitDaysIfCorrect - 1) * daySecs + workDaySecs;
         nextWaitDaysIfCorrect = 2 * waitDaysIfCorrect;

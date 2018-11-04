@@ -1,5 +1,21 @@
 #include <h>
 
+readCedictGloss :: DT.Text -> (DT.Text, DT.Text)
+readCedictGloss t =
+    if null slashParts || null toMinOver
+    then error $ "readCedictGloss: " ++ DT.unpack t
+    else (simplifiedChinese, gloss)
+  where
+    _:simplifiedChinese:_ = DT.words t
+    slashParts = DT.splitOn "/" t
+    _:defs = slashParts
+    toMinOver = 
+        map (last . DT.splitOn ") ") $
+        map (head . DT.splitOn " (") $
+        filter (not . (== "\r")) $
+        filter (not . ("CL:" `DT.isPrefixOf`)) defs
+    gloss = DT.replace " " "-" $ minimumBy (compare `on` DT.length) toMinOver
+
 sEx :: String
 sEx = "我的行李丢了。"
 
@@ -8,7 +24,9 @@ js s = BSL.concat [
     "var sentences = " <> Ae.encode s <> ";",
     "for (var i = 0; i < sentences.length; i++) {",
     "  var sentence = sentences[i];",
-    "  wds = pinyinify(sentence, true).pinyinSegmentsSyllables;",
+    "  var res = pinyinify(sentence, true);",
+    "  console.log(res.segments.join(' '));",
+    "  wds = res.pinyinSegmentsSyllables;",
     "  for (var wdI = 0; wdI < wds.length; wdI++) {",
     "    var wd = wds[wdI];",
     "    console.log(wd.join(' '));",
@@ -48,15 +66,18 @@ pyToNum syllable = if any isAlpha syllable
   then let (syllable', n) = pyPullNum "" syllable 5 in syllable' ++ show n
   else syllable
 
-getPinyins :: [String] -> IO [String]
+procSentJsResult (l:ls) = 
+    ( DT.words $ DT.pack l
+    , DT.pack $
+      intercalate " " $ map (intercalate "" . map pyToNum . words) ls
+    )
+
+getPinyins :: [String] -> IO [([DT.Text], DT.Text)]
 getPinyins s = do
     setCurrentDirectory "/home/danl/p/one-off/www/hanyu/node_modules/pinyinify"
     (_, out, _err) <- readProcessWithExitCode "nodejs" []
         (BSLU.toString $ js s)
-    return $
-        map (intercalate " " . map (intercalate "" . map pyToNum . words)) $
-        Spl.splitWhen (== "ZIFYRA") $
-        lines out
+    return $ map procSentJsResult $ Spl.splitWhen (== "ZIFYRA") $ lines out
 
 procLine [num, _, sent] = (num, sent)
 procLine x = error $ "procLine: " ++ show x
@@ -79,12 +100,22 @@ main = do
     print $ length nums
     let mandarinSentences = [fromJust (HMS.lookup n1 l1) | (n1, _) <- nums]
     pinyinSentences <- getPinyins $ map DT.unpack $ mandarinSentences
-    let prepEntry count mandarinSentence pinyinSentence (n1, n2s) = do
-            when (count `mod` 100 == 0) $ putStrLn $ show count ++ " / 40k"
+    glossPairs <- map readCedictGloss . 
+        filter (not . ("#" `DT.isPrefixOf`)) . DT.lines <$> DTI.readFile
+        "/home/danl/p/l/melang/lang/zh/cedict/cedict_1_0_ts_utf-8_mdbg.txt"
+    let glossMap = HMS.fromList $ glossPairs ++
+            [("了", "le"), ("的", "of"), ("。", ".")
+            , ("，", ",")
+            , ("！", "!")
+            ]
+    let prepEntry count mandarinSentence (wds, pinyinSentence) (n1, n2s) = do
+            when (count `mod` 100 == 1) $ putStrLn $ show count ++ " / 40k"
             return 
                 [ n1
                 , mandarinSentence
-                , DT.pack pinyinSentence
+                , pinyinSentence
+                , DT.intercalate " "
+                  [fromMaybe wd $ HMS.lookup wd glossMap | wd <- wds]
                 , maximumBy (compare `on` DT.length)
                   [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
                 ]
