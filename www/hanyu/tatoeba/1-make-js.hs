@@ -25,11 +25,10 @@ js s = BSL.concat [
     "for (var i = 0; i < sentences.length; i++) {",
     "  var sentence = sentences[i];",
     "  var res = pinyinify(sentence, true);",
-    "  console.log(res.segments.join(' '));",
-    "  wds = res.pinyinSegmentsSyllables;",
-    "  for (var wdI = 0; wdI < wds.length; wdI++) {",
-    "    var wd = wds[wdI];",
-    "    console.log(wd.join(' '));",
+    "  words = res.segments;",
+    "  pinyins = res.pinyinSegmentsSyllables;",
+    "  for (var i = 0; i < words.length; i++) {",
+    "    console.log(words[i] + ' ' + pinyins[i].join(' '));",
     "  }",
     "  console.log('ZIFYRA');",
     "}"]
@@ -66,13 +65,14 @@ pyToNum syllable = if any isAlpha syllable
   then let (syllable', n) = pyPullNum "" syllable 5 in syllable' ++ show n
   else syllable
 
-procSentJsResult (l:ls) = 
-    ( DT.words $ DT.pack l
-    , DT.pack $
-      intercalate " " $ map (intercalate "" . map pyToNum . words) ls
-    )
+procSentJsLine l = [wd, intercalate "" $ map pyToNum pinyins, gloss]
+  where
+    wd:pinyins = DT.words $ DT.pack l
+    gloss = fromMaybe wd $ HMS.lookup wd glossMap
 
-getPinyins :: [String] -> IO [([DT.Text], DT.Text)]
+procSentJsResult = map procSentJsLine
+
+getPinyins :: [String] -> IO [[[DT.Text]]]
 getPinyins s = do
     setCurrentDirectory "/home/danl/p/one-off/www/hanyu/node_modules/pinyinify"
     (_, out, _err) <- readProcessWithExitCode "nodejs" []
@@ -99,7 +99,7 @@ main = do
         HSH.run ("xzcat" :: String, [tatDir </> "links.csv.xz" :: String]) 
     print $ length nums
     let mandarinSentences = [fromJust (HMS.lookup n1 l1) | (n1, _) <- nums]
-    pinyinSentences <- getPinyins $ map DT.unpack $ mandarinSentences
+    sentenceInfos <- getPinyins $ map DT.unpack $ mandarinSentences
     glossPairs <- map readCedictGloss . 
         filter (not . ("#" `DT.isPrefixOf`)) . DT.lines <$> DTI.readFile
         "/home/danl/p/l/melang/lang/zh/cedict/cedict_1_0_ts_utf-8_mdbg.txt"
@@ -108,19 +108,12 @@ main = do
             , ("，", ",")
             , ("！", "!")
             ]
-    let prepEntry count mandarinSentence (wds, pinyinSentence) (n1, n2s) = do
+    let prepEntry count wdInfos (n1, n2s) = do
             when (count `mod` 100 == 1) $ putStrLn $ show count ++ " / 40k"
-            return 
-                [ n1
-                , mandarinSentence
-                , pinyinSentence
-                , DT.intercalate " "
-                  [fromMaybe wd $ HMS.lookup wd glossMap | wd <- wds]
-                , maximumBy (compare `on` DT.length)
-                  [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
-                ]
-    entries <- sequence $
-       zipWith4 prepEntry [1..] mandarinSentences pinyinSentences nums
+            return $ [n1, wdInfos, maximumBy (compare `on` DT.length)
+                                 [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
+                   ]
+    entries <- sequence $ zipWith3 prepEntry [1..] sentenceInfos nums
     print $ last $ show entries
     BSLC.writeFile "/home/danl/p/one-off/www/hanyu/tatoeba/entries.js" $
         "var entries = " <> Ae.encode entries <> ";"
