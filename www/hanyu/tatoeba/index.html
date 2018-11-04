@@ -5,9 +5,8 @@
 <script>
 var subId = 't';
 var entryId;
+var wordInfos;
 var zText;
-var pyText;
-var glossText;
 var eText;
 var nextSecs;
 var oldEntryId;
@@ -39,12 +38,22 @@ function colorPinyin(p) {
     return ret;
 }
 function speakAns() {
-    document.getElementById('info').innerHTML =
-        '<span style="text-shadow: 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000;">' + zText +
-        '<div style="font-size: 50%; color: #aaa">' + glossText + '</div>' +
-        '<div style="font-size: 55%">' + colorPinyin(pyText) + '</div>' +
-        '<div style="font-size: 50%; color: #ff8">' + eText + '</div>' +
+    var html = '<span style="text-shadow: 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000;">' +
+        '<div style="font-size: 50%; color: #ff8">' + eText + '</div>';
+    for (var i = 0; i < wordInfos.length; i++) {
+        //'<div style="font-size: 50%; color: #aaa">' + glossText + '</div>' +
+        //'<div style="font-size: 55%">' + colorPinyin(pyText) + '</div>' +
+        html += '<span style="float:left; margin-left:10px;">' +
+            wordInfos[i][0] +
+            '<div style="font-size: 55%">' + colorPinyin(wordInfos[i][1]) +
+            '</div>' +
+            '<div style="font-size: 40%; color: #aaa">' + wordInfos[i][2] +
+            '</div>' +
+            '</span>';
+    }
+    html +=
         '</span>';
+    document.getElementById('info').innerHTML = html;
     speechSynthesis.cancel();
     espeak(eText);
     zspeak(zText);
@@ -54,8 +63,12 @@ function speakAns() {
 }
 function newQ() {
     var nowSecs = Math.round(Date.now() / 1000);
-    for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
-        [entryId, zText, pyText, glossText, eText] = entries[curHSetI];
+    for (var curHSetI = 200; curHSetI < entries.length; curHSetI++) {
+        [entryId, wordInfos, eText] = entries[curHSetI];
+        zText = '';
+        for (var i = 0; i < wordInfos.length; i++) {
+            zText += wordInfos[i][0];
+        }
         var curRecord = localStorage[subId + entryId];
         if (curRecord) {
             [waitDaysIfCorrect, nextSecs] = JSON.parse(curRecord);
@@ -120,12 +133,12 @@ function answer(correct) {
 }
 </script>
 </head><body style="background:black;">
-<div id="info" style="position: absolute; top: 10px; left: 10px; font-size: 400%; color: white;"></div>
+<div id="info" style="pointer-events: none; position: absolute; top: 10px; left: 10px; font-size: 400%; color: white;"></div>
 <form name="form" onsubmit="return false">
-<input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="Play" onclick="play()">
+<input type="button" name="button1" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="Play" onmouseup="play()">
 <br>
-<input type="button" name="button2" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="" onclick="answer(false)">
+<input type="button" name="button2" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="" onmouseup="answer(false)">
 <br>
-<input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="" onclick="answer(true)">
+<input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="" onmouseup="answer(true)">
 </form>
 </body></html>

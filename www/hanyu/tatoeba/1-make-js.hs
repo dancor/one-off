@@ -10,6 +10,7 @@ readCedictGloss t =
     slashParts = DT.splitOn "/" t
     _:defs = slashParts
     toMinOver = 
+        map (\x -> if "to " `DT.isPrefixOf` x then DT.drop 3 x else x) .
         map (last . DT.splitOn ") ") $
         map (head . DT.splitOn " (") $
         filter (not . (== "\r")) $
@@ -27,8 +28,8 @@ js s = BSL.concat [
     "  var res = pinyinify(sentence, true);",
     "  words = res.segments;",
     "  pinyins = res.pinyinSegmentsSyllables;",
-    "  for (var i = 0; i < words.length; i++) {",
-    "    console.log(words[i] + ' ' + pinyins[i].join(' '));",
+    "  for (var j = 0; j < words.length; j++) {",
+    "    console.log(words[j] + ' ' + pinyins[j].join(' '));",
     "  }",
     "  console.log('ZIFYRA');",
     "}"]
@@ -65,19 +66,26 @@ pyToNum syllable = if any isAlpha syllable
   then let (syllable', n) = pyPullNum "" syllable 5 in syllable' ++ show n
   else syllable
 
-procSentJsLine l = [wd, intercalate "" $ map pyToNum pinyins, gloss]
+procSentJsLine glossMap l = Ae.Array $ Vec.fromList $ map Ae.String
+    [ wd
+    , DT.pack $ intercalate "" $ map pyToNum pinyins
+    , gloss
+    ]
   where
-    wd:pinyins = DT.words $ DT.pack l
+    wdS:pinyins = words l
+    wd = DT.pack wdS
     gloss = fromMaybe wd $ HMS.lookup wd glossMap
 
-procSentJsResult = map procSentJsLine
+procSentJsResult glossMap =
+    Ae.Array . Vec.fromList . map (procSentJsLine glossMap)
 
-getPinyins :: [String] -> IO [[[DT.Text]]]
-getPinyins s = do
+-- getPinyins :: [String] -> IO [Ae.Value]
+getPinyins glossMap s = do
     setCurrentDirectory "/home/danl/p/one-off/www/hanyu/node_modules/pinyinify"
     (_, out, _err) <- readProcessWithExitCode "nodejs" []
         (BSLU.toString $ js s)
-    return $ map procSentJsResult $ Spl.splitWhen (== "ZIFYRA") $ lines out
+    return $ map (procSentJsResult glossMap) $
+        Spl.splitWhen (== "ZIFYRA") $ lines out
 
 procLine [num, _, sent] = (num, sent)
 procLine x = error $ "procLine: " ++ show x
@@ -98,21 +106,26 @@ main = do
         map splitCols . DT.lines . DTE.decodeUtf8 <$>
         HSH.run ("xzcat" :: String, [tatDir </> "links.csv.xz" :: String]) 
     print $ length nums
-    let mandarinSentences = [fromJust (HMS.lookup n1 l1) | (n1, _) <- nums]
-    sentenceInfos <- getPinyins $ map DT.unpack $ mandarinSentences
     glossPairs <- map readCedictGloss . 
         filter (not . ("#" `DT.isPrefixOf`)) . DT.lines <$> DTI.readFile
         "/home/danl/p/l/melang/lang/zh/cedict/cedict_1_0_ts_utf-8_mdbg.txt"
     let glossMap = HMS.fromList $ glossPairs ++
-            [("了", "le"), ("的", "of"), ("。", ".")
-            , ("，", ",")
-            , ("！", "!")
+            [ ("了", "le")
+            , ("的", "de")
+            , ("个", "ge")
+            , ("。", ".")
+            , ("，", ","), ("！", "!")
             ]
+    let mandarinSentences = [fromJust (HMS.lookup n1 l1) | (n1, _) <- nums]
+    sentenceInfos <- getPinyins glossMap $ map DT.unpack $ mandarinSentences
     let prepEntry count wdInfos (n1, n2s) = do
             when (count `mod` 100 == 1) $ putStrLn $ show count ++ " / 40k"
-            return $ [n1, wdInfos, maximumBy (compare `on` DT.length)
-                                 [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
-                   ]
+            return 
+                [ Ae.String n1
+                , wdInfos
+                , Ae.String $ maximumBy (compare `on` DT.length)
+                  [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
+                ]
     entries <- sequence $ zipWith3 prepEntry [1..] sentenceInfos nums
     print $ last $ show entries
     BSLC.writeFile "/home/danl/p/one-off/www/hanyu/tatoeba/entries.js" $
