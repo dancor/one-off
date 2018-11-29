@@ -97,7 +97,7 @@ readNumToSentMap filename =
     DT.lines . DTE.decodeUtf8 <$>
     HSH.run ("xzcat" :: String , [filename :: String])
 
-main = do
+loadTatoebaSentences = do
     tatDir <- (\x -> x </> "data" </> "tatoeba") <$> getHomeDirectory
     l1 <- readNumToSentMap $ tatDir </> "simp-cmn.csv.xz"
     l2 <- readNumToSentMap $ tatDir </> "eng.csv.xz"
@@ -112,6 +112,10 @@ main = do
               [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
             | (_, n2s) <- nums
             ]
+    return (n1s, wdPinyinSents, englishSentences)
+
+main = do
+    tat <- loadTatoebaSentencePairs
     wdPinyinSents <- getPinyins mandarinSentences
     BSLC.writeFile "/home/danl/p/one-off/www/hanyu/tatoeba/sentence.info" $
-        serialise $ (n1s, wdPinyinSents, englishSentences)
+        serialise tat

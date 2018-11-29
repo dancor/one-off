@@ -62,7 +62,8 @@ function speakAns() {
     //espeak("The English is:");
 }
 function newQ() {
-    var nowSecs = Math.round(Date.now() / 1000);
+    var nowMsecs = Date.now();
+    var nowSecs = Math.round(nowMsecs / 1000);
     for (var curHSetI = 0; curHSetI < entries.length; curHSetI++) {
         [entryId, wordInfos, eText] = entries[curHSetI];
         zText = '';
@@ -95,6 +96,24 @@ function newQ() {
     } else {
         document.form.button3.value = "";
     }
+    //' sentences seen since 4am';
+    var back4H = new Date(nowMsecs - 4 * 3600 * 1000);
+    var back4HDaySig = back4H.getFullYear() + '-' + back4H.getMonth() + '-' +
+        back4H.getDate();
+    var prevSig = localStorage[subId + '_back4HDaySig'];
+    if (prevSig == back4HDaySig) {
+        seenSet = JSON.parse(localStorage[subId + '_seenSet']);
+        if (seenSet.findIndex(function(x){return x==entryId}) == -1) {
+            seenSet.push(entryId);
+        }
+        localStorage[subId + '_seenSet'] = JSON.stringify(seenSet);
+    } else {
+        seenSet = [entryId];
+        localStorage[subId + '_back4HDaySig'] = back4HDaySig;
+    }
+    localStorage[subId + '_seenSet'] = JSON.stringify(seenSet);
+    document.getElementById('count').innerHTML =
+        seenSet.length + ' sentences heard since 4am';
     speakQ();
 }
 function answer(correct) {
@@ -141,4 +160,5 @@ function answer(correct) {
 <br>
 <input type="button" name="button3" style="height:33%; width:100%; font-size:80px; background-color: transparent; color: white;" value="" onmouseup="answer(true)">
 </form>
+<div id="count" style="pointer-events: none; position: absolute; bottom: 0; right: 10px; font-size: 200%; color: white;"></div>
 </body></html>

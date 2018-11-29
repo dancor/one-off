@@ -30,6 +30,10 @@ wdPinyinAddGloss glossMap (WdPinyin wd py) = WdPinyinGloss wd py
     (fromMaybe wd $ HMS.lookup wd glossMap)
 
 main = do
+    {-
+    hsk4Set <- HSet.fromList . take 1200 . map (DT.takeWhile (/= '\t')) .
+        DT.lines <$> DTI.readFile "/home/danl/all.csv.txt"
+        -}
     glossPairs <- map readCedictGloss . 
         filter (not . ("#" `DT.isPrefixOf`)) . DT.lines <$> DTI.readFile
         "/home/danl/p/l/melang/lang/zh/cedict/cedict_1_0_ts_utf-8_mdbg.txt"
@@ -37,12 +41,20 @@ main = do
             [ ("了", "le")
             , ("的", "de")
             , ("个", "ge")
+            , ("是", "is")
+            , ("好", "good")
             , ("。", ".")
             , ("，", ",")
             , ("！", "!")
             ]
     (n1s, wdPinyinSents, eSents) <- deserialise <$> BSL.readFile
         "/home/danl/p/one-off/www/hanyu/tatoeba/sentence.info"
+    print $ length wdPinyinSents
+    {-
+    mapM_ (DTI.putStrLn . DT.intercalate " ") $
+        map (map (\(WdPinyin wd _) -> wd)) $ filter
+        (all (\(WdPinyin wd _) -> wd `HSet.member` hsk4Set)) wdPinyinSents
+        -}
     let wdPinyinGlossSents =
             map (map (wdPinyinAddGloss glossMap)) wdPinyinSents
         prepEntry count n1 wdPinyinGlosses eSent =
