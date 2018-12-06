@@ -2,7 +2,7 @@
 
 import Codec.Serialise
 
-import WdPinyin
+import Lang.Zh.WdPinyin
 
 readCedictGloss :: DT.Text -> (DT.Text, DT.Text)
 readCedictGloss t =
@@ -87,6 +87,7 @@ getPinyins s = do
         (BSLU.toString $ js $ map DT.unpack s)
     return $ map (map procSentJsLine) $ Spl.splitWhen (== "ZIFYRA") $ lines out
 
+{-
 procLine [num, _, sent] = (num, sent)
 procLine x = error $ "procLine: " ++ show x
 
@@ -113,9 +114,49 @@ loadTatoebaSentences = do
             | (_, n2s) <- nums
             ]
     return (n1s, wdPinyinSents, englishSentences)
+-}
+
+checkDropStart needle x =
+    if shouldBeNeedle == needle
+      then ret
+      else error $ "checkDropStart: Wanted " ++ show needle ++ " but got " ++
+        shouldBeNeedle
+  where
+    (shouldBeNeedle, ret) = splitAt (DT.length needle) x
+
+checkDropEnd needle x =
+    if shouldBeNeedle == needle
+      then ret
+      else error $ "checkDropStart: Wanted " ++ show needle ++ " but got " ++
+        shouldBeNeedle
+  where
+    (ret, shouldBeNeedl) = splitAt (DT.length x - DT.length needle) x
+
+readTmxGz filename = do
+    let enStart = "      <tuv xml:lang=\"en\"><seg>"
+        zhStart = "      <tuv xml:lang=\"zh\"><seg>"
+        end = "</seg></tuv>"
+        procChunk (enL:zhL:_) = (hash zhSentence, zhSentence, enSentence)
+          where
+            enSentence = checkDropEnd end $ DT.drop (DT.length enStart) enL
+            zhSentence = checkDropEnd end $ checkDropStart zhStart zhL
+    ls <- DT.lines . DTE.decodeUtf8 <$>
+        HSH.run ("zcat" :: String , [filename :: String])
+    let chunks = tail $
+            Spl.split (Spl.keepDelimsL $ Spl.whenElt (enStart `DT.isPrefixOf`))
+            ls
+    return $ map procChunk chunks
+
+loadMultiUN = do
+    enZhDir <- (\x -> x </> "data" </> "en-zh") <$> getHomeDirectory
+    unzip3 <$> readTmxGz (enZhDir </> "MultiUN.tmx.gz")
+
+loadOpenSubtitles = do
+    enZhDir <- (\x -> x </> "data" </> "en-zh") <$> getHomeDirectory
+    unzip3 <$> readTmxGz (enZhDir </> "OpenSubtitles.tmx.gz")
 
 main = do
-    tat <- loadTatoebaSentencePairs
+    (nums, zhSentences, enSentences)  <- loadMultiUN
     wdPinyinSents <- getPinyins mandarinSentences
     BSLC.writeFile "/home/danl/p/one-off/www/hanyu/tatoeba/sentence.info" $
-        serialise tat
+        serialise (nums, wdPinyinSentences, enSentences)

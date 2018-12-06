@@ -1,0 +1,62 @@
+<html><head><title>pad</title></head><body style="background: black; margin: 0 0 0 0" onresize=resize()>
+<textarea id=pad onkeyup=save() onchange=save() autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="background: black; color: white; width: 100%; height: 100%"></textarea>
+<script>
+var pad = document.getElementById("pad");
+var weekDayAbbrs = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function load() {
+    pad.value = localStorage.getItem('pad');
+}
+function save() {
+    localStorage.setItem('pad', pad.value);
+}
+function resize() {
+    pad.style.fontSize = window.innerWidth / 48.9;
+}
+function isDigit(c) {
+    // JS is such a joke
+    return c == '0' || c == '1' || c == '2' || c == '3' || c == '4' ||
+        c == '5' || c == '6' || c == '7' || c == '8' || c == '9';
+}
+function checkAddDates() {
+    var lines = pad.value.split(/\r?\n/);
+    var dates = [];
+    var lastDate;
+    var line;
+    for (var lineI = 0; lineI < lines.length; lineI++) {
+        line = lines[lineI];
+        if (line[0] != '2') continue;
+        if (line[4] != '-') continue;
+        if (line[7] != '-') continue;
+        if (!isDigit(line[1])) continue;
+        if (!isDigit(line[2])) continue;
+        if (!isDigit(line[3])) continue;
+        if (!isDigit(line[5])) continue;
+        if (!isDigit(line[6])) continue;
+        if (!isDigit(line[8])) continue;
+        if (!isDigit(line[9])) continue;
+        dates.push(new Date(line.substring(0, 10)).getTime());
+    }
+    var len = dates.length;
+    if (len == 0) return;
+    // wee need this offset since
+    // getDate() etc below assume local time but we stored UTC time
+    var offset = new Date().getTimezoneOffset() * 60000;
+    var timestamp = dates[len - 1] + offset;
+    var isBpg = (line.indexOf("bpg") != -1);
+    for (var dateI = len; dateI < 1000; dateI++) {
+        timestamp += 24 * 60 * 60 * 1000;
+        isBpg = !isBpg;
+        var d = new Date(timestamp);
+        pad.value += '\n' + d.getFullYear() + '-' +
+            ('0'+(d.getMonth()+1)).slice(-2) + '-' +
+            ('0'+d.getDate()).slice(-2) + ' ' +
+            weekDayAbbrs[d.getDay()] + ' gcp aL';
+        if (isBpg) pad.value += ' bpg';
+    }
+    save();
+}
+load();
+resize();
+checkAddDates();
+</script>
+</body></html>
