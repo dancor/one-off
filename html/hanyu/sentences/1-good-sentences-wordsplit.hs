@@ -1,134 +1,175 @@
 #include <h>
 
 import Codec.Serialise
+import Lang.Zh.Cedict
 
-import Lang.Zh.WdPinyin
+import WdPinyinGloss
 
-readCedictGloss :: DT.Text -> (DT.Text, DT.Text)
-readCedictGloss t =
-    if null slashParts || null toMinOver
-    then error $ "readCedictGloss: " ++ DT.unpack t
-    else (simplifiedChinese, gloss)
-  where
-    _:simplifiedChinese:_ = DT.words t
-    slashParts = DT.splitOn "/" t
-    _:defs = slashParts
-    toMinOver = 
-        map (\x -> if "to " `DT.isPrefixOf` x then DT.drop 3 x else x) .
-        map (last . DT.splitOn ") ") $
-        map (head . DT.splitOn " (") $
-        filter (not . (== "\r")) $
-        filter (not . ("CL:" `DT.isPrefixOf`)) defs
-    gloss = DT.replace " " "-" $ minimumBy (compare `on` DT.length) toMinOver
+procLines :: FilePath -> [String] -> IO [Text]
+procLines cmd args = do
+    (_, Just hOut, _, _) <-
+        createProcess (proc cmd args) {std_out = CreatePipe}
+    map TL.toStrict . TL.lines <$> TL.hGetContents hOut
 
-pyToNum syllable = if any isAlpha syllable
-  then let (syllable', n) = pyPullNum "" syllable 5 in syllable' ++ show n
-  else syllable
+readDataResourceLines :: String -> IO [Text]
+readDataResourceLines r = do
+    home <- getHomeDirectory
+    readResourceLines $ home </> "data" </> r
 
-wdPinyinGlossToAeson (WdPinyinGloss wd pinyin gloss) =
-    Ae.Array $ Vec.fromList $ map Ae.String [wd, pinyin, gloss]
+readResourceLines :: FilePath -> IO [Text]
+readResourceLines r = do
+    e <- doesFileExist r
+    let tryReaders [] = error $ "Could not read resource: " ++ r
+        tryReaders ((ext,cmd):readers) = do
+            let rExt = r ++ ext
+            e <- doesFileExist $ rExt
+            if e then procLines cmd [rExt] else tryReaders readers
+    if e then map TL.toStrict . TL.lines <$> TL.readFile r
+      else tryReaders [(".xz", "xzcat"), (".gz", "zcat")]
 
-wdPinyinGlossesToAeson = Ae.Array . Vec.fromList . map wdPinyinGlossToAeson
-
-wdPinyinAddGloss glossMap (WdPinyin wd py) = WdPinyinGloss wd py
-    (fromMaybe wd $ HMS.lookup wd glossMap)
-
-procSentJsLine l = WdPinyin (DT.pack wd)
-    (DT.pack $ intercalate "" $ map pyToNum pinyins)
-  where
-    wd:pinyins = words l
-
-js s = BSL.concat [
-    "var pinyinify = require('pinyinify');",
-    "var sentences = " <> Ae.encode s <> ";",
-    "for (var i = 0; i < sentences.length; i++) {",
-    "  var sentence = sentences[i];",
-    "  var res = pinyinify(sentence, true);",
-    "  words = res.segments;",
-    "  pinyins = res.pinyinSegmentsSyllables;",
-    "  for (var j = 0; j < words.length; j++) {",
-    "    console.log(words[j] + ' ' + pinyins[j].join(' '));",
-    "  }",
-    "  console.log('ZIFYRA');",
-    "}"]
-
-getPinyins :: [DT.Text] -> IO [[WdPinyin]]
-getPinyins s = do
-    setCurrentDirectory "/home/danl/p/one-off/www/hanyu/node_modules/pinyinify"
-    (_, out, _err) <- readProcessWithExitCode "nodejs" []
-        (BSLU.toString $ js $ map DT.unpack s)
-    return $ map (map procSentJsLine) $ Spl.splitWhen (== "ZIFYRA") $ lines out
-
-{-
-procLine [num, _, sent] = (num, sent)
+procLine :: [Text] -> (Int, Text)
+procLine [num, _, sent] = (read $ T.unpack num, sent)
 procLine x = error $ "procLine: " ++ show x
 
-splitCols = DT.splitOn "\t"
+splitCols :: Text -> [Text]
+splitCols = T.splitOn "\t"
 
-readNumToSentMap filename = 
-    HMS.fromList . map (procLine . splitCols) .
-    DT.lines . DTE.decodeUtf8 <$>
-    HSH.run ("xzcat" :: String , [filename :: String])
+readNumToSentMap :: String -> IO (HashMap Int Text)
+readNumToSentMap r = do
+    HM.fromList . map (procLine . splitCols) <$> readDataResourceLines r
 
-loadTatoebaSentences = do
-    tatDir <- (\x -> x </> "data" </> "tatoeba") <$> getHomeDirectory
-    l1 <- readNumToSentMap $ tatDir </> "simp-cmn.csv.xz"
-    l2 <- readNumToSentMap $ tatDir </> "eng.csv.xz"
-    nums <- HMS.toList . HMS.fromListWith (++) . map (\[a, b] -> (a, [b])) .
-        filter (\[a, b] -> a `HMS.member` l1 && b `HMS.member` l2) .
-        map splitCols . DT.lines . DTE.decodeUtf8 <$>
-        HSH.run ("xzcat" :: String, [tatDir </> "links.csv.xz" :: String]) 
+loadTatoeba :: IO [(Int, Text, Text)]
+loadTatoeba = do
+    l1 <- readNumToSentMap ("tatoeba" </> "simp-cmn.csv")
+    l2 <- readNumToSentMap ("tatoeba" </> "eng.csv")
+    nums <- HM.toList . HM.fromListWith Set.union .
+        map (\(a, b) -> (a, Set.singleton b)) .
+        filter (\(a, b) -> a `HM.member` l1 && b `HM.member` l2) .
+        map (\[a, b] -> (read $ T.unpack a, read $ T.unpack b)) .
+        map splitCols <$> readDataResourceLines ("tatoeba" </> "links.csv")
     let n1s = map fst nums
-        mandarinSentences = [fromJust (HMS.lookup n1 l1) | n1 <- n1s]
-        englishSentences = 
-            [ maximumBy (compare `on` DT.length)
-              [fromJust (HMS.lookup n2 l2) | n2 <- n2s]
+        zhSentences =
+            [fromJust (HM.lookup n1 l1) | n1 <- n1s]
+        enSentences =
+            [ maximumBy (compare `on` T.length)
+              [fromJust (HM.lookup n2 l2) | n2 <- Set.toList n2s]
             | (_, n2s) <- nums
             ]
-    return (n1s, wdPinyinSents, englishSentences)
--}
+    return $ zip3 n1s zhSentences enSentences
 
+--
+
+wdGloss :: Cedict -> Text -> [WdPinyinGloss]
+wdGloss dict wd = case HM.lookup wd dict of
+  Just (CedictEntry p g) -> [WdPinyinGloss wd p g]
+  Nothing -> if T.length wd == 1
+    then [WdPinyinGloss wd "" ""]
+    else concatMap (wdGloss dict . T.singleton) $ T.unpack wd
+
+procTreeLine :: Cedict -> Text -> [WdPinyinGloss]
+procTreeLine dict l = wdGloss dict wd where [_, _, _, wd] = T.splitOn "\t" l
+
+getPinyins :: Cedict -> [Text] -> IO [[WdPinyinGloss]]
+getPinyins dict sentences = do
+    home <- getHomeDirectory
+    (Just hIn, Just hOut, _, _) <- createProcess
+        (proc (home </> "p/l/melang/zh-sentence-trees.py") [])
+        {std_in = CreatePipe, std_out = CreatePipe}
+    Conc.forkIO $ mapM_ (T.hPutStrLn hIn) sentences >> hClose hIn
+    ls <- TL.lines <$> TL.hGetContents hOut
+    return $ map (concatMap (procTreeLine dict . TL.toStrict)) $
+            Spl.splitWhen TL.null ls
+
+checkDropStart :: TL.Text -> TL.Text -> TL.Text
 checkDropStart needle x =
-    if shouldBeNeedle == needle
+    let (shouldBeNeedle, ret) = TL.splitAt (TL.length needle) x
+    in if shouldBeNeedle == needle
       then ret
       else error $ "checkDropStart: Wanted " ++ show needle ++ " but got " ++
-        shouldBeNeedle
-  where
-    (shouldBeNeedle, ret) = splitAt (DT.length needle) x
+        show shouldBeNeedle
 
+checkDropEnd :: TL.Text -> TL.Text -> TL.Text
 checkDropEnd needle x =
-    if shouldBeNeedle == needle
+    let (ret, shouldBeNeedle) = TL.splitAt (TL.length x - TL.length needle) x
+    in if shouldBeNeedle == needle
       then ret
       else error $ "checkDropStart: Wanted " ++ show needle ++ " but got " ++
-        shouldBeNeedle
-  where
-    (ret, shouldBeNeedl) = splitAt (DT.length x - DT.length needle) x
+        show shouldBeNeedle
 
+readTmxGz :: String -> IO [(Int, Text, Text)]
 readTmxGz filename = do
     let enStart = "      <tuv xml:lang=\"en\"><seg>"
         zhStart = "      <tuv xml:lang=\"zh\"><seg>"
         end = "</seg></tuv>"
-        procChunk (enL:zhL:_) = (hash zhSentence, zhSentence, enSentence)
+        procChunk :: [TL.Text] -> (Int, Text, Text)
+        procChunk (enL:zhL:_) =
+            (hash zhSentence, TL.toStrict zhSentence, TL.toStrict enSentence)
           where
-            enSentence = checkDropEnd end $ DT.drop (DT.length enStart) enL
+            enSentence = checkDropEnd end $ TL.drop (TL.length enStart) enL
             zhSentence = checkDropEnd end $ checkDropStart zhStart zhL
-    ls <- DT.lines . DTE.decodeUtf8 <$>
-        HSH.run ("zcat" :: String , [filename :: String])
-    let chunks = tail $
-            Spl.split (Spl.keepDelimsL $ Spl.whenElt (enStart `DT.isPrefixOf`))
+    (_, Just hOut, _, _) <-
+        createProcess (proc "zcat" [filename]) {std_out = CreatePipe}
+    ls <- TL.lines <$> TL.hGetContents hOut
+    let chunks :: [[TL.Text]]
+        chunks = tail $
+            Spl.split (Spl.keepDelimsL $ Spl.whenElt (enStart `TL.isPrefixOf`))
             ls
     return $ map procChunk chunks
 
 loadMultiUN = do
     enZhDir <- (\x -> x </> "data" </> "en-zh") <$> getHomeDirectory
-    unzip3 <$> readTmxGz (enZhDir </> "MultiUN.tmx.gz")
+    readTmxGz (enZhDir </> "MultiUN.tmx.gz")
+    --readTmxGz (enZhDir </> "MultiUNSample.tmx.gz")
 
 loadOpenSubtitles = do
     enZhDir <- (\x -> x </> "data" </> "en-zh") <$> getHomeDirectory
-    unzip3 <$> readTmxGz (enZhDir </> "OpenSubtitles.tmx.gz")
+    readTmxGz (enZhDir </> "OpenSubtitles.tmx.gz")
 
+spaceCol :: [Text] -> [Text]
+spaceCol [] = []
+spaceCol rows = zipWith
+    (\row width -> row <> T.replicate (maxWidth - width) " ") rows widths
+  where
+    widths = map (sum . map wcwidth . T.unpack) rows
+    maxWidth = maximum widths
+
+lol en wdPinyinGlosses = do
+    --when (any (\(WdPinyinGloss w _ _) -> w == "哪怕") wdPinyinGlosses) $ do
+        T.putStrLn en
+        mapM_ (T.putStrLn . T.intercalate " ") $ transpose
+            [spaceCol [w, p, g] | WdPinyinGloss w p g <- wdPinyinGlosses]
+        T.putStrLn ""
+        hFlush stdout
+
+main :: IO ()
 main = do
-    (nums, zhSentences, enSentences)  <- loadMultiUN
-    wdPinyinSents <- getPinyins mandarinSentences
-    BSLC.writeFile "/home/danl/p/one-off/www/hanyu/tatoeba/sentence.info" $
-        serialise (nums, wdPinyinSentences, enSentences)
+    dict <- loadCedictGlossMap
+    (nums, zhSentences, enSentences) <- unzip3 <$> loadTatoeba
+    --(nums, zhSentences, enSentences) <- unzip3 <$> loadOpenSubtitles
+    --(nums, zhSentences, enSentences) <- unzip3 <$> loadMultiUN
+    {-
+    (nums, zhSentences, enSentences) <- unzip3 . concat <$>
+        sequence [loadTatoeba, loadOpenSubtitles, loadMultiUN]
+    -}
+    wdPinyinGlossSentences <- getPinyins dict zhSentences
+    home <- getHomeDirectory
+    zipWithM_ lol enSentences wdPinyinGlossSentences
+
+    {-
+    hsk4Set <- HSet.fromList . take 1200 . map (DT.takeWhile (/= '\t')) .
+        DT.lines <$> DTI.readFile "/home/danl/all.csv.txt"
+    mapM_ (DTI.putStrLn . DT.intercalate " ") $
+        map (map (\(WdPinyin wd _) -> wd)) $ filter
+        (all (\(WdPinyin wd _) -> wd `HSet.member` hsk4Set)) wdPinyinSents
+    -}
+    {-
+    let prepEntry count num wdPinyinGlosses eSentence =
+            [ Ae.String $ T.pack $ show (num :: Int)
+            , wdPinyinGlossesToAeson wdPinyinGlosses
+            , Ae.String eSentence
+            ]
+        entries = zipWith4 prepEntry
+            [1..] nums wdPinyinGlossSentences eSentences
+    BL.writeFile "/home/danl/p/one-off/html/hanyu/sentences/entries.js" $
+        "var entries = " <> Ae.encode entries <> ";"
+    -}

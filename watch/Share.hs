@@ -1,9 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module Share where
 
-#include <h>
+#include <hi>
 
 data Title = Title {unTitle :: String}
   deriving (Eq, Ord, Show)
@@ -204,3 +205,41 @@ showNumLangDesc (n, (langs, Desc title year rating actors description genres
     flatTitle = unTitle $ flattenTitle $ T.unpack title
     scoreStr = maybe "?%/?" (\(s, c) -> show s <> "%/" <> show c) rt
 
+hasOfLangs needles l = any (`elem` l) needles
+
+isOfLangs needles l = any (== head l) needles
+
+kidRank d = if | "forages0to2"   `T.isInfixOf` g -> 0
+               | "forages3to4"   `T.isInfixOf` g -> 3
+               | "forages5to7"   `T.isInfixOf` g -> 5
+               | "forages8to10"  `T.isInfixOf` g -> 8
+               | "forages11to12" `T.isInfixOf` g -> 11
+               | otherwise                       -> 13
+  where
+    g = shrinkGenres $ dGenres d
+
+resFilt res f = sortBy (
+    (compare `on` kidRank . snd . snd) <>
+    (flip compare `on` dRt . snd . snd)) $ filter f res
+
+onHead :: (a -> a) -> [a] -> [a]
+onHead _ [] = []
+onHead f (x:xs) = f x  : xs
+
+doFile filename ls = do
+    print filename
+    T.writeFile filename $ T.unlines ls
+
+printFile
+    :: [NumLangDesc]
+    -> String
+    -> (NumLangDesc -> Bool)
+    -> IO ()
+printFile res filename f =
+    doFile filename $ concatMap showNumLangDesc $ resFilt res f
+
+expFile res expiringIds filename f = doFile filename .
+    concatMap (\(expDate,x) -> onHead (expDate <>) $ showNumLangDesc x) .
+    sortBy (compare `on` fst) .
+    map (\x@(n,_) -> (fromJust $ HM.lookup n expiringIds, x)) $
+    filter (\x@(n,_) -> n `HM.member` expiringIds && f x) res

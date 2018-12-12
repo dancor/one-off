@@ -1,3 +1,3 @@
 #!/bin/sh
 cat hsk/entries.js ../lz-string.min.js compress.js | nodejs > hsk/entries-lz.js
-cat tatoeba/entries.js ../lz-string.min.js compress.js | nodejs > tatoeba/entries-lz.js
+cat sentences/entries.js ../lz-string.min.js compress.js | nodejs > sentences/entries-lz.js
