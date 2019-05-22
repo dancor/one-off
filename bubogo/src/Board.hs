@@ -3,26 +3,32 @@
 
 module Board where
 
-#include <h>
+import Data.List
+import qualified Data.List.Split as Spl
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as VM
+import System.FilePath
+import System.Process
+import qualified Text.ParserCombinators.Parsec as Psec
 
 import Color
 import Coord
 
-type BoardOf a = MVec.IOVector a
+type BoardOf a = VM.IOVector a
 
 type Board = BoardOf (Maybe Color)
 
 newBoardOf :: a -> IO (BoardOf a)
-newBoardOf = MVec.replicate (19 * 19)
+newBoardOf = VM.replicate (19 * 19)
 
 bIndex :: Coord -> Int
 bIndex (Coord column row) = 19 * row + column
 
 bRead :: BoardOf a -> Coord -> IO a
-bRead b = MVec.read b . bIndex
+bRead b = VM.read b . bIndex
 
 bWrite :: BoardOf a -> Coord -> a -> IO ()
-bWrite b = MVec.write b . bIndex
+bWrite b = VM.write b . bIndex
 
 class ShowSq a where
   showSq :: a -> Char
@@ -37,10 +43,10 @@ instance ShowSq (Either Int Color) where
 
 showBoard :: ShowSq a => BoardOf (Maybe a) -> IO String
 showBoard bd = do
-    v <- Vec.freeze bd
+    v <- V.freeze bd
     return $ intercalate "\n" $
         [headerFooter] ++
-        zipWith doLine blankBoardLines (Spl.chunksOf 19 $ Vec.toList v) ++
+        zipWith doLine blankBoardLines (Spl.chunksOf 19 $ V.toList v) ++
         [headerFooter]
   where
     doSq _ (Just x) = showSq x

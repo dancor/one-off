@@ -1,6 +1,6 @@
 module Color where
 
-#include <h>
+import qualified Text.ParserCombinators.Parsec as Psec
 
 data Color = Black | White deriving (Eq, Show)
 

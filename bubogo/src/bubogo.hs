@@ -11,7 +11,14 @@
 --   who is next
 -- - use "play pass" to get around these issues
 
-#include <h>
+import Control.Monad
+import Data.Char
+import Data.List
+import Data.Maybe
+import qualified Data.Vector as V
+import qualified Text.ParserCombinators.Parsec as Psec
+import System.IO
+import System.Process
 
 import Board
 import Color
@@ -36,15 +43,15 @@ getEval engErr = do
 ePut :: Engine -> String -> IO ()
 -- ePut e = hPutStrLn (eInH e)
 ePut e s = do
-    --putStrLn ("IN: " ++ s)
+    putStrLn ("IN: " ++ s)
     hPutStrLn (eInH e) s
 
 ePlayMove :: Engine -> Move -> IO ()
 ePlayMove e (Move color (Coord column row)) = do
-    when (color == White) $ ePut e "play pass"
+    --when (color == White) $ ePut e "play pass"
     ePut e $
         "play " ++ colorLtr color ++ " " ++ columnStr column ++ rowStr row
-    when (color == Black) $ ePut e "play pass"
+    --when (color == Black) $ ePut e "play pass"
 
 eSetBoard :: Engine -> Board -> IO ()
 eSetBoard e b = do
@@ -60,9 +67,9 @@ eSetMoves e moves = ePut e "clear_board" >> mapM_ (ePlayMove e) moves
 
 eGenMove :: Engine -> Color -> IO ()
 eGenMove e color = do
-    when (color == White) $ ePut e "play pass"
+    --when (color == White) $ ePut e "play pass"
     ePut e $ "genmove " ++ colorLtr color
-    when (color == Black) $ ePut e "play pass"
+    --when (color == Black) $ ePut e "play pass"
     hFlush (eInH e)
 
 evalAllMoves :: Engine -> Board -> Color -> IO ()
@@ -132,7 +139,8 @@ eAwaitMove :: Engine -> Color -> IO (Maybe Move)
 eAwaitMove e color = do
     mvCoordMb <- eAwaitMoves e color
     case mvCoordMb of
-      Just mv -> return $ Just $ head mv
+      Just [] -> error "eAwaitMove: got no moves"
+      Just (mv:_) -> return $ Just mv
       Nothing -> return Nothing
 
 eAwaitMoves :: Engine -> Color -> IO (Maybe [Move])
@@ -141,7 +149,7 @@ eAwaitMoves = eAwaitMovesAccum []
 eAwaitMovesAccum :: [Coord] -> Engine -> Color -> IO (Maybe [Move])
 eAwaitMovesAccum coords e color = do
     l <- hGetLine (eOutH e)
-    -- putStrLn $ "OUT: " ++ l
+    putStrLn $ "OUT: " ++ l
     case l of
       "= " -> eAwaitMovesAccum coords e color
       "= resign" -> do
@@ -149,7 +157,7 @@ eAwaitMovesAccum coords e color = do
           return Nothing
       '=':' ':s -> do
           case Psec.parse coordParser "" s of
-            Right _coord -> return $ Just (map (Move color) coords)
+            Right coord -> return $ Just [Move color coord]
             _ -> do
                 putStrLn "Could not understand engine move."
                 return Nothing
@@ -167,7 +175,7 @@ bPlayMoves b = mapM_ (bPlayMove b)
 
 withEngine :: (Engine -> IO a) -> IO a
 withEngine f = withCreateProcess (
-    (proc "my-go-engine" [])
+    (proc "gtp-engine" [])
     {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}) $
     -- \(Just inH) (Just outH) (Just errH) _engProc -> f (Engine inH outH errH)
     \(Just inH) (Just outH) (Just errH) _engProc -> do
@@ -175,6 +183,35 @@ withEngine f = withCreateProcess (
         hSetBuffering outH NoBuffering
         hSetBuffering errH NoBuffering
         f (Engine inH outH errH)
+
+setTime :: Engine -> IO ()
+setTime e = do
+  ePut e "time_settings 0 1 1"
+  return ()
+
+playEngine :: IO ()
+playEngine =
+  newBoardOf Nothing >>= \b -> withEngine $ \e -> setTime e >> go e b
+  where 
+  go e b = do
+    showBoard b >>= putStrLn >> hFlush stdout
+    gots <- getMove Black
+    go2 e b gots
+  go2 _ _ (GotQuit:_) = return ()
+  go2 e b (Got mv:gots) = do
+    bPlayMoves b [mv]
+    ePlayMove e mv
+    go2 e b gots
+  go2 e b (_:gots) = go2 e b gots
+  go2 e b [] = do
+    showBoard b >>= putStrLn >> hFlush stdout
+    mv <- eGenMove e White
+    eMvMb <- eAwaitMove e White
+    case eMvMb of
+      Nothing -> putStrLn "Got Nothing."
+      Just eMv -> do
+        bPlayMoves b [eMv]
+        go e b
 
 playRestartingEngine :: Color -> [Move] -> [GetMove] -> IO ()
 playRestartingEngine color moves queuedGots = do
@@ -211,6 +248,7 @@ playRestartingEngine color moves queuedGots = do
             playRestartingEngine (mColor $ moves !! l) (take l moves) rest
         GotQuit -> return ()
 
+{-
 gradeGame :: [Move] -> [Move] -> IO ()
 gradeGame _ [] = return ()
 gradeGame prevMoves (move:moves) = do
@@ -225,14 +263,15 @@ gradeGame prevMoves (move:moves) = do
       Just eMvs -> do
         b <- newBoardOf Nothing
         bPlayMoves b prevMoves
-        bFrozen <- Vec.freeze b
-        b2 <- Vec.thaw $ Vec.map (fmap Right) bFrozen
+        bFrozen <- V.freeze b
+        b2 <- V.thaw $ V.map (fmap Right) bFrozen
         zipWithM_ (\n coord -> bWrite b2 coord (Just $ Left n))
             [0 :: Int ..] $
             map mCoord (move : eMvs)
         showBoard b2 >>= putStrLn
         hFlush stdout
     gradeGame (prevMoves ++ [move]) moves
+-}
 
 -- It is assumed that the Board has Color at Coord.
 getChain :: Board -> Color -> Coord -> IO (BoardOf Bool)
@@ -305,6 +344,7 @@ readSgfMoves = catMaybes . map readSgfMoveLineMb . lines
       return $ Move c (Coord column row)
     readSgfMoveLineMb _ = Nothing
 
+{-
 doFile :: FilePath -> IO ()
 doFile f = do
     putStrLn "-----------------------"
@@ -312,12 +352,9 @@ doFile f = do
     putStrLn "-----------------------"
     mvs <- readSgfMoves <$> readFile f
     gradeGame [] mvs
+-}
 
 main :: IO ()
 main = do
-    args <- getArgs
-    mapM_ doFile args
-    -- mapM_ print mvs
-    --
-    -- args <- getArgs
-    -- playRestartingEngine Black [] []
+    --args <- getArgs
+    playEngine

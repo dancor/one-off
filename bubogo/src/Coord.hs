@@ -1,6 +1,8 @@
 module Coord where
 
-#include <h>
+import Data.Char
+import Data.Maybe
+import qualified Text.ParserCombinators.Parsec as Psec
 
 data Coord = Coord
   { cColumn :: !Int
