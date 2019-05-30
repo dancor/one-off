@@ -5,8 +5,9 @@ module Board where
 
 import Data.List
 import qualified Data.List.Split as Spl
+import Data.Vector (Vector, (//), (!))
 import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as VM
+import qualified Data.Vector.Mutable as MV
 import System.FilePath
 import System.Process
 import qualified Text.ParserCombinators.Parsec as Psec
@@ -14,21 +15,31 @@ import qualified Text.ParserCombinators.Parsec as Psec
 import Color
 import Coord
 
-type BoardOf a = VM.IOVector a
-
+type BoardOf a = V.Vector a
+type MBoardOf a = MV.IOVector a
 type Board = BoardOf (Maybe Color)
+type MBoard = MBoardOf (Maybe Color)
 
-newBoardOf :: a -> IO (BoardOf a)
-newBoardOf = VM.replicate (19 * 19)
+newBoardOf :: a -> BoardOf a
+newBoardOf = V.replicate (19 * 19)
+
+newMBoardOf :: a -> IO (MBoardOf a)
+newMBoardOf = MV.replicate (19 * 19)
 
 bIndex :: Coord -> Int
 bIndex (Coord column row) = 19 * row + column
 
-bRead :: BoardOf a -> Coord -> IO a
-bRead b = VM.read b . bIndex
+bRead :: BoardOf a -> Coord -> a
+bRead b c = b ! bIndex c
 
-bWrite :: BoardOf a -> Coord -> a -> IO ()
-bWrite b = VM.write b . bIndex
+mBRead :: MBoardOf a -> Coord -> IO a
+mBRead b = MV.read b . bIndex
+
+--bWrite :: BoardOf a -> Coord -> a -> BoardOf a
+--bWrite b c x = b // [(bIndex c, x)]
+
+mBWrite :: MBoardOf a -> Coord -> a -> IO ()
+mBWrite b = MV.write b . bIndex
 
 class ShowSq a where
   showSq :: a -> Char
@@ -41,13 +52,10 @@ instance ShowSq (Either Int Color) where
   showSq (Left n) = if n >= 0 && n <= 9 then head (show n) else '?'
   showSq (Right color) = showSq color
 
-showBoard :: ShowSq a => BoardOf (Maybe a) -> IO String
-showBoard bd = do
-    v <- V.freeze bd
-    return $ intercalate "\n" $
-        [headerFooter] ++
-        zipWith doLine blankBoardLines (Spl.chunksOf 19 $ V.toList v) ++
-        [headerFooter]
+showBoard :: ShowSq a => BoardOf (Maybe a) -> String
+showBoard b = intercalate "\n" $ [headerFooter] ++
+    zipWith doLine blankBoardLines (Spl.chunksOf 19 $ V.toList b) ++
+    [headerFooter]
   where
     doSq _ (Just x) = showSq x
     doSq bg _ = bg

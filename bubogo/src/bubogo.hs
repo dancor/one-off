@@ -43,7 +43,7 @@ getEval engErr = do
 ePut :: Engine -> String -> IO ()
 -- ePut e = hPutStrLn (eInH e)
 ePut e s = do
-    putStrLn ("IN: " ++ s)
+    slog $ "IN: " ++ s
     hPutStrLn (eInH e) s
 
 ePlayMove :: Engine -> Move -> IO ()
@@ -57,8 +57,7 @@ eSetBoard :: Engine -> Board -> IO ()
 eSetBoard e b = do
     ePut e "clear_board"
     forM_ allCoords $ \c -> do
-        sqHas <- bRead b c
-        case sqHas of
+        case bRead b c of
           Just color -> ePlayMove e (Move color c)
           _ -> return ()
 
@@ -72,6 +71,7 @@ eGenMove e color = do
     --when (color == Black) $ ePut e "play pass"
     hFlush (eInH e)
 
+{-
 evalAllMoves :: Engine -> Board -> Color -> IO ()
 evalAllMoves e b color = do
     let doSq c = do
@@ -101,6 +101,7 @@ readBoard b = zipWithM_ readRow [0..18] . take 19 . tail
     decode '●' = Just Black
     decode '℗' = Just White
     decode _ = Nothing
+-}
 
 data GetMove
     = GotQuit
@@ -146,10 +147,12 @@ eAwaitMove e color = do
 eAwaitMoves :: Engine -> Color -> IO (Maybe [Move])
 eAwaitMoves = eAwaitMovesAccum []
 
+slog = putStrLn
+
 eAwaitMovesAccum :: [Coord] -> Engine -> Color -> IO (Maybe [Move])
 eAwaitMovesAccum coords e color = do
     l <- hGetLine (eOutH e)
-    putStrLn $ "OUT: " ++ l
+    slog $ "OUT: " ++ l
     case l of
       "= " -> eAwaitMovesAccum coords e color
       "= resign" -> do
@@ -170,8 +173,14 @@ eAwaitMovesAccum coords e color = do
           else eAwaitMovesAccum coords e color
       _ -> eAwaitMovesAccum coords e color
 
-bPlayMoves :: Board -> [Move] -> IO ()
-bPlayMoves b = mapM_ (bPlayMove b)
+mutBPlayMoves :: MBoard -> [Move] -> IO ()
+mutBPlayMoves b = mapM_ (bPlayMove b)
+
+bPlayMoves :: Board -> [Move] -> IO Board
+bPlayMoves b mvs = do
+  mutB <- V.thaw b
+  mutBPlayMoves mutB mvs
+  V.freeze mutB
 
 withEngine :: (Engine -> IO a) -> IO a
 withEngine f = withCreateProcess (
@@ -190,32 +199,43 @@ setTime e = do
   return ()
 
 playEngine :: IO ()
-playEngine =
-  newBoardOf Nothing >>= \b -> withEngine $ \e -> setTime e >> go e b
-  where 
-  go e b = do
-    showBoard b >>= putStrLn >> hFlush stdout
-    gots <- getMove Black
-    go2 e b gots
-  go2 _ _ (GotQuit:_) = return ()
-  go2 e b (Got mv:gots) = do
-    bPlayMoves b [mv]
+playEngine = withEngine $ \e -> setTime e >> go e [newBoardOf Nothing] [] where
+  goMv e b mv = do
+    b2 <- bPlayMoves b [mv]
     ePlayMove e mv
-    go2 e b gots
-  go2 e b (_:gots) = go2 e b gots
-  go2 e b [] = do
-    showBoard b >>= putStrLn >> hFlush stdout
-    mv <- eGenMove e White
+    return b2
+  go :: Engine -> [Board] -> [Move] -> IO ()
+  go e bs@(b:_) mvs = do
+    putStrLn (showBoard b) >> hFlush stdout
+    gots <- getMove Black
+    go2 e bs mvs gots
+  go2 :: Engine -> [Board] -> [Move] -> [GetMove] -> IO ()
+  go2 _ _ _ (GotQuit:_) = return ()
+  go2 e (_:b:bs) (_:_:mvs) (GotUndo:gots) = do
+    eSetBoard e b
+    go2 e (b:bs) mvs gots
+  go2 e bs mvs (GotUndo:gots) = print bs
+  go2 e (b:bs) mvs [Got mv] = do
+    b2 <- goMv e b mv
+    putStrLn (showBoard b2) >> hFlush stdout
+    eGenMove e White
+    putStrLn . intercalate " " $ map showMove (mv:mvs)
     eMvMb <- eAwaitMove e White
     case eMvMb of
       Nothing -> putStrLn "Got Nothing."
       Just eMv -> do
-        bPlayMoves b [eMv]
-        go e b
+        b3 <- bPlayMoves b2 [eMv]
+        go e (b3:b:bs) (eMv:mv:mvs)
+  go2 e (b:bs) mvs (Got mv:gots) = do
+    b2 <- goMv e b mv
+    go2 e (b2:bs) (mv:mvs) gots
+  go2 e bs mvs (_:gots) = go2 e bs mvs gots
+  go2 e bs mvs [] = go e bs mvs
 
+{-
 playRestartingEngine :: Color -> [Move] -> [GetMove] -> IO ()
 playRestartingEngine color moves queuedGots = do
-    b <- newBoardOf Nothing
+    b <- newMBoardOf Nothing
     bPlayMoves b moves
     showBoard b >>= putStrLn
     hFlush stdout
@@ -248,7 +268,6 @@ playRestartingEngine color moves queuedGots = do
             playRestartingEngine (mColor $ moves !! l) (take l moves) rest
         GotQuit -> return ()
 
-{-
 gradeGame :: [Move] -> [Move] -> IO ()
 gradeGame _ [] = return ()
 gradeGame prevMoves (move:moves) = do
@@ -274,19 +293,19 @@ gradeGame prevMoves (move:moves) = do
 -}
 
 -- It is assumed that the Board has Color at Coord.
-getChain :: Board -> Color -> Coord -> IO (BoardOf Bool)
+getChain :: MBoard -> Color -> Coord -> IO (MBoardOf Bool)
 getChain b color c = do
-    chain <- newBoardOf False
+    chain <- newMBoardOf False
     growChain b chain color c
     return chain
 
-growChain :: Board -> BoardOf Bool -> Color -> Coord -> IO ()
+growChain :: MBoard -> MBoardOf Bool -> Color -> Coord -> IO ()
 growChain b chain color c = do
-    alreadySeen <- bRead chain c
+    alreadySeen <- mBRead chain c
     unless alreadySeen $ do
-        v <- bRead b c
+        v <- mBRead b c
         when (v == Just color) $ do
-            bWrite chain c True
+            mBWrite chain c True
             mapM_ (growChain b chain color) $ coordNeighbors c
 
 orM :: [IO Bool] -> IO Bool
@@ -298,31 +317,31 @@ orM (x:xs) = do
 anyM :: (a -> IO Bool) -> [a] -> IO Bool
 anyM f xs = orM (map f xs)
 
-chainCoords :: BoardOf Bool -> IO [Coord]
+chainCoords :: MBoardOf Bool -> IO [Coord]
 chainCoords chain = catMaybes <$> mapM isIn allCoords
   where
     isIn c = do
-        inChain <- bRead chain c
+        inChain <- mBRead chain c
         return $ if inChain then Just c else Nothing
 
-chainHasLiberties :: Board -> BoardOf Bool -> IO Bool
+chainHasLiberties :: MBoard -> MBoardOf Bool -> IO Bool
 chainHasLiberties b chain = anyM cHasLib =<< chainCoords chain
-  where cHasLib = anyM (fmap isNothing . bRead b) . coordNeighbors
+  where cHasLib = anyM (fmap isNothing . mBRead b) . coordNeighbors
 
-captureChain :: Board -> BoardOf Bool -> IO ()
-captureChain b chain = mapM_ (\c -> bWrite b c Nothing) =<< chainCoords chain
+captureChain :: MBoard -> MBoardOf Bool -> IO ()
+captureChain b chain = mapM_ (\c -> mBWrite b c Nothing) =<< chainCoords chain
 
-tryCapture :: Board -> Color -> Coord -> IO ()
+tryCapture :: MBoard -> Color -> Coord -> IO ()
 tryCapture b capturedColor c = do
-    v <- bRead b c
+    v <- mBRead b c
     when (v == Just capturedColor) $ do
         chain <- getChain b capturedColor c
         hasLib <- chainHasLiberties b chain
         unless hasLib $ captureChain b chain
 
-bPlayMove :: Board -> Move -> IO ()
+bPlayMove :: MBoard -> Move -> IO ()
 bPlayMove b (Move color c) = do
-    bWrite b c (Just color)
+    mBWrite b c (Just color)
     mapM_ (tryCapture b (otherColor color)) $ coordNeighbors c
 
 readSgfMoves :: String -> [Move]

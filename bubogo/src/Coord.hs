@@ -1,5 +1,6 @@
 module Coord where
 
+import Control.Monad
 import Data.Char
 import Data.Maybe
 import qualified Text.ParserCombinators.Parsec as Psec
@@ -41,7 +42,10 @@ coordParser = do
     case columnMb of
       Just column -> do 
         rowPreFlip <- read <$> Psec.many1 Psec.digit
-        return $ Coord column (19 - rowPreFlip)
+        let row = 19 - rowPreFlip
+        when (column < 0 || column >= 19 || row < 0 || row >= 19) $
+            fail "Out of range"
+        return $ Coord column row
       Nothing -> fail "Bad column"
 
 allCoords :: [Coord]
