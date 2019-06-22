@@ -3,8 +3,10 @@
 
 module Board where
 
+import Control.Monad
 import Data.List
 import qualified Data.List.Split as Spl
+import Data.Maybe
 import Data.Vector (Vector, (//), (!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
@@ -14,17 +16,18 @@ import qualified Text.ParserCombinators.Parsec as Psec
 
 import Color
 import Coord
+import Move
 
 type BoardOf a = V.Vector a
-type MBoardOf a = MV.IOVector a
+type MutBoardOf a = MV.IOVector a
 type Board = BoardOf (Maybe Color)
-type MBoard = MBoardOf (Maybe Color)
+type MutBoard = MutBoardOf (Maybe Color)
 
 newBoardOf :: a -> BoardOf a
 newBoardOf = V.replicate (19 * 19)
 
-newMBoardOf :: a -> IO (MBoardOf a)
-newMBoardOf = MV.replicate (19 * 19)
+newMutBoardOf :: a -> IO (MutBoardOf a)
+newMutBoardOf = MV.replicate (19 * 19)
 
 bIndex :: Coord -> Int
 bIndex (Coord column row) = 19 * row + column
@@ -32,14 +35,75 @@ bIndex (Coord column row) = 19 * row + column
 bRead :: BoardOf a -> Coord -> a
 bRead b c = b ! bIndex c
 
-mBRead :: MBoardOf a -> Coord -> IO a
-mBRead b = MV.read b . bIndex
+mutBRead :: MutBoardOf a -> Coord -> IO a
+mutBRead b = MV.read b . bIndex
 
 --bWrite :: BoardOf a -> Coord -> a -> BoardOf a
 --bWrite b c x = b // [(bIndex c, x)]
 
-mBWrite :: MBoardOf a -> Coord -> a -> IO ()
-mBWrite b = MV.write b . bIndex
+mutBWrite :: MutBoardOf a -> Coord -> a -> IO ()
+mutBWrite b = MV.write b . bIndex
+
+tryCapture :: MutBoard -> Color -> Coord -> IO ()
+tryCapture b capturedColor c = do
+    v <- mutBRead b c
+    when (v == Just capturedColor) $ do
+        chain <- getChain b capturedColor c
+        hasLib <- chainHasLiberties b chain
+        unless hasLib $ captureChain b chain
+
+mutBPlayMove :: MutBoard -> Move -> IO ()
+mutBPlayMove b (Move color c) = do
+    mutBWrite b c (Just color)
+    mapM_ (tryCapture b (otherColor color)) $ coordNeighbors c
+
+mutBPlayMoves :: MutBoard -> [Move] -> IO ()
+mutBPlayMoves b = mapM_ (mutBPlayMove b)
+
+bPlayMoves :: Board -> [Move] -> IO Board
+bPlayMoves b mvs = do
+  mutB <- V.thaw b
+  mutBPlayMoves mutB mvs
+  V.freeze mutB
+
+-- It is assumed that the Board has Color at Coord.
+getChain :: MutBoard -> Color -> Coord -> IO (MutBoardOf Bool)
+getChain b color c = do
+    chain <- newMutBoardOf False
+    growChain b chain color c
+    return chain
+
+growChain :: MutBoard -> MutBoardOf Bool -> Color -> Coord -> IO ()
+growChain b chain color c = do
+    alreadySeen <- mutBRead chain c
+    unless alreadySeen $ do
+        v <- mutBRead b c
+        when (v == Just color) $ do
+            mutBWrite chain c True
+            mapM_ (growChain b chain color) $ coordNeighbors c
+
+orM :: [IO Bool] -> IO Bool
+orM [] = return False
+orM (x:xs) = do
+    r <- x
+    if r then return True else orM xs
+
+anyM :: (a -> IO Bool) -> [a] -> IO Bool
+anyM f xs = orM (map f xs)
+
+chainCoords :: MutBoardOf Bool -> IO [Coord]
+chainCoords chain = catMaybes <$> mapM isIn allCoords
+  where
+    isIn c = do
+        inChain <- mutBRead chain c
+        return $ if inChain then Just c else Nothing
+
+chainHasLiberties :: MutBoard -> MutBoardOf Bool -> IO Bool
+chainHasLiberties b chain = anyM cHasLib =<< chainCoords chain
+  where cHasLib = anyM (fmap isNothing . mutBRead b) . coordNeighbors
+
+captureChain :: MutBoard -> MutBoardOf Bool -> IO ()
+captureChain b chain = mapM_ (\c -> mutBWrite b c Nothing) =<< chainCoords chain
 
 class ShowSq a where
   showSq :: a -> Char
