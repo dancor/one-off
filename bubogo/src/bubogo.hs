@@ -23,6 +23,7 @@ import System.Process
 import Board
 import Color
 import Coord
+import Engine
 import Move
 
 data Engine = Engine
@@ -37,7 +38,6 @@ getEval engErr = do
     if "1: " `isPrefixOf` l
       then return $ takeWhile (/= '[') (words l !! 3)
       else do
-        -- putStrLn l
         getEval engErr
 
 ePut :: Engine -> String -> IO ()
@@ -67,38 +67,6 @@ eGenMove e color = do
     ePut e $ "genmove " ++ colorLtr color
     --when (color == Black) $ ePut e "play pass"
     hFlush (eInH e)
-
-{-
-evalAllMoves :: Engine -> Board -> Color -> IO ()
-evalAllMoves e b color = do
-    let doSq c = do
-            eSetBoard e b
-            ePlayMove e (Move color c)
-            eGenMove e (otherColor color)
-            eval <- getEval $ eErrH e
-            putStr $ show $ 9 - min 9 (floor $ read eval / 10)
-    forM_ [0..18] $ \row -> do
-        forM_ [0..18] $ \column -> do
-            let c = Coord column row
-            sqHas <- bRead b c
-            case sqHas of
-              Just Black -> putStr "●"
-              Just White -> putStr "℗"
-              _ -> doSq c
-        putStrLn ""
-
-readBoard :: Board -> [String] -> IO ()
-readBoard b = zipWithM_ readRow [0..18] . take 19 . tail
-  where
-    readRow row =
-        zipWithM_ (readSq row) [0..18] . take 19 . everyOther . drop 2
-    readSq row column = bWrite b (Coord column row) . decode
-    everyOther (x:_:xs) = x : everyOther xs
-    everyOther _ = []
-    decode '●' = Just Black
-    decode '℗' = Just White
-    decode _ = Nothing
--}
 
 data GetMove
     = GotQuit
