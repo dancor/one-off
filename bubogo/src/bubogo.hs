@@ -32,14 +32,6 @@ data Engine = Engine
   , eErrH :: !Handle
   }
 
-getEval :: Handle -> IO String
-getEval engErr = do
-    l <- hGetLine engErr
-    if "1: " `isPrefixOf` l
-      then return $ takeWhile (/= '[') (words l !! 3)
-      else do
-        getEval engErr
-
 ePut :: Engine -> String -> IO ()
 ePut e s = do
     slog $ "IN: " ++ s
