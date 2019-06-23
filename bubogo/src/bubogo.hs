@@ -53,12 +53,13 @@ setTime e = do
     ePut e "time_settings 0 1 1"
     return ()
 
-bgColor, boardColor, lineColor, whiteColor, blackColor :: V4 Byte
-bgColor    = V4 0xcc 0xff 0xcc 0xff
-boardColor = V4 0xee 0xee 0x00 0xff
-lineColor  = V4 0x00 0x00 0x00 0xff
-whiteColor = V4 0xff 0xff 0xff 0xff
-blackColor = V4 0x44 0x44 0x44 0xff
+bgColor, boardColor, lineColor, whiteColor, blackColor, recentColor :: V4 Byte
+bgColor     = V4 0xcc 0xff 0xcc 0xff
+boardColor  = V4 0xee 0xee 0x00 0xff
+lineColor   = V4 0x00 0x00 0x00 0xff
+whiteColor  = V4 0xff 0xff 0xff 0xff
+blackColor  = V4 0x44 0x44 0x44 0xff
+recentColor = V4 0xff 0x88 0x88 0xff
 
 fromI :: Num a => Int -> a
 fromI = fromIntegral
@@ -76,10 +77,11 @@ data AppState = AppState
     , sBoardTopY       :: Int
     , sCellSize        :: Int
     , sEngineMoveQueue :: TQueue (Maybe Move)
-    , sUserMoveQueue   :: TQueue Move
+    , sUserMoveQueue   :: TQueue [Move]
     , sRenderer        :: Renderer
     , sTexture         :: Texture
     , sBoard           :: Board
+    , sRecent          :: Maybe Coord
     }
 
 genWindowContent :: AppState -> IO AppState
@@ -114,6 +116,11 @@ genWindowContent
         fill whiteColor
         sequence_ [sequence_ [when (bRead board (Coord y x) == Just White) $
             circle (cellXY x y) (toD cellSize)| x <- [0..18]] | y <- [0..18]]
+        case sRecent st of
+          Just (Coord y x) -> do
+            fill recentColor
+            circle (adj $ cellCenter x y) markerR
+          _ -> return ()
     return $ st {sBoardLeftX = boardLeftX, sBoardTopY = boardTopY, 
         sCellSize = cellSize}
 
@@ -132,13 +139,13 @@ main = do
     renderer <- createRenderer window (-1) defaultRenderer
     texture <- createCairoTexture' renderer window
     st <- genWindowContent $ AppState winW winH 0 0 0
-        engineMoveQueue userMoveQueue renderer texture board
+        engineMoveQueue userMoveQueue renderer texture board Nothing
     copy renderer texture Nothing Nothing
     present renderer
 
     let go e = do
-            userMove <- atomically $ readTQueue userMoveQueue
-            ePlayMove e userMove
+            userMoves <- atomically $ readTQueue userMoveQueue
+            mapM_ (ePlayMove e) userMoves
             engineMove <- eGenMove e White
             atomically $ writeTQueue engineMoveQueue engineMove
             go e
@@ -175,15 +182,24 @@ appLoop st = do
     (st2, presentDue) <- case catMaybes $ map procPress events of
       (x,y):_ -> do
           let userMove = Move Black $ Coord y x
-          atomically $ writeTQueue (sUserMoveQueue st) userMove
-          board <- bPlayMoves (sBoard st) [userMove]
+              userMoves = if y == 3 && x == 3
+                then [userMove
+                  , Move Black $ Coord 3 15
+                  , Move Black $ Coord 15 3
+                  , Move Black $ Coord 15 15
+                  ]
+                else [userMove]
+          atomically $ writeTQueue (sUserMoveQueue st) userMoves
+          board <- bPlayMoves (sBoard st) userMoves
           _ <- genWindowContent $ st {sBoard = board}
           copy (sRenderer st) (sTexture st) Nothing Nothing
           present (sRenderer st)
-          Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
+          Just engineMove@(Move _ engineCoord) <-
+              atomically $ readTQueue (sEngineMoveQueue st)
           print engineMove
           board2 <- bPlayMoves board [engineMove]
-          st2 <- genWindowContent $ st {sBoard = board2}
+          st2 <- genWindowContent $
+              st {sBoard = board2, sRecent = Just engineCoord}
           copy (sRenderer st) (sTexture st) Nothing Nothing
           return (st2, True)
       _ -> return (st, any needsPresent events)
