@@ -69,13 +69,22 @@ toD = fromIntegral
 toI :: Integral a => a -> Int
 toI = fromIntegral
 
-{-
-data WinSt = WinSt
-  { (Int, Int, Int)
--}
+data AppState = AppState
+    { sWinW            :: Int
+    , sWinH            :: Int
+    , sBoardLeftX      :: Int
+    , sBoardTopY       :: Int
+    , sCellSize        :: Int
+    , sEngineMoveQueue :: TQueue (Maybe Move)
+    , sUserMoveQueue   :: TQueue Move
+    , sRenderer        :: Renderer
+    , sTexture         :: Texture
+    , sBoard           :: Board
+    }
 
-genWindowContent :: Texture -> Int -> Int -> IO (Int, Int, Int)
-genWindowContent texture winW winH = do
+genWindowContent :: AppState -> IO AppState
+genWindowContent
+        st@AppState{sWinW=winW,sWinH=winH,sTexture=texture,sBoard=board} = do
     let sqSize = min winW winH
         cellSize = sqSize `div` 19
         halfCell = cellSize `div` 2
@@ -90,51 +99,58 @@ genWindowContent texture winW winH = do
             V2 (toD $ colCenterX x - halfCell) (toD $ rowCenterY y - halfCell)
     withCairoTexture' texture $ runCanvas $ do
         background bgColor
+        stroke lineColor
         fill boardColor
         rect $ D (toD boardLeftX) (toD boardTopY) (toD boardW) (toD boardH)
         sequence_ [line (cellCenter 0 y) (cellCenter 18 y) | y <- [0..18]]
         sequence_ [line (cellCenter x 0) (cellCenter x 18) | x <- [0..18]]
+        fill blackColor
+        sequence_ [sequence_ [when (bRead board (Coord y x) == Just Black) $
+            circle (cellXY x y) (toD cellSize)| x <- [0..18]] | y <- [0..18]]
         fill whiteColor
-        circle (cellXY 0 0) (toD cellSize)
-    return (boardLeftX, boardTopY, cellSize)
+        sequence_ [sequence_ [when (bRead board (Coord y x) == Just White) $
+            circle (cellXY x y) (toD cellSize)| x <- [0..18]] | y <- [0..18]]
+    return $ st {sBoardLeftX = boardLeftX, sBoardTopY = boardTopY, 
+        sCellSize = cellSize}
 
 main :: IO ()
 main = do
+    engineMoveQueue <- atomically newTQueue   
+    userMoveQueue <- atomically newTQueue   
     initializeAll
     let winW = 700
         winH = 700
+        board = newBoardOf Nothing
     window <- createWindow "Bubogo" $ defaultWindow
         { windowInitialSize = V2 (fromI winW) (fromI winH)
         , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
         }
     renderer <- createRenderer window (-1) defaultRenderer
     texture <- createCairoTexture' renderer window
-    (boardLeftX, boardTopY, cellSize) <- genWindowContent texture winW winH
+    st <- genWindowContent $ AppState winW winH 0 0 0
+        engineMoveQueue userMoveQueue renderer texture board
     copy renderer texture Nothing Nothing
     present renderer
 
-    engineMoveQueue <- atomically newTQueue   
-    userMoveQueue <- atomically newTQueue   
     let go e = do
             userMove <- atomically $ readTQueue userMoveQueue
             ePlayMove e userMove
             engineMove <- eGenMove e White
             atomically $ writeTQueue engineMoveQueue engineMove
             go e
-    forkIO $ withEngine $ \e -> setTime e >> go e
-    appLoop (boardLeftX, boardTopY, cellSize, engineMoveQueue, userMoveQueue,
-        renderer, texture)
+    _ <- forkIO $ withEngine $ \e -> setTime e >> go e
+    appLoop st
 
-posToCell (boardLeftX, boardTopY, cellSize) (P (V2 x y)) =
+posToCell :: AppState -> Int -> Int -> Maybe (Int, Int)
+posToCell st x y =
     if cellX >= 0 && cellX <= 18 && cellY >= 0 && cellY <= 18
     then Just (cellX, cellY) else Nothing
   where
-    cellX = (toI x - boardLeftX) `div` cellSize
-    cellY = (toI y - boardTopY)  `div` cellSize
+    cellX = (x - sBoardLeftX st) `div` sCellSize st
+    cellY = (y - sBoardTopY st)  `div` sCellSize st
 
--- appLoop :: WinSt -> Renderer -> Texture -> IO ()
-appLoop st@(boardLeftX, boardTopY, cellSize, engineMoveQueue, userMoveQueue,
-        renderer, texture) = do
+appLoop :: AppState -> IO ()
+appLoop st = do
     events <- pollEvents
     let isQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
@@ -148,17 +164,25 @@ appLoop st@(boardLeftX, boardTopY, cellSize, engineMoveQueue, userMoveQueue,
           _ -> False
         procPress event = case eventPayload event of
           MouseButtonEvent
-            (MouseButtonEventData _ Pressed _ ButtonLeft _ pos) ->
-            posToCell (boardLeftX, boardTopY, cellSize) pos
+            (MouseButtonEventData _ Pressed _ ButtonLeft _ (P (V2 x y))) ->
+            posToCell st (toI x) (toI y)
           _ -> Nothing
         quitDue = any isQPress events
-        presentDue = any needsPresent events
-    when presentDue $ present renderer
-    case catMaybes $ map procPress events of
+    (st2, presentDue) <- case catMaybes $ map procPress events of
       (x,y):_ -> do
-          atomically $ writeTQueue userMoveQueue $ Move Black $ Coord y x
-          engineMove <- atomically $ readTQueue engineMoveQueue
+          let userMove = Move Black $ Coord y x
+          atomically $ writeTQueue (sUserMoveQueue st) userMove
+          board <- bPlayMoves (sBoard st) [userMove]
+          _ <- genWindowContent $ st {sBoard = board}
+          copy (sRenderer st) (sTexture st) Nothing Nothing
+          present (sRenderer st)
+          Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
           print engineMove
-      _ -> return ()
+          board2 <- bPlayMoves board [engineMove]
+          st2 <- genWindowContent $ st {sBoard = board2}
+          copy (sRenderer st) (sTexture st) Nothing Nothing
+          return (st2, True)
+      _ -> return (st, any needsPresent events)
+    when presentDue $ present (sRenderer st)
     threadDelay 200000
-    unless quitDue $ appLoop st
+    unless quitDue $ appLoop st2
