@@ -22,6 +22,7 @@ import qualified Data.Vector as V
 import qualified Text.ParserCombinators.Parsec as Psec
 -}
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Monad
 import Data.Maybe
 import Graphics.Rendering.Cairo.Canvas hiding (toD)
@@ -33,8 +34,8 @@ import System.IO
 import System.Process
 
 import Board
---import Color
---import Coord
+import Color
+import Coord
 import Engine
 import Move
 
@@ -52,44 +53,7 @@ setTime e = do
     ePut e "time_settings 0 1 1"
     return ()
 
-playEngine :: IO ()
-playEngine = withEngine $ \e -> setTime e >> go e [newBoardOf Nothing] [] where
-    go :: Engine -> [Board] -> [Move] -> IO ()
-    go _ _ _ = return ()
-    {-
-    goMv e b mv = do
-        b2 <- bPlayMoves b [mv]
-        ePlayMove e mv
-        return b2
-    go :: Engine -> [Board] -> [Move] -> IO ()
-    go e bs@(b:_) mvs = do
-        putStrLn (showBoard b) >> hFlush stdout
-        gots <- getMove Black
-        go2 e bs mvs gots
-    go2 :: Engine -> [Board] -> [Move] -> [GetMove] -> IO ()
-    go2 _ _ _ (GotQuit:_) = return ()
-    go2 e (_:b:bs) (_:_:mvs) (GotUndo:gots) = do
-        eSetBoard e b
-        go2 e (b:bs) mvs gots
-    go2 e bs mvs (GotUndo:gots) = print bs
-    go2 e (b:bs) mvs [Got mv] = do
-        b2 <- goMv e b mv
-        putStrLn (showBoard b2) >> hFlush stdout
-        eGenMove e White
-        putStrLn . intercalate " " $ map showMove (mv:mvs)
-        eMvMb <- eAwaitMove e White
-        case eMvMb of
-          Nothing -> putStrLn "Got Nothing."
-          Just eMv -> do
-            b3 <- bPlayMoves b2 [eMv]
-            go e (b3:b:bs) (eMv:mv:mvs)
-    go2 e (b:bs) mvs (Got mv:gots) = do
-        b2 <- goMv e b mv
-        go2 e (b2:bs) (mv:mvs) gots
-    go2 e bs mvs (_:gots) = go2 e bs mvs gots
-    go2 e bs mvs [] = go e bs mvs
-    -}
-
+bgColor, boardColor, lineColor, whiteColor, blackColor :: V4 Byte
 bgColor    = V4 0xcc 0xff 0xcc 0xff
 boardColor = V4 0xee 0xee 0x00 0xff
 lineColor  = V4 0x00 0x00 0x00 0xff
@@ -105,6 +69,12 @@ toD = fromIntegral
 toI :: Integral a => a -> Int
 toI = fromIntegral
 
+{-
+data WinSt = WinSt
+  { (Int, Int, Int)
+-}
+
+genWindowContent :: Texture -> Int -> Int -> IO (Int, Int, Int)
 genWindowContent texture winW winH = do
     let sqSize = min winW winH
         cellSize = sqSize `div` 19
@@ -139,11 +109,21 @@ main = do
         }
     renderer <- createRenderer window (-1) defaultRenderer
     texture <- createCairoTexture' renderer window
-    winSt <- genWindowContent texture winW winH
+    (boardLeftX, boardTopY, cellSize) <- genWindowContent texture winW winH
     copy renderer texture Nothing Nothing
     present renderer
-    appLoop winSt renderer texture
-    --playEngine
+
+    engineMoveQueue <- atomically newTQueue   
+    userMoveQueue <- atomically newTQueue   
+    let go e = do
+            userMove <- atomically $ readTQueue userMoveQueue
+            ePlayMove e userMove
+            engineMove <- eGenMove e White
+            atomically $ writeTQueue engineMoveQueue engineMove
+            go e
+    forkIO $ withEngine $ \e -> setTime e >> go e
+    appLoop (boardLeftX, boardTopY, cellSize, engineMoveQueue, userMoveQueue,
+        renderer, texture)
 
 posToCell (boardLeftX, boardTopY, cellSize) (P (V2 x y)) =
     if cellX >= 0 && cellX <= 18 && cellY >= 0 && cellY <= 18
@@ -152,8 +132,9 @@ posToCell (boardLeftX, boardTopY, cellSize) (P (V2 x y)) =
     cellX = (toI x - boardLeftX) `div` cellSize
     cellY = (toI y - boardTopY)  `div` cellSize
 
---appLoop :: Renderer -> Texture -> IO ()
-appLoop winSt renderer texture = do
+-- appLoop :: WinSt -> Renderer -> Texture -> IO ()
+appLoop st@(boardLeftX, boardTopY, cellSize, engineMoveQueue, userMoveQueue,
+        renderer, texture) = do
     events <- pollEvents
     let isQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
@@ -168,14 +149,16 @@ appLoop winSt renderer texture = do
         procPress event = case eventPayload event of
           MouseButtonEvent
             (MouseButtonEventData _ Pressed _ ButtonLeft _ pos) ->
-            posToCell winSt pos
+            posToCell (boardLeftX, boardTopY, cellSize) pos
           _ -> Nothing
         quitDue = any isQPress events
         presentDue = any needsPresent events
     when presentDue $ present renderer
     case catMaybes $ map procPress events of
       (x,y):_ -> do
-        return ()
+          atomically $ writeTQueue userMoveQueue $ Move Black $ Coord y x
+          engineMove <- atomically $ readTQueue engineMoveQueue
+          print engineMove
       _ -> return ()
     threadDelay 200000
-    unless quitDue $ appLoop winSt renderer texture
+    unless quitDue $ appLoop st
