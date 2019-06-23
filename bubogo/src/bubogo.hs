@@ -180,7 +180,8 @@ appLoop st = do
           _ -> Nothing
         quitDue = any isQPress events
     (st2, presentDue) <- case catMaybes $ map procPress events of
-      (x,y):_ -> do
+      (x,y):_ -> case bRead (sBoard st) (Coord y x) of
+        Nothing -> do
           let userMove = Move Black $ Coord y x
               userMoves = if y == 3 && x == 3
                 then [userMove
@@ -202,6 +203,7 @@ appLoop st = do
               st {sBoard = board2, sRecent = Just engineCoord}
           copy (sRenderer st) (sTexture st) Nothing Nothing
           return (st2, True)
+        _ -> return (st, any needsPresent events)
       _ -> return (st, any needsPresent events)
     when presentDue $ present (sRenderer st)
     threadDelay 200000
