@@ -97,6 +97,8 @@ genWindowContent
         cellCenter x y = V2 (toD $ colCenterX x) (toD $ rowCenterY y)
         cellXY x y =
             V2 (toD $ colCenterX x - halfCell) (toD $ rowCenterY y - halfCell)
+        markerR = toD cellSize / 4
+        adj (V2 x y) = V2 (x - markerR / 2) (y - markerR / 2)
     withCairoTexture' texture $ runCanvas $ do
         background bgColor
         stroke lineColor
@@ -105,6 +107,8 @@ genWindowContent
         sequence_ [line (cellCenter 0 y) (cellCenter 18 y) | y <- [0..18]]
         sequence_ [line (cellCenter x 0) (cellCenter x 18) | x <- [0..18]]
         fill blackColor
+        mapM_ (\[x,y] -> circle (adj $ cellCenter x y) markerR) $
+            sequence $ replicate 2 [3,9,15]
         sequence_ [sequence_ [when (bRead board (Coord y x) == Just Black) $
             circle (cellXY x y) (toD cellSize)| x <- [0..18]] | y <- [0..18]]
         fill whiteColor
