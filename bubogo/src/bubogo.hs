@@ -13,45 +13,23 @@
 --   who is next
 -- - use "play pass" to get around these issues
 
-{-
-import Control.Monad
-import Data.Char
-import Data.List
-import Data.Maybe
-import qualified Data.Vector as V
-import qualified Text.ParserCombinators.Parsec as Psec
--}
 import Control.Concurrent
 import Control.Concurrent.STM
+import Control.Exception
 import Control.Monad
 import Data.Maybe
+import GHC.IO.Exception
 import Graphics.Rendering.Cairo.Canvas hiding (toD)
 import Linear (V4(..))
 import Linear.V2 (V2(..))
 import SDL
 import SDL.Cairo
-import System.IO
-import System.Process
 
 import Board
 import Color
 import Coord
 import Engine
 import Move
-
-withEngine :: (Engine -> IO a) -> IO a
-withEngine f = withCreateProcess ((proc "gtp-engine" [])
-    {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}
-    ) $ \(Just inH) (Just outH) (Just errH) _engProc -> do
-        hSetBuffering inH  NoBuffering
-        hSetBuffering outH NoBuffering
-        hSetBuffering errH NoBuffering
-        f (Engine inH outH errH)
-
-setTime :: Engine -> IO ()
-setTime e = do
-    ePut e "time_settings 0 1 1"
-    return ()
 
 bgColor, boardColor, lineColor, whiteColor, blackColor, recentColor :: V4 Byte
 bgColor     = V4 0xcc 0xff 0xcc 0xff
@@ -145,11 +123,21 @@ main = do
 
     let go e = do
             userMoves <- atomically $ readTQueue userMoveQueue
-            mapM_ (ePlayMove e) userMoves
-            engineMove <- eGenMove e White
+            let vanishRedo :: IOError -> IO (Engine, Maybe Move)
+                vanishRedo exc = if ioe_type exc == ResourceVanished
+                  then withEngine $ \eng -> do
+                    putStrLn "Engine vanished; restarted."
+                    eSetBoard eng (sBoard st)
+                    putStrLn "Board set."
+                    tryWithE eng
+                  else throwIO exc
+                tryWithE eng = do
+                    mapM_ (ePlayMove eng) userMoves
+                    (,) eng <$> eGenMove eng White
+            (e2, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
-            go e
-    _ <- forkIO $ withEngine $ \e -> setTime e >> go e
+            go e2
+    _ <- forkIO $ withEngine go
     appLoop st
 
 posToCell :: AppState -> Int -> Int -> Maybe (Int, Int)
@@ -192,7 +180,8 @@ appLoop st = do
                 else [userMove]
           atomically $ writeTQueue (sUserMoveQueue st) userMoves
           board <- bPlayMoves (sBoard st) userMoves
-          _ <- genWindowContent $ st {sBoard = board, sRecent = Coord y x}
+          _ <- genWindowContent $
+              st {sBoard = board, sRecent = Just $ Coord y x}
           copy (sRenderer st) (sTexture st) Nothing Nothing
           present (sRenderer st)
           Just engineMove@(Move _ engineCoord) <-
