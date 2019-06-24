@@ -192,7 +192,7 @@ appLoop st = do
                 else [userMove]
           atomically $ writeTQueue (sUserMoveQueue st) userMoves
           board <- bPlayMoves (sBoard st) userMoves
-          _ <- genWindowContent $ st {sBoard = board}
+          _ <- genWindowContent $ st {sBoard = board, sRecent = Coord y x}
           copy (sRenderer st) (sTexture st) Nothing Nothing
           present (sRenderer st)
           Just engineMove@(Move _ engineCoord) <-
