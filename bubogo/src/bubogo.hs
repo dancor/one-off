@@ -113,6 +113,7 @@ main = do
     window <- createWindow "Bubogo" $ defaultWindow
         { windowInitialSize = V2 (fromI winW) (fromI winH)
         , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
+        , windowResizable = True
         }
     renderer <- createRenderer window (-1) defaultRenderer
     texture <- createCairoTexture' renderer window
@@ -151,7 +152,7 @@ posToCell st x y =
     cellY = (y - sBoardTopY st)  `div` sCellSize st
 
 appLoop :: AppState -> IO ()
-appLoop st@AppState{sBoard=boardVar} = do
+appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=texture} = do
     events <- pollEvents
     let isQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
@@ -168,8 +169,12 @@ appLoop st@AppState{sBoard=boardVar} = do
             (MouseButtonEventData _ Pressed _ ButtonLeft _ (P (V2 x y))) ->
             posToCell st (toI x) (toI y)
           _ -> Nothing
+        procResize event = case eventPayload event of
+          WindowResizedEvent (WindowResizedEventData _ (V2 x y)) ->
+            Just (toI x, toI y)
+          _ -> Nothing
         quitDue = any isQPress events
-    (st2, presentDue) <- case catMaybes $ map procPress events of
+    (st2, renderDue, presentDue) <- case catMaybes $ map procPress events of
       (x,y):_ -> do
           board <- atomically $ readTVar boardVar
           case bRead board (Coord y x) of
@@ -184,21 +189,29 @@ appLoop st@AppState{sBoard=boardVar} = do
                     else [userMove]
               atomically $ writeTQueue (sUserMoveQueue st) userMoves
               board2 <- bPlayMoves board userMoves
+              atomically $ writeTVar boardVar board2
               _ <- genWindowContent $
                   st {sRecent = Just $ Coord y x}
-              copy (sRenderer st) (sTexture st) Nothing Nothing
-              present (sRenderer st)
+              copy renderer texture Nothing Nothing
+              present renderer
               Just engineMove@(Move _ engineCoord) <-
                   atomically $ readTQueue (sEngineMoveQueue st)
               print engineMove
               board3 <- bPlayMoves board2 [engineMove]
               atomically $ writeTVar boardVar board3
-              st2 <- genWindowContent $
-                  st {sRecent = Just engineCoord}
-              copy (sRenderer st) (sTexture st) Nothing Nothing
-              return (st2, True)
-            _ -> return (st, any needsPresent events)
-      _ -> return (st, any needsPresent events)
-    when presentDue $ present (sRenderer st)
+              return (st {sRecent = Just engineCoord}, True, True)
+            _ -> return (st, False, any needsPresent events)
+      _ -> return (st, False, any needsPresent events)
+    let (st3, renderDue2, presentDue2) =
+          case catMaybes $ map procResize events of
+            (w,h):_ -> (st2 {sWinW = w, sWinH = h}, True, True)
+            _ -> (st2, renderDue, presentDue)
+    st4 <- if renderDue2
+      then do
+        st4 <- genWindowContent st3
+        copy renderer texture Nothing Nothing
+        return st4
+      else return st3
+    when presentDue2 $ present renderer
     threadDelay 200000
-    unless quitDue $ appLoop st2
+    unless quitDue $ appLoop st4
