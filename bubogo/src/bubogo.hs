@@ -58,13 +58,13 @@ data AppState = AppState
     , sUserMoveQueue   :: TQueue [Move]
     , sRenderer        :: Renderer
     , sTexture         :: Texture
-    , sBoard           :: Board
+    , sBoard           :: TVar Board
     , sRecent          :: Maybe Coord
     }
 
 genWindowContent :: AppState -> IO AppState
-genWindowContent
-        st@AppState{sWinW=winW,sWinH=winH,sTexture=texture,sBoard=board} = do
+genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=texture} = do
+    board <- atomically $ readTVar $ sBoard st
     let sqSize = min winW winH
         cellSize = sqSize `div` 19
         halfCell = cellSize `div` 2
@@ -104,12 +104,12 @@ genWindowContent
 
 main :: IO ()
 main = do
-    engineMoveQueue <- atomically newTQueue   
-    userMoveQueue <- atomically newTQueue   
     initializeAll
     let winW = 700
         winH = 700
-        board = newBoardOf Nothing
+    engineMoveQueue <- atomically newTQueue   
+    userMoveQueue <- atomically newTQueue   
+    boardVar <- atomically $ newTVar $ newBoardOf Nothing
     window <- createWindow "Bubogo" $ defaultWindow
         { windowInitialSize = V2 (fromI winW) (fromI winH)
         , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
@@ -117,7 +117,7 @@ main = do
     renderer <- createRenderer window (-1) defaultRenderer
     texture <- createCairoTexture' renderer window
     st <- genWindowContent $ AppState winW winH 0 0 0
-        engineMoveQueue userMoveQueue renderer texture board Nothing
+        engineMoveQueue userMoveQueue renderer texture boardVar Nothing
     copy renderer texture Nothing Nothing
     present renderer
 
@@ -125,9 +125,11 @@ main = do
             userMoves <- atomically $ readTQueue userMoveQueue
             let vanishRedo :: IOError -> IO (Engine, Maybe Move)
                 vanishRedo exc = if ioe_type exc == ResourceVanished
-                  then withEngine $ \eng -> do
+                  then do
                     putStrLn "Engine vanished; restarted."
-                    eSetBoard eng (sBoard st)
+                    eng <- startEngine
+                    board <- atomically $ readTVar boardVar
+                    eSetBoard eng board
                     putStrLn "Board set."
                     tryWithE eng
                   else throwIO exc
@@ -137,7 +139,7 @@ main = do
             (e2, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
             go e2
-    _ <- forkIO $ withEngine go
+    _ <- forkIO $ startEngine >>= go
     appLoop st
 
 posToCell :: AppState -> Int -> Int -> Maybe (Int, Int)
@@ -149,7 +151,7 @@ posToCell st x y =
     cellY = (y - sBoardTopY st)  `div` sCellSize st
 
 appLoop :: AppState -> IO ()
-appLoop st = do
+appLoop st@AppState{sBoard=boardVar} = do
     events <- pollEvents
     let isQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
@@ -168,31 +170,34 @@ appLoop st = do
           _ -> Nothing
         quitDue = any isQPress events
     (st2, presentDue) <- case catMaybes $ map procPress events of
-      (x,y):_ -> case bRead (sBoard st) (Coord y x) of
-        Nothing -> do
-          let userMove = Move Black $ Coord y x
-              userMoves = if y == 3 && x == 3
-                then [userMove
-                  , Move Black $ Coord 3 15
-                  , Move Black $ Coord 15 3
-                  , Move Black $ Coord 15 15
-                  ]
-                else [userMove]
-          atomically $ writeTQueue (sUserMoveQueue st) userMoves
-          board <- bPlayMoves (sBoard st) userMoves
-          _ <- genWindowContent $
-              st {sBoard = board, sRecent = Just $ Coord y x}
-          copy (sRenderer st) (sTexture st) Nothing Nothing
-          present (sRenderer st)
-          Just engineMove@(Move _ engineCoord) <-
-              atomically $ readTQueue (sEngineMoveQueue st)
-          print engineMove
-          board2 <- bPlayMoves board [engineMove]
-          st2 <- genWindowContent $
-              st {sBoard = board2, sRecent = Just engineCoord}
-          copy (sRenderer st) (sTexture st) Nothing Nothing
-          return (st2, True)
-        _ -> return (st, any needsPresent events)
+      (x,y):_ -> do
+          board <- atomically $ readTVar boardVar
+          case bRead board (Coord y x) of
+            Nothing -> do
+              let userMove = Move Black $ Coord y x
+                  userMoves = if y == 3 && x == 3
+                    then [userMove
+                      , Move Black $ Coord 3 15
+                      , Move Black $ Coord 15 3
+                      , Move Black $ Coord 15 15
+                      ]
+                    else [userMove]
+              atomically $ writeTQueue (sUserMoveQueue st) userMoves
+              board2 <- bPlayMoves board userMoves
+              _ <- genWindowContent $
+                  st {sRecent = Just $ Coord y x}
+              copy (sRenderer st) (sTexture st) Nothing Nothing
+              present (sRenderer st)
+              Just engineMove@(Move _ engineCoord) <-
+                  atomically $ readTQueue (sEngineMoveQueue st)
+              print engineMove
+              board3 <- bPlayMoves board2 [engineMove]
+              atomically $ writeTVar boardVar board3
+              st2 <- genWindowContent $
+                  st {sRecent = Just engineCoord}
+              copy (sRenderer st) (sTexture st) Nothing Nothing
+              return (st2, True)
+            _ -> return (st, any needsPresent events)
       _ -> return (st, any needsPresent events)
     when presentDue $ present (sRenderer st)
     threadDelay 200000
