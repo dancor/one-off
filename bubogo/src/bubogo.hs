@@ -57,13 +57,13 @@ data AppState = AppState
     , sEngineMoveQueue :: TQueue (Maybe Move)
     , sUserMoveQueue   :: TQueue [Move]
     , sRenderer        :: Renderer
-    , sTexture         :: Texture
+    , sTexture         :: TVar Texture
     , sBoard           :: TVar Board
     , sRecent          :: Maybe Coord
     }
 
 genWindowContent :: AppState -> IO AppState
-genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=texture} = do
+genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
     board <- atomically $ readTVar $ sBoard st
     let sqSize = min winW winH
         cellSize = sqSize `div` 19
@@ -79,6 +79,8 @@ genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=texture} = do
             V2 (toD $ colCenterX x - halfCell) (toD $ rowCenterY y - halfCell)
         markerR = toD cellSize / 4
         adj (V2 x y) = V2 (x - markerR / 2) (y - markerR / 2)
+    texture <- 
+        createCairoTexture (sRenderer st) (V2 (fromI winW) (fromI winH))
     withCairoTexture' texture $ runCanvas $ do
         background bgColor
         stroke lineColor
@@ -99,6 +101,7 @@ genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=texture} = do
             fill recentColor
             circle (adj $ cellCenter x y) markerR
           _ -> return ()
+    atomically $ writeTVar textureVar texture
     return $ st {sBoardLeftX = boardLeftX, sBoardTopY = boardTopY, 
         sCellSize = cellSize}
 
@@ -110,22 +113,24 @@ main = do
     engineMoveQueue <- atomically newTQueue   
     userMoveQueue <- atomically newTQueue   
     boardVar <- atomically $ newTVar $ newBoardOf Nothing
+    textureVar <- atomically $ newTVar $ error "Texture uninitialized"
     window <- createWindow "Bubogo" $ defaultWindow
         { windowInitialSize = V2 (fromI winW) (fromI winH)
         , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
         , windowResizable = True
         }
     renderer <- createRenderer window (-1) defaultRenderer
-    texture <- createCairoTexture' renderer window
     st <- genWindowContent $ AppState winW winH 0 0 0
-        engineMoveQueue userMoveQueue renderer texture boardVar Nothing
+        engineMoveQueue userMoveQueue renderer textureVar
+        boardVar Nothing
+    texture <- atomically $ readTVar textureVar
     copy renderer texture Nothing Nothing
     present renderer
 
     let go e = do
             userMoves <- atomically $ readTQueue userMoveQueue
             let vanishRedo :: IOError -> IO (Engine, Maybe Move)
-                vanishRedo exc = if ioe_type exc == ResourceVanished
+                vanishRedo exc = if ioe_type exc `elem` [EOF, ResourceVanished]
                   then do
                     putStrLn "Engine vanished; restarted."
                     eng <- startEngine
@@ -152,7 +157,7 @@ posToCell st x y =
     cellY = (y - sBoardTopY st)  `div` sCellSize st
 
 appLoop :: AppState -> IO ()
-appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=texture} = do
+appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
     events <- pollEvents
     let isQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
@@ -190,8 +195,8 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=texture} = do
               atomically $ writeTQueue (sUserMoveQueue st) userMoves
               board2 <- bPlayMoves board userMoves
               atomically $ writeTVar boardVar board2
-              _ <- genWindowContent $
-                  st {sRecent = Just $ Coord y x}
+              _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
+              texture <- atomically $ readTVar textureVar
               copy renderer texture Nothing Nothing
               present renderer
               Just engineMove@(Move _ engineCoord) <-
@@ -209,7 +214,8 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=texture} = do
     st4 <- if renderDue2
       then do
         st4 <- genWindowContent st3
-        copy renderer texture Nothing Nothing
+        texture2 <- atomically $ readTVar textureVar
+        copy renderer texture2 Nothing Nothing
         return st4
       else return st3
     when presentDue2 $ present renderer
