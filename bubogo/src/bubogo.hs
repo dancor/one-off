@@ -58,13 +58,13 @@ data AppState = AppState
     , sUserMoveQueue   :: TQueue [Move]
     , sRenderer        :: Renderer
     , sTexture         :: TVar Texture
-    , sBoard           :: TVar Board
+    , sBoardVar        :: TVar [Board]
     , sRecent          :: Maybe Coord
     }
 
 genWindowContent :: AppState -> IO AppState
 genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
-    board <- atomically $ readTVar $ sBoard st
+    board:_ <- atomically $ readTVar $ sBoardVar st
     let sqSize = min winW winH
         cellSize = sqSize `div` 19
         halfCell = cellSize `div` 2
@@ -112,7 +112,7 @@ main = do
         winH = 700
     engineMoveQueue <- atomically newTQueue   
     userMoveQueue <- atomically newTQueue   
-    boardVar <- atomically $ newTVar $ newBoardOf Nothing
+    boardVar <- atomically $ newTVar [newBoardOf Nothing]
     textureVar <- atomically $ newTVar $ error "Texture uninitialized"
     window <- createWindow "Bubogo" $ defaultWindow
         { windowInitialSize = V2 (fromI winW) (fromI winH)
@@ -134,7 +134,7 @@ main = do
                   then do
                     putStrLn "Engine vanished; restarted."
                     eng <- startEngine
-                    board <- atomically $ readTVar boardVar
+                    board:_ <- atomically $ readTVar boardVar
                     eSetBoard eng board
                     putStrLn "Board set."
                     tryWithE eng
@@ -156,13 +156,17 @@ posToCell st x y =
     cellX = (x - sBoardLeftX st) `div` sCellSize st
     cellY = (y - sBoardTopY st)  `div` sCellSize st
 
-appLoop :: AppState -> IO ()
-appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
-    events <- pollEvents
+appProcEvents :: AppState -> [Event] -> IO ()
+appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=textureVar} events = do
     let isQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
             keyboardEventKeyMotion keyboardEvent == Pressed &&
             keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
+          _ -> False
+        isUPress event = case eventPayload event of
+          KeyboardEvent keyboardEvent ->
+            keyboardEventKeyMotion keyboardEvent == Pressed &&
+            keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeU
           _ -> False
         needsPresent event = case eventPayload event of
           WindowExposedEvent _ -> True
@@ -181,7 +185,7 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
         quitDue = any isQPress events
     (st2, renderDue, presentDue) <- case catMaybes $ map procPress events of
       (x,y):_ -> do
-          board <- atomically $ readTVar boardVar
+          boards@(board:_) <- atomically $ readTVar boardVar
           case bRead board (Coord y x) of
             Nothing -> do
               let userMove = Move Black $ Coord y x
@@ -194,7 +198,7 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
                     else [userMove]
               atomically $ writeTQueue (sUserMoveQueue st) userMoves
               board2 <- bPlayMoves board userMoves
-              atomically $ writeTVar boardVar board2
+              atomically $ writeTVar boardVar (board2:boards)
               _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
               texture <- atomically $ readTVar textureVar
               copy renderer texture Nothing Nothing
@@ -203,7 +207,7 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
                   atomically $ readTQueue (sEngineMoveQueue st)
               print engineMove
               board3 <- bPlayMoves board2 [engineMove]
-              atomically $ writeTVar boardVar board3
+              atomically $ writeTVar boardVar (board3:boards)
               return (st {sRecent = Just engineCoord}, True, True)
             _ -> return (st, False, any needsPresent events)
       _ -> return (st, False, any needsPresent events)
@@ -211,13 +215,28 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
           case catMaybes $ map procResize events of
             (w,h):_ -> (st2 {sWinW = w, sWinH = h}, True, True)
             _ -> (st2, renderDue, presentDue)
-    st4 <- if renderDue2
+    (renderDue3, presentDue3) <- if any isUPress events
+      then do
+        boards <- atomically $ readTVar boardVar
+        case boards of
+          _:prevBoards -> do
+            atomically $ writeTVar boardVar prevBoards
+            return (True, True)
+          [] -> return (False, False)
+      else return (renderDue2, presentDue2)
+    st4 <- if renderDue3
       then do
         st4 <- genWindowContent st3
         texture2 <- atomically $ readTVar textureVar
         copy renderer texture2 Nothing Nothing
         return st4
       else return st3
-    when presentDue2 $ present renderer
-    threadDelay 200000
+    when presentDue3 $ present renderer
     unless quitDue $ appLoop st4
+
+appLoop :: AppState -> IO ()
+appLoop st = do
+    events <- pollEvents
+    if null events
+      then threadDelay 100000 >> appLoop st
+      else appProcEvents st events
