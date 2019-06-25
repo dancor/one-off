@@ -7,12 +7,9 @@ import Control.Monad
 import Data.List
 import qualified Data.List.Split as Spl
 import Data.Maybe
-import Data.Vector (Vector, (//), (!))
+import Data.Vector ((!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-import System.FilePath
-import System.Process
-import qualified Text.ParserCombinators.Parsec as Psec
 
 import Color
 import Coord
@@ -53,6 +50,7 @@ tryCapture b capturedColor c = do
         unless hasLib $ captureChain b chain
 
 mutBPlayMove :: MutBoard -> Move -> IO ()
+mutBPlayMove _ Pass = return ()
 mutBPlayMove b (Move color c) = do
     mutBWrite b c (Just color)
     mapM_ (tryCapture b (otherColor color)) $ coordNeighbors c

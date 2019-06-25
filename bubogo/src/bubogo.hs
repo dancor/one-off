@@ -189,7 +189,7 @@ appLoop st@AppState{sBoard=boardVar,sRenderer=renderer,sTexture=textureVar} = do
                     then [userMove
                       , Move Black $ Coord 3 15
                       , Move Black $ Coord 15 3
-                      , Move Black $ Coord 15 15
+                      -- , Move Black $ Coord 15 15
                       ]
                     else [userMove]
               atomically $ writeTQueue (sUserMoveQueue st) userMoves
