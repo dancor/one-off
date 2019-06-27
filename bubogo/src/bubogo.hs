@@ -127,25 +127,32 @@ main = do
     copy renderer texture Nothing Nothing
     present renderer
 
-    let go e = do
+    let go e moves = do
             userMoves <- atomically $ readTQueue userMoveQueue
             let vanishRedo :: IOError -> IO (Engine, Maybe Move)
                 vanishRedo exc = if ioe_type exc `elem` [EOF, ResourceVanished]
                   then do
-                    putStrLn "Engine vanished; restarted."
+                    putStrLn "Engine vanished. Restarting..."
                     eng <- startEngine
-                    board:_ <- atomically $ readTVar boardVar
-                    eSetBoard eng board
-                    putStrLn "Board set."
+                    putStrLn "Done."
+                    putStrLn "Replaying moves.."
+                    mapM_ (ePlayMove eng) $ concat moves
+                    putStrLn "Done."
                     tryWithE eng
                   else throwIO exc
                 tryWithE eng = do
-                    mapM_ (ePlayMove eng) userMoves
+                    case userMoves of
+                      [] -> do
+                        putStrLn "Doing undo with engine.."
+                        ePut e "undo"
+                        putStrLn "Done."
+                        go e (drop 1 moves)
+                      _ -> mapM_ (ePlayMove eng) userMoves
                     (,) eng <$> eGenMove eng White
             (e2, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
-            go e2
-    _ <- forkIO $ startEngine >>= go
+            go e2 (userMoves:(maybeToList engineMove):moves)
+    _ <- forkIO $ startEngine >>= \e -> go e []
     appLoop st
 
 posToCell :: AppState -> Int -> Int -> Maybe (Int, Int)
@@ -185,13 +192,14 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=texture
         quitDue = any isQPress events
     (st2, renderDue, presentDue) <- case catMaybes $ map procPress events of
       (x,y):_ -> do
-          boards@(board:_) <- atomically $ readTVar boardVar
+          boards@(board:prevBoards) <- atomically $ readTVar boardVar
           case bRead board (Coord y x) of
             Nothing -> do
               let userMove = Move Black $ Coord y x
-                  userMoves = if y == 3 && x == 3
-                    then [userMove
-                      , Move Black $ Coord 3 15
+                  userMoves = if null prevBoards
+                    then
+                      -- [ userMove
+                      [ Move Black $ Coord 3 15
                       , Move Black $ Coord 15 3
                       -- , Move Black $ Coord 15 15
                       ]
@@ -203,12 +211,14 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=texture
               texture <- atomically $ readTVar textureVar
               copy renderer texture Nothing Nothing
               present renderer
-              Just engineMove@(Move _ engineCoord) <-
-                  atomically $ readTQueue (sEngineMoveQueue st)
+              Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
+              let engineCoordMb = case engineMove of
+                    Move _ engineCoord -> Just engineCoord
+                    _ -> Nothing
               print engineMove
               board3 <- bPlayMoves board2 [engineMove]
               atomically $ writeTVar boardVar (board3:boards)
-              return (st {sRecent = Just engineCoord}, True, True)
+              return (st {sRecent = engineCoordMb}, True, True)
             _ -> return (st, False, any needsPresent events)
       _ -> return (st, False, any needsPresent events)
     let (st3, renderDue2, presentDue2) =
@@ -221,6 +231,8 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=texture
         case boards of
           _:prevBoards -> do
             atomically $ writeTVar boardVar prevBoards
+            atomically $ writeTQueue (sUserMoveQueue st) []
+            atomically $ writeTQueue (sUserMoveQueue st) []
             return (True, True)
           [] -> return (False, False)
       else return (renderDue2, presentDue2)
