@@ -136,7 +136,7 @@ main = do
                     e2 <- startEngine
                     putStrLn "Done."
                     putStrLn "Replaying moves.."
-                    mapM_ (ePlayMove e2) $ concat moves
+                    mapM_ (ePlayMove e2) $ reverse $ concat moves
                     putStrLn "Done."
                     tryWithE e2
                   else throwIO exc
@@ -151,7 +151,7 @@ main = do
                     (,) e2 <$> eGenMove e2 White
             (e3, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
-            go e3 (userMoves:(maybeToList engineMove):moves)
+            go e3 ((maybeToList engineMove):userMoves:moves)
     _ <- forkIO $ startEngine >>= \e -> go e []
     appLoop st
 
@@ -229,12 +229,12 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=texture
       then do
         boards <- atomically $ readTVar boardVar
         case boards of
-          _:prevBoards -> do
+          _:(prevBoards@(_:_:_)) -> do
             atomically $ writeTVar boardVar prevBoards
             atomically $ writeTQueue (sUserMoveQueue st) []
             atomically $ writeTQueue (sUserMoveQueue st) []
             return (True, True)
-          [] -> return (False, False)
+          _ -> return (False, False)
       else return (renderDue2, presentDue2)
     st4 <- if renderDue3
       then do
