@@ -133,25 +133,25 @@ main = do
                 vanishRedo exc = if ioe_type exc `elem` [EOF, ResourceVanished]
                   then do
                     putStrLn "Engine vanished. Restarting..."
-                    eng <- startEngine
+                    e2 <- startEngine
                     putStrLn "Done."
                     putStrLn "Replaying moves.."
-                    mapM_ (ePlayMove eng) $ concat moves
+                    mapM_ (ePlayMove e2) $ concat moves
                     putStrLn "Done."
-                    tryWithE eng
+                    tryWithE e2
                   else throwIO exc
-                tryWithE eng = do
+                tryWithE e2 = do
                     case userMoves of
                       [] -> do
                         putStrLn "Doing undo with engine.."
                         ePut e "undo"
                         putStrLn "Done."
                         go e (drop 1 moves)
-                      _ -> mapM_ (ePlayMove eng) userMoves
-                    (,) eng <$> eGenMove eng White
-            (e2, engineMove) <- handle vanishRedo (tryWithE e)
+                      _ -> mapM_ (ePlayMove e2) userMoves
+                    (,) e2 <$> eGenMove e2 White
+            (e3, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
-            go e2 (userMoves:(maybeToList engineMove):moves)
+            go e3 (userMoves:(maybeToList engineMove):moves)
     _ <- forkIO $ startEngine >>= \e -> go e []
     appLoop st
 
