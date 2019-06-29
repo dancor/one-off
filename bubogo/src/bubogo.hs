@@ -105,6 +105,26 @@ genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
     return $ st {sBoardLeftX = boardLeftX, sBoardTopY = boardTopY, 
         sCellSize = cellSize}
 
+allColorAndSame board [] = error "allColorAndSame []"
+allColorAndSame board (coord:coords) = case bRead board coord of
+    Just color -> if all (== color) $ map (bRead board) coords
+      then Just color
+      else Nothing
+    _ -> Nothing
+
+computeScore :: TVar [Board] -> IO ()
+computeScore boardVar = do
+    boards <- atomically $ readTVar boardVar
+    when (null boards) $ error "computeSore: null boards"
+    let board = head boards
+    points <- V.thaw board
+    let spread = forM_ allCoords $ \coord -> case bRead board coord of
+          Nothing -> case allColorAndSame adjacentCoords of
+            Just color -> mutBWrite points coord (Just color) >> return True
+            _ -> return False
+          _ -> return False
+    spread points
+
 main :: IO ()
 main = do
     initializeAll
@@ -132,25 +152,26 @@ main = do
             let vanishRedo :: IOError -> IO (Engine, Maybe Move)
                 vanishRedo exc = if ioe_type exc `elem` [EOF, ResourceVanished]
                   then do
-                    putStrLn "Engine vanished. Restarting..."
+                    slog "Engine vanished. Restarting..."
                     e2 <- startEngine
-                    putStrLn "Done."
-                    putStrLn "Replaying moves.."
+                    slog "Done."
+                    slog "Replaying moves.."
                     mapM_ (ePlayMove e2) $ reverse $ concat moves
-                    putStrLn "Done."
+                    slog "Done."
                     tryWithE e2
                   else throwIO exc
                 tryWithE e2 = do
                     case userMoves of
                       [] -> do
-                        putStrLn "Doing undo with engine.."
+                        slog "Doing undo with engine.."
                         ePut e "undo"
-                        putStrLn "Done."
+                        slog "Done."
                         go e (drop 1 moves)
                       _ -> mapM_ (ePlayMove e2) userMoves
                     (,) e2 <$> eGenMove e2 White
             (e3, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
+            computeScore boardVar
             go e3 ((maybeToList engineMove):userMoves:moves)
     _ <- forkIO $ startEngine >>= \e -> go e []
     appLoop st
@@ -215,7 +236,6 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=texture
               let engineCoordMb = case engineMove of
                     Move _ engineCoord -> Just engineCoord
                     _ -> Nothing
-              print engineMove
               board3 <- bPlayMoves board2 [engineMove]
               atomically $ writeTVar boardVar (board3:boards)
               return (st {sRecent = engineCoordMb}, True, True)
