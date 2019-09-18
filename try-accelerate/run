@@ -1,0 +1,2 @@
+#!/bin/sh
+exec stack exec try-accelerate-exe "$@"

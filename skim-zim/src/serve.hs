@@ -41,6 +41,7 @@ keepLangs =
     , "Chinese"
     , "French"
     , "Hebrew"
+    , "Hawaiian"
     -- , "Hindi"
     , "Japanese"
     , "Mandarin"

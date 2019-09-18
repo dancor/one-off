@@ -105,25 +105,40 @@ genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
     return $ st {sBoardLeftX = boardLeftX, sBoardTopY = boardTopY, 
         sCellSize = cellSize}
 
+{-
 allColorAndSame board [] = error "allColorAndSame []"
 allColorAndSame board (coord:coords) = case bRead board coord of
     Just color -> if all (== color) $ map (bRead board) coords
       then Just color
       else Nothing
     _ -> Nothing
+-}
+
+{-
+data PointState = IsColor Color | Reaches Color | ReachesBoth | NoReachKnownYet
 
 computeScore :: TVar [Board] -> IO ()
 computeScore boardVar = do
     boards <- atomically $ readTVar boardVar
     when (null boards) $ error "computeSore: null boards"
     let board = head boards
-    points <- V.thaw board
-    let spread = forM_ allCoords $ \coord -> case bRead board coord of
+        initPoint Nothing = NoReachKnownYet
+        initPoint (Just Color) = IsColor Color
+    pointBoard <- V.thaw $ V.map initPoint board
+    let spread = forM_ allCoords $ \coord -> do
+          pointState <- mutBRead pointBoard coord
+          let ns = coordNeighbors coord
+          case pointState of
+            IsColor color -> mapM_ (\n -> ) ns
+            NoReachKnownYet ->
+            _ 
+        case bRead board coord of
           Nothing -> case allColorAndSame adjacentCoords of
             Just color -> mutBWrite points coord (Just color) >> return True
             _ -> return False
           _ -> return False
     spread points
+-}
 
 main :: IO ()
 main = do
@@ -139,7 +154,10 @@ main = do
         , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
         , windowResizable = True
         }
-    renderer <- createRenderer window (-1) defaultRenderer
+    renderer <- createRenderer window (-1) $ defaultRenderer
+        --{ rendererType = AcceleratedVSyncRenderer
+        { rendererType = UnacceleratedRenderer
+        }
     st <- genWindowContent $ AppState winW winH 0 0 0
         engineMoveQueue userMoveQueue renderer textureVar
         boardVar Nothing
@@ -171,7 +189,7 @@ main = do
                     (,) e2 <$> eGenMove e2 White
             (e3, engineMove) <- handle vanishRedo (tryWithE e)
             atomically $ writeTQueue engineMoveQueue engineMove
-            computeScore boardVar
+            --computeScore boardVar
             go e3 ((maybeToList engineMove):userMoves:moves)
     _ <- forkIO $ startEngine >>= \e -> go e []
     appLoop st
@@ -219,9 +237,9 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,sTexture=texture
               let userMove = Move Black $ Coord y x
                   userMoves = if null prevBoards
                     then
-                      -- [ userMove
                       [ Move Black $ Coord 3 15
                       , Move Black $ Coord 15 3
+                      , Move Black $ Coord 3 3
                       -- , Move Black $ Coord 15 15
                       ]
                     else [userMove]

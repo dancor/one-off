@@ -59,11 +59,11 @@ coordNeighbors (Coord column row) = concat
     , if row    == 18 then [] else [Coord column (row + 1)]
     ]
 
-columnStr :: Int -> String
-columnStr x = [chr (x + ord 'A' + if x >= 8 then 1 else 0)]
+showColumn :: Int -> String
+showColumn x = [chr (x + ord 'A' + if x >= 8 then 1 else 0)]
 
-rowStr :: Int -> String
-rowStr y = show (19 - y)
+showRow :: Int -> String
+showRow y = show (19 - y)
 
 showCoord :: Coord -> String
-showCoord coord = columnStr (cColumn coord) ++ rowStr (cRow coord)
+showCoord coord = showColumn (cColumn coord) ++ showRow (cRow coord)

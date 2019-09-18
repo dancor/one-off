@@ -89,12 +89,14 @@ orM (x:xs) = do
 anyM :: (a -> IO Bool) -> [a] -> IO Bool
 anyM f xs = orM (map f xs)
 
+{-
 adjZ 0 = [1]
 adjZ 18 = [17]
 adjZ z = [z - 1, z + 1]
 
 adjacentCoords (Coord y x) =
     map (\[y2,x2] -> Coord y2 x2) $ sequence [adjZ y, adjZ x]
+-}
 
 chainCoords :: MutBoardOf Bool -> IO [Coord]
 chainCoords chain = catMaybes <$> mapM isIn allCoords
