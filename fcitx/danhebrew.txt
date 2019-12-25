@@ -1,0 +1,70 @@
+;fcitx Version 0x03 Table file
+KeyCode=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'1234567890?!.,;~></%_
+Length=3
+Pinyin=@
+PinyinLength=3
+Prompt=&
+ConstructPhrase=^
+[Data]
+a א
+v ב
+b בּ
+g ג
+gg גּ
+j ג׳
+d ד
+dd דּ
+dh ד׳
+h ה
+hh הּ
+w ו
+ww וּ
+z ז
+zz זּ
+zh ז׳
+h- ח
+t? ט
+t?? טּ
+y י
+yy יּ
+x כ
+x. ך
+k כּ
+k. ךּ
+l ל
+ll לּ
+m מ
+m. ם
+mm מּ
+n נ
+n. ן
+nn נּ
+s ס
+ss סּ
+' ע
+f פ
+f. ף
+p פּ
+p. ףּ
+ts צ
+ts. ץ
+tss צּ
+ch צ׳
+ch. ץ׳
+q ק
+qq קּ
+r ר
+rr רּ
+sh שׁ
+shh שּׁ
+s שׂ
+ss שּׂ
+t ת
+tt תּ
+th ת׳
+h. ח׳
+z. ט׳
+g. ר׳
+g.. ע׳
+d. צ׳
+d.. ץ׳

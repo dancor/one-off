@@ -1,0 +1,74 @@
+;fcitx Version 0x03 Table file
+KeyCode=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'1234567890?!.,;~></%_
+Length=2
+Pinyin=@
+PinyinLength=2
+Prompt=&
+ConstructPhrase=^
+[Data]
+a а
+A А
+b б
+B Б
+v в
+V В
+g г
+G Г
+d д
+D Д
+e е
+E Е
+jo ё
+JO Ё
+zh ж
+ZH Ж
+z з
+Z З
+i и
+I И
+j й
+J Й
+k к
+K К
+l л
+L Л
+m м
+M М
+n н
+N Н
+o о
+O О
+p п
+P П
+r р
+R Р
+s с
+S С
+t т
+T Т
+u у
+U У
+f ф
+F Ф
+x х
+X Х
+c ц
+C Ц
+q ч
+Q Ч
+sh ш
+SH Ш
+sq щ
+SQ Щ
+_h ъ
+_H Ъ
+y ы
+Y Ы
+_s ь
+_S Ь
+eh э
+EH Э
+ju ю
+JU Ю
+ja я
+JA Я
