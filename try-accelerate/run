@@ -1,2 +1,0 @@
-#!/bin/sh
-exec gpu stack exec try-accelerate-exe "$@"
