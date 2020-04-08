@@ -8,6 +8,9 @@ danhebrew: danhebrew.txt
 	echo "reloads after fcitx -r. However fcitx -r may cause your xterm to"
 	echo "hang and require xkill to kill it."
 
+dankorean.txt: make-dankorean.hs
+	runghc -cpp -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints make-dankorean.hs > dankorean.txt
+
 dankorean: dankorean.txt
 	cp conf/dankorean.conf ~/.config/fcitx/table/
 	txt2mb dankorean.txt ~/.config/fcitx/table/dankorean.mb
