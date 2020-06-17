@@ -7,7 +7,6 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import Data.List
 import Data.Maybe
-import Data.Monoid
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Text.Lazy (toStrict, fromStrict)
 import qualified Data.Text.Lazy as DTL

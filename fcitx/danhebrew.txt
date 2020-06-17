@@ -1,5 +1,5 @@
 ;fcitx Version 0x03 Table file
-KeyCode=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'1234567890?!.,;~></%_
+KeyCode=abcdefghijklmnopqrstuvwxyz'?.-
 Length=3
 Pinyin=@
 PinyinLength=3
