@@ -1,0 +1,38 @@
+- Currently trying out UserLAnd & Ubuntu & XServerXSDL
+- Colemak in Android generally:
+  - External Keyboard Helper Demo works but find FOSS or make
+  - Look at: extra-keyboard-layouts finqwerty
+- ssh to UserLAnd Ubuntu
+  - May have to figure out what to do about systemd install failing
+  - Is there something else to try besides openssh-server?
+- Xorg:
+  - kill Fluxbox permanent-bottom-bar
+  - install wmctrl
+  - remove xorg decorations
+
+- If can get software end working well, then consider exotic hardware for
+  keyboardless usage
+
+- Note Raccoon downloads APKs from Google Play Store even "bundle" ones
+- Termux:
+  - 5ba3f7cf6d8b2c29eb4f4d51a6a8961db502500d last time supported Sdk 22.
+    2019-10-07. This works as of 2020-10 but legacy pkg db, no more updates.
+- main section: smartglasses v1 todo:
+  - 1) keyboard over bluetooth
+  - 2) my own android app receiving keystrokes
+- testing w/ little old battery pack:
+  - 5:22pm 53% and powerpack immediately jumped to 3 lights. bt on. wifi off.
+    screen left on. brightness 10.
+  - 5:26pm 60% powerpack still at 3 lights. set brightness to 1 now.
+- later:
+  - batteries from 2020-10:
+    - 89c/Ah: $23.91/26.8Ah https://smile.amazon.com/dp/B08BRDVGP1
+    - 115: $22.99/20Ah https://smile.amazon.com/dp/B07YPY31FL               
+  - investigate wired data transfer
+- work on soon: using smartglasses w/o clon:
+  - look into battery pack in pocket
+  - smartglasses are always at least the display. if android is too annoying
+    may try raspi in pocket too. how does battery life compare?
+  - mode w/ keyboard
+  - mode w/o keyboard: what is input method here? wired/wireless clicker opts?
+- if just make a C app https://github.com/cnlohr/rawdrawandroid
