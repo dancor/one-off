@@ -1,4 +1,47 @@
-- Currently trying out UserLAnd & Ubuntu & XServerXSDL
+- Current plan:
+  - Termux is deprecated on Android 6 and not receiving package updates, but it
+    still can plays audio files in background. I can't get UserLAnd to.
+  - Use UserLAnd for everything else.
+
+- Try next:
+  - sshd on port 2022
+  - Copy current setup off.
+  - Graphical browser: On Userland chromium-browser segfaulted. Netsurf has
+    no packages in Ubuntu 18.04 (but does in 17.10 and 18.10?).  Try building
+    netsurf?
+  - Colemak for all of Android w/o proprietary app. Should fix CapsLock
+    madness.
+  - Removed xterm border.
+
+- Working in Termux:
+  - play mp3 with mpv (note sox "play" shows playing stats but is silent)
+    And note UserLAnd only plays audio thru XServerXSDL, but the audio shuts
+    off if you turn off the screen or XServerXSDL is not the foreground app.
+
+- Working in UserLAnd+Ubuntu+XServerXSDL:
+  - Play mp3 with sox "play" (note mpv permissions error even w/ sudo)
+  - Ran [~ sudo unminimize] to get manpages
+  - Installed tmux
+  - Fullscreened xterm w/ wmctrl.
+
+- Next for UserLAnd Xorg:
+  - Alt+Tab alternative; use xv to see what keys are.
+    - "Command/Windows" keys don't get to UserLAnd.
+    - So most interesting keys (w/ keycode) are:
+      Alt_L(64) Alt_R(108) Control_L(37) Shift_R(62) Shift_L(50) Delete(119)
+      Left(113) Right(114) Up(111) Down(116) Backspace(22) []
+      keycode 10 is # 1.
+      keycode 11 is # 2.
+      9Escape 67F1 .. 76F10 95F11 96F12 119Delete
+      23Tab 24Q .. 34bracketleft 35bracketright 51backslash
+      66Caps_Lock 38A .. 47semicolon 48apostrophe 36Return
+      50Shift_L 52Z 59comma 60period 61slash 62Shift_R
+  - graphical browser ideally that can do duolingo
+    try 
+  - Faster way to bootstrap my mods?
+- Next for Vuzix Blade Android:
+  - what filesystems are supported for microsd card?
+
 - Colemak in Android generally:
   - External Keyboard Helper Demo works but find FOSS or make
   - Look at: extra-keyboard-layouts finqwerty
