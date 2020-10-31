@@ -1,7 +1,7 @@
 - Current plan:
   - Termux is deprecated on Android 6 and not receiving package updates, but it
     still can plays audio files in background. I can't get UserLAnd to.
-  - Use UserLAnd for everything else.
+  - Use UserLAnd for everything else?
 
 - Try next:
   - sshd on port 2022
@@ -12,6 +12,18 @@
   - Colemak for all of Android w/o proprietary app. Should fix CapsLock
     madness.
   - Removed xterm border.
+
+- Podcast battery stats:
+  - 5:08 84%
+  - 5:13 81%, 5:38 71% -> 25m/10% so expect 20% in 128m=2h8m at 7:49pm.
+    5:51 68%
+    6:00 56%  28%/52m  ~2m/% (60%=2h)
+    7:07 43%
+    7:28 38% plug in
+    7:33 44% 4-lights (fast)
+    7:57 80% 4-lights
+  - pause/play w/o keyboard? based on earbud button would be best..
+  - v2: also running on raspi0
 
 - Working in Termux:
   - play mp3 with mpv (note sox "play" shows playing stats but is silent)
