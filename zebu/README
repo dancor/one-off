@@ -1,7 +1,15 @@
+# Cur notes:
+If a media button needs custom handling, override your callback’s onMediaButtonEvent() method, extract the KeyEvent using intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT), handle the event yourself, and return true.
+
 # Try next:
 - try intents to make danl-button work w/ screen off
+  - try MediaSessionCompat
+    onMediaButtonEvent()
 - try to save my mods to github
 - try to make a colemak app
+
+# Note: app2/ is an Android app that captures KeyEvent.KEYCODE_MEDIA_PLAY
+  and KeyEvent.KEYCODE_MEDIA_PAUSE, so I can toggle mpv play/pause in Termux.
 
 # Current plan:
 - Termux is deprecated on Android 6 and not receiving package updates, but it
