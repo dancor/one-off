@@ -1,4 +1,9 @@
 package com.example.app2
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
 import android.os.Bundle
 import android.util.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -9,6 +14,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
 import java.io.File
+import android.support.v4.media.session.MediaSessionCompat
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,6 +26,10 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
         }
+        var f : IntentFilter = IntentFilter(Intent.ACTION_MEDIA_BUTTON);
+        var r = MyReceiver();
+        f.setPriority(999);
+        registerReceiver(r, f);
     }
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -35,6 +45,7 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+    /*
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode != KeyEvent.KEYCODE_MEDIA_PLAY &&
                 keyCode != KeyEvent.KEYCODE_MEDIA_PAUSE)
@@ -46,4 +57,5 @@ class MainActivity : AppCompatActivity() {
         File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
         return true
     }
+    */
 }
