@@ -1,93 +1,105 @@
-- Current plan:
-  - Termux is deprecated on Android 6 and not receiving package updates, but it
-    still can plays audio files in background. I can't get UserLAnd to.
-  - Use UserLAnd for everything else?
+# Try next:
+- try intents to make danl-button work w/ screen off
+- try to save my mods to github
+- try to make a colemak app
 
-- Try next:
-  - sshd on port 2022
-  - Copy current setup off.
-  - Graphical browser: On Userland chromium-browser segfaulted. Netsurf has
-    no packages in Ubuntu 18.04 (but does in 17.10 and 18.10?).  Try building
-    netsurf?
-  - Colemak for all of Android w/o proprietary app. Should fix CapsLock
-    madness.
-  - Removed xterm border.
+# Current plan:
+- Termux is deprecated on Android 6 and not receiving package updates, but it
+  still can plays audio files in background. I can't get UserLAnd to.
+- Use UserLAnd for everything else?
 
-- Podcast battery stats:
-  - 5:08 84%
-  - 5:13 81%, 5:38 71% -> 25m/10% so expect 20% in 128m=2h8m at 7:49pm.
-    5:51 68%
-    6:00 56%  28%/52m  ~2m/% (60%=2h)
-    7:07 43%
-    7:28 38% plug in
-    7:33 44% 4-lights (fast)
-    7:57 80% 4-lights
-  - pause/play w/o keyboard? based on earbud button would be best..
-  - v2: also running on raspi0
+# Apps 12: Hom Cam Con Fdr Net Pho Tas Ta2 Ter Use Xse Set
+- Removed: androidVNC bVNCFree Easer ExternalKeyboardHelper MultiVNC
+  Pleco("corrupted"-every-install) VuzixNews Weather Yelp
+- cannot remove: Camera Control Photos
+- left: F-Droid Netflix Tasker Termux Userland XServerXSDL
 
-- Working in Termux:
-  - play mp3 with mpv (note sox "play" shows playing stats but is silent)
-    And note UserLAnd only plays audio thru XServerXSDL, but the audio shuts
-    off if you turn off the screen or XServerXSDL is not the foreground app.
+# Try later:
+- sshd on port 2022
+- Copy current setup off.
+- Graphical browser: On Userland chromium-browser segfaulted. Netsurf has
+  no packages in Ubuntu 18.04 (but does in 17.10 and 18.10?).  Try building
+  netsurf?
+- Colemak for all of Android w/o proprietary app. Should fix CapsLock
+  madness.
+- Removed xterm border.
 
-- Working in UserLAnd+Ubuntu+XServerXSDL:
-  - Play mp3 with sox "play" (note mpv permissions error even w/ sudo)
-  - Ran [~ sudo unminimize] to get manpages
-  - Installed tmux
-  - Fullscreened xterm w/ wmctrl.
+# Podcast battery stats:
+- 5:08 84%
+- 5:13 81%, 5:38 71% -> 25m/10% so expect 20% in 128m=2h8m at 7:49pm.
+  5:51 68%
+  6:00 56%  28%/52m  ~2m/% (60%=2h)
+  7:07 43%
+  7:28 38% plug in
+  7:33 44% 4-lights (fast)
+  7:57 80% 4-lights
+- pause/play w/o keyboard? based on earbud button would be best..
+- v2: also running on raspi0
 
-- Next for UserLAnd Xorg:
-  - Alt+Tab alternative; use xv to see what keys are.
-    - "Command/Windows" keys don't get to UserLAnd.
-    - So most interesting keys (w/ keycode) are:
-      Alt_L(64) Alt_R(108) Control_L(37) Shift_R(62) Shift_L(50) Delete(119)
-      Left(113) Right(114) Up(111) Down(116) Backspace(22) []
-      keycode 10 is # 1.
-      keycode 11 is # 2.
-      9Escape 67F1 .. 76F10 95F11 96F12 119Delete
-      23Tab 24Q .. 34bracketleft 35bracketright 51backslash
-      66Caps_Lock 38A .. 47semicolon 48apostrophe 36Return
-      50Shift_L 52Z 59comma 60period 61slash 62Shift_R
-  - graphical browser ideally that can do duolingo
-    try 
-  - Faster way to bootstrap my mods?
-- Next for Vuzix Blade Android:
-  - what filesystems are supported for microsd card?
+# Working in Termux:
+- play mp3 with mpv (note sox "play" shows playing stats but is silent)
+  And note UserLAnd only plays audio thru XServerXSDL, but the audio shuts
+  off if you turn off the screen or XServerXSDL is not the foreground app.
 
-- Colemak in Android generally:
+# Working in UserLAnd+Ubuntu+XServerXSDL:
+- Play mp3 with sox "play" (note mpv permissions error even w/ sudo)
+- Ran [~ sudo unminimize] to get manpages
+- Installed tmux
+- Fullscreened xterm w/ wmctrl.
+
+# Next for UserLAnd Xorg:
+- Alt+Tab alternative; use xv to see what keys are.
+  - "Command/Windows" keys don't get to UserLAnd.
+  - So most interesting keys (w/ keycode) are:
+    Alt_L(64) Alt_R(108) Control_L(37) Shift_R(62) Shift_L(50) Delete(119)
+    Left(113) Right(114) Up(111) Down(116) Backspace(22) []
+    keycode 10 is # 1.
+    keycode 11 is # 2.
+    9Escape 67F1 .. 76F10 95F11 96F12 119Delete
+    23Tab 24Q .. 34bracketleft 35bracketright 51backslash
+    66Caps_Lock 38A .. 47semicolon 48apostrophe 36Return
+    50Shift_L 52Z 59comma 60period 61slash 62Shift_R
+- graphical browser ideally that can do duolingo
+  try 
+- Faster way to bootstrap my mods?
+
+# Next for Vuzix Blade Android:
+- what filesystems are supported for microsd card?
+
+# Colemak in Android generally:
   - External Keyboard Helper Demo works but find FOSS or make
   - Look at: extra-keyboard-layouts finqwerty
-- ssh to UserLAnd Ubuntu
+# ssh to UserLAnd Ubuntu
   - May have to figure out what to do about systemd install failing
   - Is there something else to try besides openssh-server?
-- Xorg:
+# Xorg:
   - kill Fluxbox permanent-bottom-bar
   - install wmctrl
   - remove xorg decorations
 
-- If can get software end working well, then consider exotic hardware for
+# If can get software end working well, then consider exotic hardware for
   keyboardless usage
 
-- Note Raccoon downloads APKs from Google Play Store even "bundle" ones
-- Termux:
+# Note Raccoon downloads APKs from Google Play Store even "bundle" ones
+# Termux:
   - 5ba3f7cf6d8b2c29eb4f4d51a6a8961db502500d last time supported Sdk 22.
     2019-10-07. This works as of 2020-10 but legacy pkg db, no more updates.
-- main section: smartglasses v1 todo:
+# main section: smartglasses v1 todo:
   - 1) keyboard over bluetooth
   - 2) my own android app receiving keystrokes
-- testing w/ little old battery pack:
+# testing w/ little old battery pack:
   - 5:22pm 53% and powerpack immediately jumped to 3 lights. bt on. wifi off.
     screen left on. brightness 10.
   - 5:26pm 60% powerpack still at 3 lights. set brightness to 1 now.
-- later:
+# later:
   - batteries from 2020-10:
     - 89c/Ah: $23.91/26.8Ah https://smile.amazon.com/dp/B08BRDVGP1
     - 115: $22.99/20Ah https://smile.amazon.com/dp/B07YPY31FL               
   - investigate wired data transfer
-- work on soon: using smartglasses w/o clon:
+# work on soon: using smartglasses w/o clon:
   - look into battery pack in pocket
   - smartglasses are always at least the display. if android is too annoying
     may try raspi in pocket too. how does battery life compare?
   - mode w/ keyboard
   - mode w/o keyboard: what is input method here? wired/wireless clicker opts?
-- if just make a C app https://github.com/cnlohr/rawdrawandroid
+# if just make a C app https://github.com/cnlohr/rawdrawandroid
