@@ -26,6 +26,8 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
         }
+        // Note this fails for >= Android 8.0 API 26; you need to play dummy audio:
+        // https://developer.android.com/guide/topics/media-apps/mediabuttons
         var f : IntentFilter = IntentFilter(Intent.ACTION_MEDIA_BUTTON);
         var r = MyReceiver();
         f.setPriority(999);

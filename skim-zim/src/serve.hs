@@ -108,11 +108,11 @@ procArticle zimHtml =
     (preH2, h2s, theEnd) =
         headerMiddersFooter isH2Id (== TS.TagComment "htdig_noindex")
         (TS.parseTags zimHtml)
-    (engH2s, nonEngKeptH2s) = partition ((== "English") . h2IdLang . head) $
+    (enH2s, nonEnKeptH2s) = partition ((== "English") . h2IdLang . head) $
         filter ((`elem` keepLangs) . h2IdLang . head) h2s
-    (spaH2s, otherKeptH2s) = partition ((== "Spanish") . h2IdLang . head)
-        nonEngKeptH2s
-    modifiedKeptH2s = map modifyH2 $ spaH2s ++ otherKeptH2s ++ engH2s
+    (ptH2s, otherKeptH2s) = partition ((== "Portuguese") . h2IdLang . head)
+        nonEnKeptH2s
+    modifiedKeptH2s = map modifyH2 $ ptH2s ++ otherKeptH2s ++ enH2s
     modifyH2 h2 =
         modifyRegions
             (== TS.TagOpen "h3" [("id","Glyph_origin")])

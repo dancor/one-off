@@ -13,8 +13,8 @@ class MyReceiver : BroadcastReceiver() {
         // action = android.intent.action.MEDIA_BUTTON, data = null.
         if (!this.waitingOn2) {this.waitingOn2 = true; return}
         this.waitingOn2 = false
-        var s = "You pressed!" // + keyCode + "] at " + System.currentTimeMillis()
-        Log.e("LOL-BUTTON", s)
+        //var s = "You pressed!" // + keyCode + "] at " + System.currentTimeMillis()
+        Log.e("LOL-BUTTON", this.waitingOn2.toString())
         //val t: TextView = findViewById(R.id.textview_first)
         //t.text = s
         File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()

@@ -1,15 +1,7 @@
-# Cur notes:
-If a media button needs custom handling, override your callback’s onMediaButtonEvent() method, extract the KeyEvent using intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT), handle the event yourself, and return true.
-
 # Try next:
-- try intents to make danl-button work w/ screen off
-  - try MediaSessionCompat
-    onMediaButtonEvent()
-- try to save my mods to github
-- try to make a colemak app
-
-# Note: app2/ is an Android app that captures KeyEvent.KEYCODE_MEDIA_PLAY
-  and KeyEvent.KEYCODE_MEDIA_PAUSE, so I can toggle mpv play/pause in Termux.
+- try to make a Colemak app
+- try to save Termux files to github
+- try ssh to/from Termux: what's best way?
 
 # Current plan:
 - Termux is deprecated on Android 6 and not receiving package updates, but it
@@ -32,7 +24,8 @@ If a media button needs custom handling, override your callback’s onMediaButto
   madness.
 - Removed xterm border.
 
-# Podcast battery stats:
+# Battery stats:
+- Overnight w/ bluetooth but doing nothing next morning 64%.
 - 5:08 84%
 - 5:13 81%, 5:38 71% -> 25m/10% so expect 20% in 128m=2h8m at 7:49pm.
   5:51 68%
@@ -44,17 +37,21 @@ If a media button needs custom handling, override your callback’s onMediaButto
 - pause/play w/o keyboard? based on earbud button would be best..
 - v2: also running on raspi0
 
-# Working in Termux:
-- play mp3 with mpv (note sox "play" shows playing stats but is silent)
+# Working:
+- app2/ is an Android app that captures KeyEvent.KEYCODE_MEDIA_PLAY
+  and KeyEvent.KEYCODE_MEDIA_PAUSE, so I can toggle mpv play/pause in Termux.
+- Termux: play mp3 with mpv (note sox "play" shows playing stats but silent)
   And note UserLAnd only plays audio thru XServerXSDL, but the audio shuts
   off if you turn off the screen or XServerXSDL is not the foreground app.
+- UserLAnd+Ubuntu+XServerXSDL:
+  - Play mp3 with sox "play" (note mpv permissions error even w/ sudo) but only
+    w/ XServerXSDL in foreground and screen on.
+  - Ran [~ sudo unminimize] to get manpages
+  - Installed tmux
+  - Fullscreen Xterm w/ Wmctrl and Fluxbox settings.
+- Microsd card working as Fat32.
 
-# Working in UserLAnd+Ubuntu+XServerXSDL:
-- Play mp3 with sox "play" (note mpv permissions error even w/ sudo)
-- Ran [~ sudo unminimize] to get manpages
-- Installed tmux
-- Fullscreened xterm w/ wmctrl.
-
+## Old:
 # Next for UserLAnd Xorg:
 - Alt+Tab alternative; use xv to see what keys are.
   - "Command/Windows" keys don't get to UserLAnd.
@@ -68,22 +65,11 @@ If a media button needs custom handling, override your callback’s onMediaButto
     66Caps_Lock 38A .. 47semicolon 48apostrophe 36Return
     50Shift_L 52Z 59comma 60period 61slash 62Shift_R
 - graphical browser ideally that can do duolingo
-  try 
 - Faster way to bootstrap my mods?
-
-# Next for Vuzix Blade Android:
-- what filesystems are supported for microsd card?
 
 # Colemak in Android generally:
   - External Keyboard Helper Demo works but find FOSS or make
   - Look at: extra-keyboard-layouts finqwerty
-# ssh to UserLAnd Ubuntu
-  - May have to figure out what to do about systemd install failing
-  - Is there something else to try besides openssh-server?
-# Xorg:
-  - kill Fluxbox permanent-bottom-bar
-  - install wmctrl
-  - remove xorg decorations
 
 # If can get software end working well, then consider exotic hardware for
   keyboardless usage
