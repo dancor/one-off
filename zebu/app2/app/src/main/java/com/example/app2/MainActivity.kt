@@ -50,29 +50,7 @@ class MainActivity : AppCompatActivity() {
      */
 
     override fun onKeyDown(keyCode: Int, e: KeyEvent): Boolean {
-        var curTime : Long = System.currentTimeMillis()
-        if (curTime < lastKeyTime + 100) return true
-        // 5 single nonholds:
-        // KEYCODE_ENTER
-        // KEYCODE_DPAD_RIGHT
-        // KEYCODE_DPAD_LEFT
-        // KEYCODE_DPAD_UP
-        // KEYCODE_DPAD_DOWN
-        // 5 double nonholds:
-        // KEYCODE_BACK
-        // KEYCODE_FORWARD_DEL
-        // KEYCODE_DEL
-        // KEYCODE_VOLUME_UP
-        // KEYCODE_VOLUME_DOWN
-
-        /*
-        if (keyCode != KeyEvent.KEYCODE_MEDIA_PLAY &&
-                keyCode != KeyEvent.KEYCODE_MEDIA_PAUSE)
-            return super.onKeyUp(keyCode, event)
-        */
-        Log.e("LOL-KEYDOWN", e.toString())
-        val t: TextView = findViewById(R.id.textview_first)
-        t.append(when (e.keyCode) {
+        var c = when (e.keyCode) {
             KeyEvent.KEYCODE_DPAD_RIGHT -> "f"
             KeyEvent.KEYCODE_DPAD_LEFT -> "b"
             KeyEvent.KEYCODE_DPAD_UP -> "u"
@@ -83,8 +61,18 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_VOLUME_UP -> "U"
             KeyEvent.KEYCODE_VOLUME_DOWN -> "D"
             KeyEvent.KEYCODE_BACK -> "T"
-            else -> ""
-        })
+            else -> return false
+        }
+        var curTime : Long = System.currentTimeMillis()
+        if (curTime < lastKeyTime + 100) return true
+        /*
+        if (keyCode != KeyEvent.KEYCODE_MEDIA_PLAY &&
+                keyCode != KeyEvent.KEYCODE_MEDIA_PAUSE)
+            return super.onKeyUp(keyCode, event)
+        */
+        Log.e("LOL-KEYDOWN", e.toString())
+        val t: TextView = findViewById(R.id.textview_first)
+        t.append(c)
         lastKeyTime = curTime
         lastKeyCode = e.keyCode
         //File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
