@@ -40,22 +40,36 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+    /*
     override fun onTrackballEvent(e: MotionEvent): Boolean {
         Log.e("LOL-TRACKBALL", e.toString())
-        return true
+        return false // true
     }
+     */
 
-    /*
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+    override fun onKeyDown(keyCode: Int, e: KeyEvent): Boolean {
+        // 5 single nonholds:
+        // KEYCODE_ENTER
+        // KEYCODE_DPAD_RIGHT
+        // KEYCODE_DPAD_LEFT
+        // KEYCODE_DPAD_UP
+        // KEYCODE_DPAD_DOWN
+        // 5 double nonholds:
+        // KEYCODE_BACK
+        // KEYCODE_FORWARD_DEL
+        // KEYCODE_DEL
+        // KEYCODE_VOLUME_UP
+        // KEYCODE_VOLUME_DOWN
+
+        /*
         if (keyCode != KeyEvent.KEYCODE_MEDIA_PLAY &&
                 keyCode != KeyEvent.KEYCODE_MEDIA_PAUSE)
             return super.onKeyUp(keyCode, event)
-        val s = "You pressed:[" + keyCode + "] at " + System.currentTimeMillis()
-        Log.e("ZEDZED", s)
+        */
+        Log.e("LOL-KEYDOWN", e.toString())
         val t: TextView = findViewById(R.id.textview_first)
-        t.text = s
-        File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
+        t.text = e.toString()
+        //File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
         return true
     }
-    */
 }
