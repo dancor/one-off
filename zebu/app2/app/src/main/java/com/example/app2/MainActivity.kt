@@ -18,6 +18,8 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.view.MotionEvent
 
 class MainActivity : AppCompatActivity() {
+    var lastKeyTime : Long = 0
+    var lastKeyCode = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -48,6 +50,8 @@ class MainActivity : AppCompatActivity() {
      */
 
     override fun onKeyDown(keyCode: Int, e: KeyEvent): Boolean {
+        var curTime : Long = System.currentTimeMillis()
+        if (curTime < lastKeyTime + 100) return true
         // 5 single nonholds:
         // KEYCODE_ENTER
         // KEYCODE_DPAD_RIGHT
@@ -68,7 +72,21 @@ class MainActivity : AppCompatActivity() {
         */
         Log.e("LOL-KEYDOWN", e.toString())
         val t: TextView = findViewById(R.id.textview_first)
-        t.text = e.toString()
+        t.append(when (e.keyCode) {
+            KeyEvent.KEYCODE_DPAD_RIGHT -> "f"
+            KeyEvent.KEYCODE_DPAD_LEFT -> "b"
+            KeyEvent.KEYCODE_DPAD_UP -> "u"
+            KeyEvent.KEYCODE_DPAD_DOWN -> "d"
+            KeyEvent.KEYCODE_ENTER -> "t"
+            KeyEvent.KEYCODE_FORWARD_DEL -> "F"
+            KeyEvent.KEYCODE_DEL -> "B"
+            KeyEvent.KEYCODE_VOLUME_UP -> "U"
+            KeyEvent.KEYCODE_VOLUME_DOWN -> "D"
+            KeyEvent.KEYCODE_BACK -> "T"
+            else -> ""
+        })
+        lastKeyTime = curTime
+        lastKeyCode = e.keyCode
         //File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
         return true
     }
