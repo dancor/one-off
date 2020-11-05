@@ -1,3 +1,17 @@
+# Pros to working w/ stat
+- No-video mode possible and probably longer battery w/ it
+- More control
+- Possibly easier to carry around
+# Cons
+- Time to set up and maintain new system (but already have uSD)
+- Dual-mode is more to carry and charge
+  (possibly also continue zebu-mode, but syncing is issue then too, although
+  prob want backup plan anyway)
+- stat is a little awkward; just make thin cardboard case?
+- dual-mode means writing transfer code
+  (possibly long development time on zebu end and stat end)
+- stat is less proven (could have worse Bluetooth or Wifi range?)
+
 # Try next:
 - try to make a Colemak app
 - try to save Termux files to github
