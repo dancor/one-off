@@ -5,7 +5,7 @@ import Database.HDBC.Sqlite3
 import Data.Time.Clock.POSIX
 
 import Ddo
-import MyDdos (myDdos)
+import MyDdos.MyDdos (myDdos)
 
 type MyTime = Double
 

@@ -1,53 +1,74 @@
-# Keyboard (everything in 3 strokes, most in 2, some in 1):
+- Modify termux-app:terminal-emulator to do colemak?
+- Next: install openssh and try sshing to zebu port 8022.
+- Get things to run on device boot: https://wiki.termux.com/wiki/Termux:Boot
+- Plan tapmap: (everything in 3 strokes, most in 2, some in 1):
+  - control key faster etc?
+  # Order: f b u d t F B U D T (forward back up down tap; two-finger)
+  f space
+  b backspace
+  u a-j but ut:10slot
+  d k-t but dT:z
+  t u-y left right up down enter
+  F e
+  B t
+  U 0-9
+  D .:,;?!()'"
+  Tf 20slot
+  Tb 30slot
+  Tu A-J
+  Td K-T but TdT:Z
+  Tt U-Y home end pageup pagedown 31slot
+  TF 41slot
+  TB T
+  TU vol-up
+  TD vol-down
+  TT 51slot
+  --
+  52 left for 51 slots oops
+  22: `~@#$%^&*-_=+|[]{}<>/\  coding </>
+   6: delete tab alt control super escape
+  12: F1-F12
+   6: acute circumflex grave macron caron breve
+   4: ç ñ turned! turned?
+   2: caps-on caps-off
+  -- 4x 1stroke: backspace space e t
+  - 51x def 2stroke:
+   25: a-z (except e)
+   10: 0-9 (all on same 1 prefix key; also creates ordering)
+   10: .:,;?!()'"
+    5: up down left right enter
+    2: volume-up volume-down  (mute is already a hold)
+  - take<=20
+   22: `~@#$%^&*-_=+|[]{}<>/\  coding </>
+    6: delete tab alt control super escape
+  - 3stroke:
+   26: A-Z (single prefix on a-z?)
+   12: F1-F12
+    6: acute circumflex grave macron caron breve
+    4: ç ñ turned! turned?
+    2: caps-on caps-off
+  - also nice in 3 strokes: IPA symbols? korean? japanese?
+  - https://en.wikipedia.org/wiki/Letter_frequency
+  - zebu touchpad https://www.vuzix.com/Developer/KnowledgeBase/Detail/65
+    12 capturable (two finger hold not; 2 holds, 10 taps/swipes)
+    2 swipes / second?  type 100 characters w/ 2 swipes each or make
+    common letters one swipe for speed? is it consistent enough?
+    - UP and DOWN sometimes triple-fire (no others!) but just have a timeout
+      for those
+  - Try Raspi0W w/ 64G-microsd
+    - Record wire setup
+    - cp zebu podcasts to clon (make space..)
+    - Check what was on on 64G card
+    - Write to 64G card incl. zebu audio
+  - FluxmobBolt is 3Ah. If Zero W averages 0.2 A then 15h.
+  - Termux-tts-speak w/ mkfifo (or inotify dir alt works?)
+    https://wiki.termux.com/wiki/Termux-tts-speak
+    - Make mpv announce names
+  - v ~/z/README colemak github-Termux-~/bin-scripts?/fork-dancomp-non-hs..
+- start stat-comp?
+- work on zebu tapkeys (CTRL faster? easy to add to Termux? how interact w/
+  keyboard? set up ssh first so easier to backup and fix things?)
 
-# Order: f b u d t F B U D T (forward back up down tap; two-finger)
-
-f space
-b backspace
-u a-j but ut:10slot
-d k-t but dT:z
-t u-y left right up down enter
-F e
-B t
-U 0-9
-D .:,;?!()'"
-Tf 20slot
-Tb 30slot
-Tu A-J
-Td K-T but TdT:Z
-Tt U-Y home end pageup pagedown 31slot
-TF 41slot
-TB T
-TU vol-up
-TD vol-down
-TT 51slot
-
-52 left for 51 slots oops
- 22: `~@#$%^&*-_=+|[]{}<>/\  coding </>
-  6: delete tab alt control super escape
- 12: F1-F12
-  6: acute circumflex grave macron caron breve
-  4: ç ñ turned! turned?
-  2: caps-on caps-off
-
-
--- 4x 1stroke: backspace space e t
-- 51x def 2stroke:
- 25: a-z (except e)
- 10: 0-9 (all on same 1 prefix key; also creates ordering)
- 10: .:,;?!()'"
-  5: up down left right enter
-  2: volume-up volume-down  (mute is already a hold)
-- take<=20
- 22: `~@#$%^&*-_=+|[]{}<>/\  coding </>
-  6: delete tab alt control super escape
-- 3stroke:
- 26: A-Z (single prefix on a-z?)
- 12: F1-F12
-  6: acute circumflex grave macron caron breve
-  4: ç ñ turned! turned?
-  2: caps-on caps-off
-- also nice in 3 strokes: IPA symbols? korean? japanese?
 
 # Pros to working w/ stat
 - No-video mode possible and probably longer battery w/ it

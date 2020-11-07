@@ -19,7 +19,7 @@ import android.view.MotionEvent
 
 class MainActivity : AppCompatActivity() {
     var lastKeyTime : Long = 0
-    var lastKeyCode = 0
+    var lastC = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -72,9 +72,13 @@ class MainActivity : AppCompatActivity() {
         */
         Log.e("LOL-KEYDOWN", e.toString())
         val t: TextView = findViewById(R.id.textview_first)
-        t.append(c)
+        val c2 = lastC
+        lastC = c
+        t.append(when(Pair(c2, c)) {
+            Pair("F", "F") -> lastC = "e"
+            else -> {lastC = c; c}
+        })
         lastKeyTime = curTime
-        lastKeyCode = e.keyCode
         //File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
         return true
     }
