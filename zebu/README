@@ -1,4 +1,6 @@
-- Modify termux-app:terminal-emulator to do colemak?
+- The current codes for end, home, pageup and pagedown just each cause a tidle to appear in
+  the terminal.
+
 - Next: install openssh and try sshing to zebu port 8022.
 - Get things to run on device boot: https://wiki.termux.com/wiki/Termux:Boot
 - Plan tapmap: (everything in 3 strokes, most in 2, some in 1):
