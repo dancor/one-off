@@ -2,35 +2,47 @@
 - Next: install openssh and try sshing to zebu port 8022.
 - Get things to run on device boot: https://wiki.termux.com/wiki/Termux:Boot
 - Plan tapmap: (everything in 3 strokes, most in 2, some in 1):
+  # useful soon: / colon
+
   - control key faster etc?
   # Order: f b u d t F B U D T (forward back up down tap; two-finger)
   f space
   b backspace
-  u a-j but ut:10slot
+  u a-j but ut:1slot
   d k-t but dT:z
-  t u-y left right up down enter
+  t u-y right left up down enter
   F e
   B t
-  U 0-9
-  D .:,;?!()'"
-  Tf 20slot
-  Tb 30slot
-  Tu A-J
-  Td K-T but TdT:Z
-  Tt U-Y home end pageup pagedown 31slot
-  TF 41slot
-  TB T
-  TU vol-up
-  TD vol-down
-  TT 51slot
-  --
-  52 left for 51 slots oops
+  Uf .
+  Ub ,
+  Uu A-J
+  Ud K-T but UdT:Z
+  Ut U-Y end home pageup pagedown 1slot
+  UF 10slot
+  UB T
+  UU VolUp
+  UD 10slot
+  UT 10slot
+  Df 10slot
+  Db 10slot
+  Du 10slot
+  Dd 10slot
+  Dt 10slot
+  DF 10slot
+  DB CTRL
+  DU 10slot
+  DD VolDown
+  DT 10slot
+  T 0-9
+  -- 83 slots for:
+   8: :;?!()'"
   22: `~@#$%^&*-_=+|[]{}<>/\  coding </>
    6: delete tab alt control super escape
   12: F1-F12
    6: acute circumflex grave macron caron breve
    4: ç ñ turned! turned?
    2: caps-on caps-off
+
   -- 4x 1stroke: backspace space e t
   - 51x def 2stroke:
    25: a-z (except e)
