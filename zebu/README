@@ -1,19 +1,29 @@
+- use-modes:
+  - any hope of graphical browser on zebu w/o extra computer? can hardware even
+    do it usably in theory? would need to be heavily modified android app in c,
+    or run over XSDL (or worse VNC)?
+  - if no hope of that, then modes are: gfx-web w/ extra, anything text w/o.
 - temple-type:
-  - Look into possible bug: The current codes for end, home, pageup and pagedown just each
-    cause a tidle to appear in the terminal. Verify it works w/ keyboard or try in vim?
-  - Current layout: Order: f b u d t F B U D T (forward back up down tap; two-finger)
+  - Look into possible bug: The current codes for end,home,pageup,pagedown just
+    each cause a tidle to appear in the terminal. Verify it works w/ keyboard
+    or try in vim?
+  - Current layout: Order: f b u d t F B U D T
+    (forward back up down tap; two-finger)
     f space
     b backspace
-    u a-j but ut:escape
-    d k-t but dT:z
-    t u-y right left up down enter
+      fbudt FBUDT
+    u abcdE fghij ut:escape
+    d klmno pqrsz
+    t uvwxy RLUDE (right left up down enter)
+      fbudt FBUDT
     F e
     B t
     Uf .
     Ub ,
     Uu A-J
     Ud K-T but UdT:Z
-    Ut U-Y end home pageup pagedown +
+    Ut UVWXY ehud+ (end home pageup pagedown +)
+       fbudt FBUDT
     UF 10slot
     UB T
     UU VolUp
@@ -33,8 +43,10 @@
   - 150 tapcodes summary:
     -  4 1stroke: backspace space e t
     - 48 2stroke: a-zT0-9 escape right left up down enter volUp volDown tab .,
-    - 72 3stroke: A-Z(notT) end home pageup pagedown F1-12 +!@#$%^&*`~)(/\?][-_;}{'|!><"=:
+    - 72 3stroke: A-Z(notT) end home pageup pagedown F1-12
+                  +!@#$%^&*`~)(/\?][-_;}{'|!><"=:
     - 26 4stroke: ctrlA-ctrlZ
+  - May change for keyboard matching: tt -> enter. B -> backspace.
   - May add these 19 tapcodes in the remaining 58 slots:
     3: delete alt super
     6: acute circumflex grave macron caron breve
