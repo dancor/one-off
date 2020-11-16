@@ -72,12 +72,15 @@ class MainActivity : AppCompatActivity() {
         */
         Log.e("LOL-KEYDOWN", e.toString())
         val t: TextView = findViewById(R.id.textview_first)
+        /*
         val c2 = lastC
         lastC = c
         t.append(when(Pair(c2, c)) {
             Pair("F", "F") -> lastC = "e"
             else -> {lastC = c; c}
         })
+        */
+        t.append(c)
         lastKeyTime = curTime
         //File("/storage/external/danl-button/" + System.currentTimeMillis()).createNewFile()
         return true
