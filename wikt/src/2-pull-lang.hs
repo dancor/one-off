@@ -1,6 +1,5 @@
--- Usage: bzless ~/data/wikt/en.xml.bz2 | rhs a.hs > out.txt
 #include <h>
-
+import Share
 type Ts = [T]
 type T = TL.Text
 
@@ -14,6 +13,9 @@ isTitle, isH2 :: T -> Bool
 isTitle = (titlePre `TL.isPrefixOf`)
 isH2 x = TL.take 2 x == "==" && TL.drop 2 (TL.take 3 x) /= "="
 
+procTitle :: T -> T
+procTitle = TL.dropEnd (TL.length titlePost) . TL.drop (TL.length titlePre)
+
 readStart :: T -> Ts -> [Ts]
 readStart _ []     = []
 readStart l (x:xs) = if isTitle x then readFromTitle l x xs else readStart l xs
@@ -23,16 +25,16 @@ readFromTitle _ t []     = []
 readFromTitle l t (x:xs) = if isTitle x
   then readFromTitle l x xs
   else if x == "==" <> l <> "=="
-    then readFromSection l [t] xs -- TODO t extract title
+    then readFromSection l [] (procTitle t) xs
     else readFromTitle l t xs
 
-readFromSection :: T -> Ts -> Ts -> [Ts]
-readFromSection _ _   []     = error "End of input in section"
-readFromSection l acc (x:xs) = if isH2 x
-  then acc : readStart l xs
+readFromSection :: T -> Ts -> T -> Ts -> [Ts]
+readFromSection _ _   _    []     = error "End of input in section"
+readFromSection l acc acc1 (x:xs) = if isH2 x
+  then (acc ++ [acc1]) : readStart l xs
   else if shaPre `TL.isPrefixOf` x
-    then acc : readStart l xs  -- TODO extract acc last line
-    else readFromSection l (acc ++ [x]) xs
+    then (acc ++ [TL.drop (TL.length textPost) acc1]) : readStart l xs
+    else readFromSection l (acc ++ [acc1]) x xs
 
 main :: IO ()
 main = do
