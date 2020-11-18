@@ -1,0 +1,1 @@
+pv ~/data/wikt/en.xml.bz2 | bzcat | ./2-pull-lang English > out/en

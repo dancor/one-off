@@ -1,11 +1,17 @@
 - issues:
-  - boot: sshd didn't come up one time? see if it recurs. have never gotten tmux fully inited,
-    but got 8 and 9 to work which is great.
-  - (ip link show) hangs. (ip link) works. (ip link set wlan0 12:34:56:78:90:12) hangs.
+  - boot: sshd didn't come up one time? see if it recurs. have never gotten
+    tmux fully inited, but got 8 and 9 to work which is great.
+  - (ip link show) hangs. (ip link) works.
+    (ip link set wlan0 12:34:56:78:90:12) hangs. maybe this is expected w/o
+    root.  wifi advanced settings doesn't seem to be accessible in vuzix menus.
+    still may be able to invoke advanced settings of wifi from app2.
 - use-modes:
   - usable even w/o keyboard:
-    - play podcasts, 2nd time, get new podcasts, get more old podcasts (working now)
-    - lookup portuguese words in text-file simplification of enwikt ==Portuguese==
+    - works: play podcasts, 2nd time, get new podcasts, get more old podcasts
+    - lookup Pt words in text-file simplification of enwikt ==Portuguese==
+    - mm
+    - make termux color clearer? is it gray now? try white or green or bigger
+  - duo w/ gfx over usb thru clon/jeon (not stat since no faster than zebu?)
   - any hope of graphical browser on zebu w/o extra computer? can hardware even
     do it usably in theory? would need to be heavily modified android app in c,
     or run over XSDL (or worse VNC)?
