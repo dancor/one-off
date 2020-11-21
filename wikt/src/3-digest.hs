@@ -1,7 +1,6 @@
 #include <h>
 
-{-
-sectionsToKeep, sectionsToKill :: [Text]
+{- sectionsToKeep, sectionsToKill :: [Text]
 sectionsToKeep =
   [ "Noun"
   , "Verb"
@@ -10,17 +9,15 @@ sectionsToKeep =
   , "Derived terms"
   , "Related terms"
   , "Preposition"
-  ]
--}
+  ] -}
 sectionsToKill :: [Text]
 sectionsToKill =
-  [ "Alternative forms"
+  [ "Alternative" -- forms
   , "Conjugation"
   , "Descendants"
   , "Etymology"
-  , "Futher reading"
-  , "Pronunciation"
-  , "Quotations"
+  , "Further" -- reading
+  , "Pronunciation" , "Quotations"
   ]
 
 isHeader l = T.take 1 l == "="
@@ -33,7 +30,7 @@ procEntry [l] = procEntry [l,  ""]
 procEntry (l:l2:ls) = if isHeader l
   then let header = T.dropAround (== '=') l
            (section, rest) = span (\l -> T.take 1 l /= "=") ls
-    in if header `elem` sectionsToKill
+    in if T.takeWhile (/= ' ') header `elem` sectionsToKill
       then procEntry rest
       else (++ procEntry rest) $ case header of
         "Coordinate terms" ->
@@ -65,6 +62,7 @@ f l = do
             T.replace "{{" "<" . T.replace "}}" ">" . 
             -- T.replace "{{em|intr=1" "<" .    -- actually this talks about em
             -- T.replace " {{em|intr=1}}" "" .  -- preposition
+            T.replace "{{-}}" "" .
             T.replace "{{top2}}" "" .
             T.replace "{{mid2}}" "" .
             T.replace "{{bot2}}" "" .
@@ -79,6 +77,8 @@ f l = do
             T.replace "{{bot5}}" "" .
             T.replace "{{l|en|" "<" .
             T.replace "{{l|pt|" "<" .
+            T.replace "{{m|en|" "<" .
+            T.replace "{{m|pt|" "<" .
             T.replace "{{lb|pt|" "<" .
             T.replace "{{ux|pt|" "<" .
             T.replace "{{uxi|pt|" "<" .
@@ -95,9 +95,9 @@ f l = do
             T.replace "translation=" "" .
             T.replace "{{senseid|pt|" "<" $
             read l2
-    T.putStrLn word
-    mapM_ T.putStrLn $ procEntry $ filter (/= "----") $ filter (/= "") $
-        T.lines entry
+        e = procEntry $ filter (/= "----") $ filter (/= "") $ T.lines entry
+    --mapM_ T.putStrLn e
+    T.putStrLn $ T.intercalate "\1" $ word:e
 
 main :: IO ()
 main = do

@@ -43,13 +43,14 @@
     Db )(/\?][-_; (the real "?")
     Du }{'|!><"=:
     Dd 10slot
-    Dt 10slot
+    Dt 1234567890 (for combining marks with next letter 1 2á 3 4à 5 6 7tilde 8, 9)
     DF 10slot
     DB CTRL
     DU 10slot
     DD VolDown
     DT F11 F12 8slot
     T 0-9
+  - Add soon: ã á à (also for: e i o u) ç
   - May change for keyboard matching: tt -> enter. B -> backspace.
   - 150 tapcodes summary:
     -  4 1stroke: backspace space e t
