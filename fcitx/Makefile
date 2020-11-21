@@ -1,4 +1,12 @@
-all: danhebrew dankorean danrussian
+all: dan1345 danhebrew dankorean danrussian
+
+dan1345: dan1345.txt
+	cp conf/dan1345.conf ~/.config/fcitx/table/
+	txt2mb dan1345.txt ~/.config/fcitx/table/dan1345.mb
+	echo "Now run fcitx -r somewhere (it may spew errors there later)>"
+	echo "You don't need to restart programs; even fcitx-configtool auto"
+	echo "reloads after fcitx -r. However fcitx -r may cause your xterm to"
+	echo "hang and require xkill to kill it."
 
 danhebrew: danhebrew.txt
 	cp conf/danhebrew.conf ~/.config/fcitx/table/

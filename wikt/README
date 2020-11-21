@@ -1,1 +1,15 @@
-- May pull all Translations under English section..
+# Ideas
+- Look at longest ==Portuguese== sections for best summary planning?
+- Most entries are verb forms?
+- Pull pt from English:Translations (a reverse lookup)
+- Convert senseid's to "(the sense)"
+
+# Other projects
+- https://github.com/componavt/wikokit (last updated 2014? Java)
+
+# Old notes
+kill: ====Quotations==== ====Derived terms==== ===Alternative forms===
+kill for now: ===Pronunciation=== ===Etymology=== ====See also====
+good ones: ===Proper noun===, Adjective Noun Verb etc
+usually repeated in the tags after anyway?
+- also look for pt translations in english word entries?
