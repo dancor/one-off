@@ -6,6 +6,10 @@
 	mkdir -p build; \
 		ghc -cpp -O3 -o $@ --make $< -isrc -hidir build -odir build
 
+3-digest: src/3-digest.hs
+	mkdir -p build; \
+		ghc -cpp -O3 -o $@ --make $< -isrc -hidir build -odir build
+
 a.out: src/pull-lang.c
 	gcc -O3 -o $@ -march=native $<
 
