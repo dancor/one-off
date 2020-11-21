@@ -1,0 +1,2 @@
+pv out/pt | ./3-digest > enwikt-pt.dig
+scp -P 8022 enwikt-pt.dig z:
