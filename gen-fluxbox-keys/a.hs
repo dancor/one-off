@@ -22,7 +22,7 @@ i2f = fromIntegral
 
 ms, ss, ts :: [T]
 ms = concatMap (\(a,s) -> [
-    "m " <> a <> " :Exec multiplexed-positioned-titled-xt" <> s,
+    "m " <> a <> " :Exec multiplexed-positioned-titled-xt " <> s,
     "b " <> a <> " :Exec multiplexed-positioned-titled-xt -b " <> s]) [
     ("a", "1 0 a1"),
     ("r", "2 1 a2"),
