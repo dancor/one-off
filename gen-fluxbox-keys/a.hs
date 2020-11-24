@@ -37,15 +37,17 @@ ms = concatMap (\(a,s) -> [
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
     ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
 ts = "t 9 :Exec wmv 0.0+" : concat
-    [tsH lpos width | lpos <- [0..8], width <- [1..9-lpos]] where
+    [tsH lpos width | lpos <- [0..8], width <- [1..9-lpos]] ++
+    concat (zipWith (\a n -> forms (a <> " :Exec wmv " <> n))
+        ["a", "r", "s", "t", "d"] ["0", "1", "2", "3", "4+"])
+  where
     tsH :: Int -> Int -> [T]
-    tsH lpos width = [
-        "t " <> c, 
-        "t q " <> c <> " 0+0.5", 
-        "t w " <> c <> " 0+0.87", 
-        "t z " <> c <> " 0.5+"] where
-        c = sh lpos <> " " <> sh width <> " :Exec wmv " <> sh (i2f lpos / 2) <>
-            if lpos + width == 9 then "+" else "+" <> sh (i2f width / 2)
+    tsH lpos width = forms $ sh lpos <> " " <> sh width <> " :Exec wmv " <>
+        sh (i2f lpos / 2) <>
+        if lpos + width == 9 then "+" else "+" <> sh (i2f width / 2)
+    forms :: T -> [T]
+    forms x = ["t " <> x, "t q " <> x <> " +.5", "t w " <> x <> " +.87", 
+        "t z " <> x <> " .5+"]
 
 mod4Codes :: [T]
 mod4Codes = T.lines [r|d :ToggleDecor
