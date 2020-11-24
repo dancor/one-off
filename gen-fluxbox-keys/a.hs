@@ -38,8 +38,8 @@ ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
     ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
 ts = "t 9 :Exec wmv 0.0+" : concat
     [tsH lpos width | lpos <- [0..8], width <- [1..9-lpos]] ++
-    concat (zipWith (\a n -> forms (a <> " :Exec wmv " <> n))
-        ["a", "r", "s", "t", "d"] ["0", "1", "2", "3", "4+"])
+    concat (zipWith (\a n -> forms (T.singleton a <> " :Exec wmv " <> n))
+        "arstd" ["0", "1", "2", "3", "4+"])
   where
     tsH :: Int -> Int -> [T]
     tsH lpos width = forms $ sh lpos <> " " <> sh width <> " :Exec wmv " <>
