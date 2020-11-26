@@ -1,0 +1,32 @@
+#!/usr/bin/python3
+from os import chdir, listdir, makedirs, path
+from subprocess import PIPE, run
+import sys
+from urllib.parse import urlparse
+from shutil import move
+
+def mkd(d): makedirs(d, exist_ok=True)
+
+argn = len(sys.argv)
+assert (argn <= 2), "Usage."
+max_n = 1 if argn == 1 else int(sys.argv[1])
+pod_d = b"/storage/external/podcasts"
+#pod_d = "/var/www/html/rtp/podcasts"
+staging = path.join(pod_d, b"staging")
+mkd(staging); chdir(staging)
+for n in range(max_n):
+    for f in listdir(path.join(pod_d, b"rss")):
+        mkd(path.join(pod_d, b"mp3", f))
+        for g in listdir(path.join(pod_d, b"rss", f)):
+            print(str(b"Doing: " + f + b"/" + g, encoding="utf8"))
+            mkd(path.join(pod_d, b"mp3", f, g))
+            rss_g = path.join(pod_d, b"rss", f, g)
+            c = ["grep", "-oP" ,"(?<=>).*mp3", rss_g]
+            ls = run(c, stdout=PIPE).stdout.split(b"\n")
+            if len(ls) <= n: continue
+            url = ls[n]
+            mp3_name = urlparse(url).path.rpartition(b"/")[2]
+            dest = path.join(pod_d, b"mp3", f, g, mp3_name)
+            if path.exists(dest): continue
+            run(["wget", "-c", url])
+            move(mp3_name, dest)
