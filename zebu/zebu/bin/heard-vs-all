@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+cd /storage/external/podcasts
+find did-mp3 -iname '*.mp3' | wc -l
+find mp3 -iname '*.mp3' | wc -l
