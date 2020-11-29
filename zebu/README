@@ -5,6 +5,7 @@
     (ip link set wlan0 12:34:56:78:90:12) hangs. maybe this is expected w/o
     root.  wifi advanced settings doesn't seem to be accessible in vuzix menus.
     still may be able to invoke advanced settings of wifi from app2.
+  - zebu too shaky w/ bluetooth so trying stat
 - use-modes:
   - usable even w/o keyboard:
     - works: play podcasts, 2nd time, get new podcasts, get more old podcasts
