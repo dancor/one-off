@@ -1,0 +1,68 @@
+# p plan: require subs: track ongoing shows, and then watch 2020 vids (maybe
+# going back by month; on Out. see ../abbrs). or shortest first? kids first?
+# kids:
+# -  2h Hora do Conto (Video is relevant)
+# -  6h Conta um Conto (Vid semi rel),
+# - 10h Outra Escola (docu about school kids anyway)
+# humor(hardest,last?):
+# -  4h Desliga a Televisão - Compactos
+# - 26h Nelo & Idália
+# d plan: oldest things before they disappear?
+#2020-11-30	danl	30 Minutos com...	S[]E[2012-05-15]Note[The3OlderEps,AllFrom2010,NotAvail.]
+
+# older format list. D[] Description
+2020-11-03	paul	Ziguipedia Monumentos	S[]E05
+  D[Fic Kids GoodAestheticCompGfx]
+2020-11-05 p Isto não é um Chapéu	S[]E03[2020-10-24]
+2020-11-26 d Inspira, Expira	S01E29[2020-11-23]
+2020-11-28 d A Grande Viagem de Magalhães	S01E02-06,DidShow
+2020-11-28 d Inspira, Expira	[Zigzag; static image],S01E01
+2020-11-29 p A Arte Eletrica Em Portugal	S02E01[NoSubs]
+2020-11-29 p O Alto	S01E01[EvenWorseThanOsNossosDias]
+  [AccidentallyWatched6mOfS01E07WhereSubsWorkedBut1Stuck]
+2020-11-30 p Bom Dia Portugal	S[2020]E[2020-11-30]
+  Note[8partsAndVeryRepetitive.GotTo9:40OfPart6.Try360DailyInstead?]
+2020-11-30 p 360	S[2020]E[2020-11-29][NoSubs]
+  Note[3parts:40min,40min,10min.1st2almostIdentical?3rdDiff.]
+2020-11-30 p Olhar O Mundo	S07E19[NoSubs]
+2020-11-30 p Sociadade Civil	S16E181[NoSubs]
+2020-12-01 p Nelo & Idália	S[]E[2019-03-09][NoSubs]
+2020-12-01 p 360	S[2020]E[2020-11-30][NoSubs]Note[3parts:~40min,
+  ~40min,5min.5minWas"3At23:00"NoRealRepsThisTimeJustTinyClip]
+2020-12-01 p Estudar Com Autonomia	S[]E01[NoSubs;OnlyWatched11min;
+  4HrSchoolAtHomeStartsMathALittleHard]
+2020-12-01 p Ziguipedia Monumentos	S[]:E01[Subs],E02[BlankSubs;
+  HasDupeAndBothHaveBlankSubs],E03-04,DidShow,
+  D[Trivia show for kids w/ puppets and comp-gfx]
+2020-12-01 p Isto não é um Chapéu	S[]E01-02[NoSubs],DidShow
+
+# main list in latest format
+2020-10-21 p 1803 S2020E01 Histórias de Mar "Sal" # S[] = S2019 + S2020
+2020-12-02 p 7707 S[]E01 Uma SMS para Antígona    # S[] = 1ep
+2020-12-02 p 7417 S[]E01 Os Pastores do Deserto   # S[] = 1ep
+# These were each the latest available of these weekly continuing shows:
+2020-12-02 p 6601 S09E29 Voz do Cidadão ""
+2020-12-02 p 6689 S18E37 Biosfera "Que Visão para Portugal em 2030?"
+2020-12-02 p 6595 S22E29 Linha da Frente "Já Não Sou Quem Era"
+2020-12-02 p 6785 S[]E17 Unidos ao Clube ""
+2020-12-02 p 6943 S[]E15 Fabrico Internacional "The Navigator Company"
+2020-12-02 p 6660 S03E09 Outras Histórias
+  "Artesã da Ilha, Verdade das Letras, Colecionador de Falares"
+2020-12-02 p 7801 S[]E04 Primeira Pessoa "Herman José"
+#
+2020-12-02 p 8010 S[]E01 Fala aos Bichos # Theater Piece. S[] = 1ep
+
+# 3m/~20m in:
+2020-12-02 p 1803 S2020E02 Histórias de Mar "Concha" # Daily until 2020-11-02
+
+# plan Out.:
+https://www.rtp.pt/play/p7843/e499689/soqnao
+2020-12-02 p 7843 S02E01 #SÓQNÃO
+https://www.rtp.pt/play/p6756/e501889/novo-mundo-digital
+2020-12-02 p 6756 S[]E01 Novo Mundo Digital
+https://www.rtp.pt/play/p7697/e500349/depois-do-crime
+2020-12-02 p 7697 S[]E01 Depois do Crime
+https://www.rtp.pt/play/p7402/e497083/desliga-a-televisao-compactos
+2020-12-02 p 7402 S[]E01 Desliga a Televisão # BestOf
+https://www.rtp.pt/play/p7665/e501718/francisco-de-holanda-a-luz-esquecida-do-renascimento
+2020-12-02 p 7665 S[]E01 Francisco de Holanda

@@ -98,15 +98,18 @@ main = do
     a <- IM.fromList .
         filter (aHasSubs . snd) . 
         filter (aIsAvail . snd) . 
+        filter ((/= 7911) . fst) . 
         map procA .
         T.lines <$> T.readFile aFile
     s <- IM.fromList . 
-        filter ((== "2020") . last . T.words . sNextEp . snd) . 
+        filter (("2020" `T.isSuffixOf`) . sNextEp . snd) . 
+        --filter (("Nov. 2020" `T.isSuffixOf`) . sNextEp . snd) . 
+        -- filter ((\x -> "Not" `T.isInfixOf` x || "not" `T.isInfixOf` x) . sDesc . snd) . 
         procS . T.lines <$> T.readFile sFile
     mapM_ (\(secs, as) -> T.putStrLn . T.unlines $
         tSecs secs <> " " <> sName (snd $ head as) : concatMap (\(a, s) ->
         [ "- S[" <> sSeason s <> "] " <>
-          T.pack (show $ sEpCount s) <> "ep[" <>
+          tSecs (aEpSecs a) <> "*" <> T.pack (show $ sEpCount s) <> "ep[" <>
           sNextEp s <> "] " <> (if aHasSubs a then "" else "No") <> 
           "Subs"
         , aUrl a
