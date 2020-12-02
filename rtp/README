@@ -1,0 +1,66 @@
+# Directories:
+- v/ # videos
+- p/ # podcasts TODO
+
+# Info about vids:
+- pnum
+- if it's available
+- group seasons
+- if it's zigzag or palco
+- length in seconds
+
+# To pull info on RTP on-demand videos (series and standalone films):
+- In browser go to https://rtp.pt/
+- Clicking "RTPPlay" gets https://www.rtp.pt/play/
+- Clicking "Programas" gets https://www.rtp.pt/play/programas
+- Change just-under-top-right dropdown from "Todos os Canais" to
+  "Todos os Canais de Televisão". This puts you at:
+  https://www.rtp.pt/play/programas/tema/channels-tv
+  (so you could just start there).
+- Over and over press End key and wait for more to load.
+  This will take a long time and eventually create CPU load.
+  It's probably worth automating the periodic End key sending like
+  (forever sh -c 'sleep 1 && xdotool key End') then focus the browser.
+  It should take about 20 minutes? Then focus terminal and ^C xdotool.
+- Save the source of the browser page. You don't need the _files directory
+  with it unless you want to use the thumbnails to select shows locally.
+- This source has a link for every RTP on-demand series. Each season has its
+  own link. But they won't necessarily all be available to you where you are.
+- Use a Greasemoney script so when a video link is loaded it checks if
+  the video is loading or saying it's not available in your region (this is a
+  good time to see what has subtitles too), and sends this info to a local web
+  service (that you have to make), that saves it to disk. Load the link for
+  each series and close it after the Greasemonkey script runs. Now you know
+  what series are available and what series are subtitled. Whew.
+- Note that some of the "videos" just have a still image the whole
+  time, like the kids meditions series "Inspira, Expira".
+  I'm still calling those videos. RTP's "podcasts" are mp3-format audio series
+  with no video whatsoever.)
+
+# To pull info on RTP podcasts:
+- TODO
+
+# Old personal notes:
+- https://www.rtp.pt/play/
+- See 77-subs-desc.txt
+- unseen: Hotel5Estrelas(Telenovela) BemVindosABeirais(Telenovela)
+  NeloEIdalia(SketchCom) VisitaGuiada(Travel) OutraEscola(NonficStudents)
+  LiteraturaAqui(Lit) OPovoQueAindaCanta(Singing) LinhaDaFrenta
+  EuMiudoEuGraudo(TimeTravFic) Paraiso(Gardens) GrandesQuadrosPortugueses
+  DeLisboaAHlsinquia Armario ContaMeComoFoi TeoriasDaConspiraçao
+  NossoConsulEmHavana VejamBem PalcosAgora(PerformingArts) ...
+- Actually there are 2828 vids incl. singletons!
+  - Investigate these as well?
+- Site has European Portuguese serials. Some audio-only, some with video too.
+  As of 2020-10: 1738 video shows: 205 unavail to us in Tifl.
+  77 avail w/ en subtitles. 1456 avail w/o en subtitles.
+- Todo:
+  - Get descriptions for 77 or also 1456..
+- Not avail?:
+  - A Espia (NCIS actress? WW2 female spy in Portugal?)
+  - Solteira e Boa Rapariga (Love Actually actress? new date each ep?)
+- Old: 3 yr old link to series & standalone w/ subtitles:
+  (2020-10 checked Os Boys and it's available but without subtitles.)
+https://www.reddit.com/r/Portuguese/comments/6t9ffn/subtitled_portuguese_tv_content_list_with_links/dljx4eq/
+- Old: for vid:
+for i in $(find * -size 0); do mtt $i; my-wget -O $i 'https://www.rtp.pt/play/bg_l_pg/?stamp=499974&listDate=&listQuery=&listProgram=&listcategory=&listchannel=&listtype=recent&page='$i'&type=all&currentItemSelected=0&listbroadcaster=tv'; done

@@ -10,8 +10,9 @@ def mkd(d): makedirs(d, exist_ok=True)
 argn = len(sys.argv)
 assert (argn <= 2), "Usage."
 max_n = 1 if argn == 1 else int(sys.argv[1])
-pod_d = b"/storage/external/podcasts"
-#pod_d = "/var/www/html/rtp/podcasts"
+pod_d = b"/home/pi/Podcasts"
+#pod_d = b"/storage/external/podcasts"
+#pod_d = b"/var/www/html/rtp/podcasts"
 staging = path.join(pod_d, b"staging")
 mkd(staging); chdir(staging)
 for n in range(max_n):

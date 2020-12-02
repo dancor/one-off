@@ -1,0 +1,14 @@
+// ==UserScript==
+// @name        fast-vid
+// @namespace   Violentmonkey Scripts
+// @match       https://www.rtp.pt/play/p*
+// @grant       none
+// @version     1.0
+// @author      -
+// @description 11/29/2020, 2:15:29 PM
+// ==/UserScript==
+window.addEventListener('load', function() {
+  for (v in document.getElementsByClassName("rmp-video")) {
+    v.playbackRate = 1.5;
+  }
+}, false);
