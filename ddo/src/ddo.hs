@@ -1,8 +1,19 @@
-#include <h>
+{-# LANGUAGE OverloadedStrings #-}
 
+import Control.Monad
+import Data.HashMap.Strict (HashMap)
+import Data.List
+import Data.Maybe
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
+import Data.Time
+import Data.Time.Clock.POSIX
 import Database.HDBC
 import Database.HDBC.Sqlite3
-import Data.Time.Clock.POSIX
+import System.Directory
+import System.Environment
+import System.FilePath
 
 import Ddo
 import MyDdos.MyDdos (myDdos)
