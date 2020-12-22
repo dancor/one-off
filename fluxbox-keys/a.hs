@@ -58,12 +58,12 @@ w :ClientMenu
 F7 :Exec arst
 n :Exec hide-notifier
 r n :Exec show-notifier
-a :Exec my-fcitx-remote -os danarabic  ; sleep 1; fid
-j :Exec my-fcitx-remote -os mozc       ; sleep 1; fid
-3 :Exec my-fcitx-remote -os ipa-x-sampa; sleep 1; fid
-p :Exec my-fcitx-remote -os pinyin     ; sleep 1; fid
-k :Exec my-fcitx-remote -os dankorean  ; sleep 1; fid
-h :Exec my-fcitx-remote -os danhebrew  ; sleep 1; fid
+a :Exec my-fcitx-remote -os danarabic  ; sleep 0.5; fid
+j :Exec my-fcitx-remote -os mozc       ; sleep 0.5; fid
+3 :Exec my-fcitx-remote -os ipa-x-sampa; sleep 0.5; fid
+p :Exec my-fcitx-remote -os pinyin     ; sleep 0.5; fid
+k :Exec my-fcitx-remote -os dankorean  ; sleep 0.5; fid
+h :Exec my-fcitx-remote -os danhebrew  ; sleep 0.5; fid
 c :Exec my-fcitx-remote -c             ; fid
 F3 :Exec lower-brightness
 F4 :Exec raise-brightness

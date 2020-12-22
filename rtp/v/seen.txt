@@ -1,3 +1,19 @@
+# Weekly RTP Subs shows Paul and I should do (PT release day):
+#   Th https://www.rtp.pt/play/p6595/e508845/linha-da-frente News? 9pmRTP1
+#   Sa https://www.rtp.pt/play/p6601/e509115/voz-do-cidadao  News?
+#   Sa https://www.rtp.pt/play/p6689/e509113/biosfera        Bio?
+#   Su https://www.rtp.pt/play/p6785/e509263/unidos-ao-clube Sport+CommServ
+#   Mo https://www.rtp.pt/play/p6943/e507927/fabrico-internacional Manufact
+#   MoSporatic https://www.rtp.pt/play/p6660/e506319/outras-historias NewsAlt?
+#   2ndMo https://www.rtp.pt/play/p7801/e508134/primeira-pessoa 1Famous/Ep  
+# Finished but could go thru:
+#   Histórias de Mar
+#   #SÓQNÃO S02:10 S01:10?
+#   Novo Mundo Digital: subs were wrong on E14 and not on E01
+#   Depois do Crime
+#   Desliga a Televisão
+#   Francisco de Holanda
+
 # p plan: require subs: track ongoing shows, and then watch 2020 vids (maybe
 # going back by month; on Out. see ../abbrs). or shortest first? kids first?
 # kids:
@@ -9,6 +25,9 @@
 # - 26h Nelo & Idália
 # d plan: oldest things before they disappear?
 #2020-11-30	danl	30 Minutos com...	S[]E[2012-05-15]Note[The3OlderEps,AllFrom2010,NotAvail.]
+
+# Note that 7308 "Genealogias de um Crime" is a fr-lang film in 3 parts and
+# part 1 is 28m28s.
 
 # older format list. D[] Description
 2020-11-03	paul	Ziguipedia Monumentos	S[]E05
@@ -37,32 +56,63 @@
 2020-12-01 p Isto não é um Chapéu	S[]E01-02[NoSubs],DidShow
 
 # main list in latest format
-2020-10-21 p 1803 S2020E01 Histórias de Mar "Sal" # S[] = S2019 + S2020
-2020-12-02 p 7707 S[]E01 Uma SMS para Antígona    # S[] = 1ep
-2020-12-02 p 7417 S[]E01 Os Pastores do Deserto   # S[] = 1ep
+2020-10-20 p 7391 S[]E02 Megaoperação # S[]=1ep+rep
+2020-10-20 p 6689 S18E28[PósCovidCidade]
+2020-10-21 p 1803 S2020E01 Histórias de Mar "Sal" # S[]=S2019+S2020
+2020-11-03 p 7594 S[]E02 Hoteis Com História ~"Estoril+Sol" # S[]=1ep+rep
+2020-11-03 p 5656 S09E01[2019-04-01] Visita Guiada ~"Slavery" # [Nonfic PortugalHistory] Subs
+2020-11-03 p 5054 S[]E[2020-06-14] De Lisboa A Helsínquia [Short weekly program about EU public funds projects in the EU.] # This was the latest ep. Ep numbers seem jumbled. Spans 2018-2020.
+2020-11-04 p 7193 S[]E02[2020-04-26] Chefs De Casa [Nonfic Cooking]
+2020-11-05 p 4788 S[]E[2020-09-22] Just In Time # S[]=1ep+rep [Nonfic RecordingJazzMusic EmptySubs!]
+2020-12-02 p 7707 S[]E01 Uma SMS para Antígona    # S[]=1ep
+2020-12-02 p 7417 S[]E01 Os Pastores do Deserto   # S[]=1ep
 # These were each the latest available of these weekly continuing shows:
-2020-12-02 p 6601 S09E29 Voz do Cidadão ""
-2020-12-02 p 6689 S18E37 Biosfera "Que Visão para Portugal em 2030?"
-2020-12-02 p 6595 S22E29 Linha da Frente "Já Não Sou Quem Era"
-2020-12-02 p 6785 S[]E17 Unidos ao Clube ""
-2020-12-02 p 6943 S[]E15 Fabrico Internacional "The Navigator Company"
-2020-12-02 p 6660 S03E09 Outras Histórias
+2020-12-02 p 6601 S09E29 Voz do Cidadão "" [Subs] # viewer letters about RTP..
+2020-12-02 p 6689 S18E37 Biosfera "Que Visão para Portugal em 2030?" [Subs]
+2020-12-02 p 6595 S22E29 Linha da Frente "Já Não Sou Quem Era" [Subs]
+2020-12-02 p 6785 S[]E17 Unidos ao Clube "" [Subs]
+2020-12-02 p 6943 S[]E15 Fabrico Internacional "The Navigator Company" [Subs]
+2020-12-02 p 6660 S03E09 Outras Histórias [Subs]
   "Artesã da Ilha, Verdade das Letras, Colecionador de Falares"
-2020-12-02 p 7801 S[]E04 Primeira Pessoa "Herman José"
+2020-12-02 p 7801 S[]E04 Primeira Pessoa "Herman José" [Subs]
 #
 2020-12-02 p 8010 S[]E01 Fala aos Bichos # Theater Piece. S[] = 1ep
+2020-12-03 p 1803 S2020E02 Histórias de Mar "Concha" # Daily until 2020-11-02
+2020-12-03 p 7843 S02E01 #SÓQNÃO dragQueen # S02 = 10ep
+2020-12-03 p 6756 S[]E14[2020-10-26] Novo Mundo Digital ""
+2020-12-03 p 7697 S[]E01 Depois do Crime [Subs]
+2020-12-04 p 6595 S22E30 Voz do Cidadão "As Máquinas de Vício" (vaping)
+2020-12-04 p 7402 S[]E01 Desliga a Televisão [Subs] # BestOf
+2020-12-04 p 6651 S2020E[2020-12-04] NoSubs # 40:21in/56:35 only1parte=good!
+2020-12-04 p 7665 S[]E02 Francisco de Holanda [Subs]             # S[]=1ep+rep
+2020-12-04 p 5794 S[]E02 A Sustentável Vida das Berlengas [Subs] # S[]=1ep+rep
+2020-12-04 p 7647 S[]E01 Eduardo Madeira Convida [Subs]          # S[]=1ep
+2020-12-05 p 95 S[]E1247[2020-12-04] Jornal da Tarde - Açores
+2020-12-07 p 3011 S[]E01[2020-08-20] Romani # palco; S[]=1ep Subs
+2020-12-07 p 6651 2020-12-07 3 às 14 NoSubs
+2020-12-07 p 7586 S[]E[2020-08-16]  # S[]=1ep Subs
+2020-12-07 p 7084 Ver Mais Sobre Ti # S[]=1ep Subs
+2020-12-07 p 7368 S[]E[2020-08-16]  # S[]=1ep Subs
+2020-12-07 p 6943 E16[2020-12-07] Fabrico Internacional "Wewood" # Subs
+2020-12-07 p 5656 S09E02 Visita Guiada # Subs
+2020-12-08 p 6651 2020-12-08 3 às 14 NoSubs
+2020-12-09 p 6651 2020-12-09 3 às 14 NoSubs
+2020-12-09 p 7193 S[]E01 Chefs De Casa # HaveWatchedEntireShow S[] E01-02
+2020-12-09 p 6668 S[]E01 Beautiful Madeira # HaveWatchedEntireShow S[] E01
+2020-12-10 p 5054 S[]E10[2020-05-27] De Lisboa A Helsínquia
+2020-12-10 p 6651 2020-12-10 3 às 14 EmptySubs # extra long ep 1h45m
+2020-12-11 p 6557 2020-12-11 Portugal Em Direto # 3 partes
+2020-12-13 p 6651 2020-12-13 3 às 14 EmptySubs
+2020-12-14 p 6645 2020-12-14 3 às 11 EmptySubs
+2020-12-15 p 6556 2020-12-15 Bom Dia Portugal # 8 parts S[2020] each has sports
+2020-12-16 p 6557 2020-12-16 Portugal Em Direto # 3 partes
+2020-12-17 p 6557 2020-12-17 Portugal Em Direto # 3 partes
+2020-12-19 p 6557 2020-12-18 Portugal Em Direto # 3 partes
+2020-12-19 p 6752 E28[2020-12-19] Parlamento # 1 parte 49min; invite politicians debate topic
+2020-12-20 p 6657 2020-12-20 Jornal das 12 # 1 parte 50min; news and second half (!) was sports
+2020-12-21 p 6557 2020-12-21 Portugal Em Direto # 3 partes
 
-# 3m/~20m in:
-2020-12-02 p 1803 S2020E02 Histórias de Mar "Concha" # Daily until 2020-11-02
+# cur in middle of:
 
-# plan Out.:
-https://www.rtp.pt/play/p7843/e499689/soqnao
-2020-12-02 p 7843 S02E01 #SÓQNÃO
-https://www.rtp.pt/play/p6756/e501889/novo-mundo-digital
-2020-12-02 p 6756 S[]E01 Novo Mundo Digital
-https://www.rtp.pt/play/p7697/e500349/depois-do-crime
-2020-12-02 p 7697 S[]E01 Depois do Crime
-https://www.rtp.pt/play/p7402/e497083/desliga-a-televisao-compactos
-2020-12-02 p 7402 S[]E01 Desliga a Televisão # BestOf
-https://www.rtp.pt/play/p7665/e501718/francisco-de-holanda-a-luz-esquecida-do-renascimento
-2020-12-02 p 7665 S[]E01 Francisco de Holanda
+# plan (. after): Jan Fev Mar Abr Mai Jun Jul Ago
+  (literature shows too hard? ok w/ subs?)

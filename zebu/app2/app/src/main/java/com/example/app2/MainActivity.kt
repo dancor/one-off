@@ -17,9 +17,34 @@ import java.io.File
 import android.support.v4.media.session.MediaSessionCompat
 import android.view.MotionEvent
 
+// Camera stuff
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import android.app.Service;
+import android.content.Intent;
+import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.Parameters;
+import android.os.Environment;
+import android.os.IBinder;
+import android.os.StrictMode;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+
 class MainActivity : AppCompatActivity() {
     var lastKeyTime : Long = 0
     var lastC = ""
+
+    // Camera stuff
+    private SurfaceHolder sHolder;
+    private Camera mCamera;
+    private Parameters parameters;
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -27,6 +52,9 @@ class MainActivity : AppCompatActivity() {
         var r = MyReceiver();
         f.setPriority(999);
         registerReceiver(r, f);
+
+        // Camera stuff
+
     }
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
