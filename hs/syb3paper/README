@@ -1,7 +1,0 @@
-This is basically a little tutorial to using syb-with-class.
-
-It's working example code from:
-"Scrap your boilerplate with class: extensible generic functions,
-Ralf Laemmel and Simon Peyton Jones, submitted to ICFP 2005."
-at
-http://research.microsoft.com/en-us/um/people/simonpj/papers/hmap

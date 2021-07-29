@@ -111,8 +111,19 @@
 2020-12-19 p 6752 E28[2020-12-19] Parlamento # 1 parte 49min; invite politicians debate topic
 2020-12-20 p 6657 2020-12-20 Jornal das 12 # 1 parte 50min; news and second half (!) was sports
 2020-12-21 p 6557 2020-12-21 Portugal Em Direto # 3 partes
+2020-12-22 p 6557 2020-12-22 Portugal Em Direto # 3 partes
+2020-12-23 p 6557 2020-12-23 Portugal Em Direto # 3 partes
+2020-12-24 p 6557 2020-12-24 Portugal Em Direto # 3 partes
+2020-12-28 p 6557 2020-12-28 Portugal Em Direto # 3 partes (after vacay break)
+2020-12-29 d 6557 2020-12-29 Portugal Em Direto # 3 partes
+2020-12-30 p 6557 2020-12-30 Portugal Em Direto # 3 partes
+2020-12-31 p 6557 2020-12-31 Portugal Em Direto # 3 partes
+2021-01-01 p 8227 2021-01-01 3 às 14 # 1 parte
+2021-01-12 p ???? Finished all 7 eps of the 2021 President Interviews show
+2021-01-12 p 8201 E[2021-01-09] 2021Pres: Joao Ferreia vs Vitorino Silva
 
 # cur in middle of:
+2021-01-12 p ???? 2021Pres: 7way debate
 
 # plan (. after): Jan Fev Mar Abr Mai Jun Jul Ago
   (literature shows too hard? ok w/ subs?)
