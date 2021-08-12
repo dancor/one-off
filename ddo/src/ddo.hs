@@ -33,15 +33,22 @@ getConn p f = do
         [] >> return ()
     return conn
 
+-- Convert unixtime to a local effective-day-for-my-purposes;
+-- that is, with the day cutoff potentially not at midnight.
+myDay :: Double -> IO Day
+myDay t = localDay . zonedTimeToLocalTime <$> utcToLocalZonedTime
+    (posixSecondsToUTCTime . realToFrac $ t - myCutoffHoursAfterMidnight * 3600)
+    where myCutoffHoursAfterMidnight = 11 -- unusually late for jetlag prep
+
 tryD :: Connection -> Ddo -> IO (Maybe Text)
 tryD conn (Ddo days d) = do
     ret <- withTransaction conn $ \c -> quickQuery c (
         "SELECT time FROM dd WHERE desc = ?") [toSql d]
     case ret of
       [[SqlDouble t]] -> do
-        thenDay <- localDay . zonedTimeToLocalTime <$>
-            utcToLocalZonedTime (posixSecondsToUTCTime $ realToFrac t)
-        curDay <- localDay . zonedTimeToLocalTime <$> getZonedTime
+        thenDay <- myDay t
+        curT <- realToFrac <$> getPOSIXTime
+        curDay <- myDay curT
         pure $ if curDay `diffDays` thenDay >= fromIntegral days
           then Just d else Nothing
       _ -> pure $ Just d
