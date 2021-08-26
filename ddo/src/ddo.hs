@@ -38,8 +38,7 @@ getConn p f = do
 myDay :: Double -> IO Day
 myDay t = localDay . zonedTimeToLocalTime <$> utcToLocalZonedTime
     (posixSecondsToUTCTime . realToFrac $ t - myCutoffHoursAfterMidnight * 3600)
-    where myCutoffHoursAfterMidnight = 4 -- normal in Lisbon
-    -- where myCutoffHoursAfterMidnight = 11 -- unusually late for jetlag prep
+    where myCutoffHoursAfterMidnight = 4
 
 tryD :: Connection -> Ddo -> IO (Maybe Text)
 tryD conn (Ddo days d) = do
