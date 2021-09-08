@@ -1,10 +1,15 @@
 #include <h>
 
-startDay = fromGregorian 2018 6 7
+-- right now must be a ????-03-01 day because of how the numbering is done
+startDay y = fromGregorian y 3 1
 
-numDays = 900
+lpad c n s = replicate (n - length s) c <> s
 
-showDay = formatTime defaultTimeLocale "%F %a"
+showDay n = formatTime defaultTimeLocale ("%F " <> lpad '0' 3 (show n) <> " %a")
 
-main =
-    mapM_ (\n -> putStrLn $ showDay $ addDays n startDay) $ take numDays [0..]
+main = do
+  args <- getArgs
+  case map readMay args of
+    [Just year] -> mapM_
+      (\n -> putStrLn $ showDay n $ addDays (n - 1) (startDay year)) [1..366]
+    _ -> hPutStrLn stderr "Usage: rhs a.hs 2022 > out"
