@@ -30,9 +30,10 @@ Shift:42 Z:44 .. RSHIFT:54 UP:103 END:107
 LCTRL:29 LWIN:126 LALT:56 Space:57 RAlt:100 RWin:127 RCtrl:97 Left:105 Down:108 Right:106
  */
 
+// timeStepSize = len / sampleRate
 #define sampleRate 44100
-#define len 110
-#define timeStepSize 2.494331065759637e-3 // len / sampleRate. do the math people
+#define len 55
+#define timeStepSize 1.2471655328798186e-3
 #define preset 0 // piano, the main preset
 #define vol 1.0f // piano, the main preset
 
@@ -117,59 +118,72 @@ int main(int argc, char **argv) {
         c ==  54 ?  34 :
         c == 103 ?  35 :
         
-        c ==  30 ?  48 : // [A]: C2
-        c ==  31 ?  49 :
-        c ==  32 ?  50 :
-        c ==  33 ?  51 :
-        c ==  34 ?  52 :
-        c ==  35 ?  53 :
-        c ==  36 ?  54 :
-        c ==  37 ?  55 :
-        c ==  38 ?  56 :
-        c ==  39 ?  57 :
-        c ==  40 ?  58 :
-        c ==  28 ?  59 :
+        c ==  30 ?  36 : // [A]: C2
+        c ==  31 ?  37 :
+        c ==  32 ?  38 :
+        c ==  33 ?  39 :
+        c ==  34 ?  40 :
+        c ==  35 ?  41 :
+        c ==  36 ?  42 :
+        c ==  37 ?  43 :
+        c ==  38 ?  44 :
+        c ==  39 ?  45 :
+        c ==  40 ?  46 :
+        c ==  28 ?  47 :
         
-        c ==  16 ?  60 : // [Q]: C3
-        c ==  17 ?  61 :
-        c ==  18 ?  62 :
-        c ==  19 ?  63 :
-        c ==  20 ?  64 :
-        c ==  21 ?  65 :
-        c ==  22 ?  66 :
-        c ==  23 ?  67 :
-        c ==  24 ?  68 :
-        c ==  25 ?  69 :
-        c ==  26 ?  70 :
-        c ==  27 ?  71 :
+        c ==  16 ?  48 : // [Q]: C3
+        c ==  17 ?  49 :
+        c ==  18 ?  50 :
+        c ==  19 ?  51 :
+        c ==  20 ?  52 :
+        c ==  21 ?  53 :
+        c ==  22 ?  54 :
+        c ==  23 ?  55 :
+        c ==  24 ?  56 :
+        c ==  25 ?  57 :
+        c ==  26 ?  58 :
+        c ==  27 ?  59 :
 
-        c ==   2 ?  72 : // [1]: C4
-        c ==   3 ?  73 :
-        c ==   4 ?  74 :
-        c ==   5 ?  75 :
-        c ==   6 ?  76 :
-        c ==   7 ?  77 :
-        c ==   8 ?  78 :
-        c ==   9 ?  79 :
-        c ==  10 ?  80 :
-        c ==  11 ?  81 :
-        c ==  12 ?  82 :
-        c ==  13 ?  83 :
+        c ==   2 ?  60 : // [1]: C4
+        c ==   3 ?  61 :
+        c ==   4 ?  62 :
+        c ==   5 ?  63 :
+        c ==   6 ?  64 :
+        c ==   7 ?  65 :
+        c ==   8 ?  66 :
+        c ==   9 ?  67 :
+        c ==  10 ?  68 :
+        c ==  11 ?  69 :
+        c ==  12 ?  70 :
+        c ==  13 ?  71 :
 
-        c ==  59 ?  84 : // [F1]: C5
-        c ==  60 ?  85 :
-        c ==  61 ?  86 :
-        c ==  62 ?  87 :
-        c ==  63 ?  88 :
-        c ==  64 ?  89 :
-        c ==  65 ?  90 :
-        c ==  66 ?  91 :
-        c ==  67 ?  92 :
-        c ==  68 ?  93 :
-        c ==  87 ?  94 :
-        c ==  88 ?  95 :
+        c ==  59 ?  72 : // [F1]: C5
+        c ==  60 ?  73 :
+        c ==  61 ?  74 :
+        c ==  62 ?  75 :
+        c ==  63 ?  76 :
+        c ==  64 ?  77 :
+        c ==  65 ?  78 :
+        c ==  66 ?  79 :
+        c ==  67 ?  80 :
+        c ==  68 ?  81 :
+        c ==  87 ?  82 :
+        c ==  88 ?  83 :
         
-        c == 119 ?  96 : // [Pause]: C7
+        c == 119 ?  84 : // [Pause]: C6
+        c == 110 ?  85 :
+        c == 111 ?  86 :
+        c == 102 ?  87 :
+        c == 104 ?  88 :
+        c == 109 ?  89 :
+        c == 107 ?  90 :
+        c == 106 ?  91 :
+        c == 108 ?  92 :
+        c == 105 ?  93 :
+        c ==  97 ?  94 :
+        c == 127 ?  95 :
+        
+        c == 100 ?  96 : // [RAlt]: C7
 
         /*
         c == 29  ? 24 :
@@ -184,14 +198,13 @@ int main(int argc, char **argv) {
         c == 106 ? 33 :
         */
         23;
-      tsf_note_on(sf, preset, noteNum, ev.value);
+      if (noteNum == 23) {printf("%d!", c); fflush(stdout);} else tsf_note_on(sf, preset, noteNum, ev.value);
       //printf("%d:%d!", c, noteNum); fflush(stdout);
-      printf("%d!", c); fflush(stdout);
 passDone:
       float tLeft = getTime() + timeStepSize - t;
       if (tLeft > 0) usleep(tLeft);
     }
-    printf("."); fflush(stdout);
+    //printf("."); fflush(stdout);
   }
   //if (frames > 0 && frames < (long)sizeof(buffer))
   //  printf("Short write (expected %li, wrote %li)\n", (long)sizeof(buffer), frames);
