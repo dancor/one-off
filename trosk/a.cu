@@ -39,8 +39,9 @@ int main(int argc, char **argv) {
   }
   int fd = open(argv[1], O_RDONLY);
   printf("fd: %d\n", fd);
-  fd_set fds;
-  struct timeval tv;
+  struct pollfd fds[1];
+  fds[0].fd = fd;
+  fds[0].events = POLLIN;
   struct input_event ev;
 
   struct termios term;
@@ -76,13 +77,9 @@ int main(int argc, char **argv) {
       snd_pcm_close(sc);
       return 0;
     }
-    FD_ZERO(&fds); FD_SET(fd, &fds);
-    tv.tv_sec = 0;
-    tv.tv_usec = 0; //100*1000*1000;
-    int pollRes = select(fd + 1, &fds, NULL, NULL, &tv);
-    //printf("pollRes: %d\n", pollRes);
-    if (pollRes == -1) perror("select() returned -1 which is bad");
-    if (pollRes) {
+    int pollRes = poll(fds, 1, 0);
+    if (pollRes != 0) {
+      if (pollRes == -1) perror("poll returned -1 which is bad");
       int lol = read(fd, &ev, sizeof(struct input_event));
       if (ev.type != 1) continue;
       if (ev.value == 1) { // value 1:down 2:holdRepeat 0:up
