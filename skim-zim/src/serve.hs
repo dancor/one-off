@@ -5,6 +5,7 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC
+import qualified Data.ByteString.Search as BSS
 import Data.List
 import Data.Maybe
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -94,6 +95,13 @@ modifyRegions startsARegion endsARegion f xs = pre ++
     end:rest = endAndRest
     region = regionMinusEnd ++ [end]
 
+fixColors = BSS.replace
+  ("background-color: white" :: BS.ByteString)
+  ("background-color:#777777" :: BS.ByteString)
+fixColorsT = DTL.replace
+  ("background-color: white")
+  ("background-color:#777777")
+
 -- Modify the wiktionary article html to only keep the h2 headings that
 -- match the languages-of-interest. Also move any English h2 heading from
 -- the top to the bottom.
@@ -139,25 +147,11 @@ serveZimUrl fps = do
       (mimeType, zimHtml) : rest -> do
         liftIO . putStrLn $ "Serving: " ++ show url
         setHeader "Content-Type" (fromStrict $ decodeUtf8 mimeType)
-
         -- These shouldn't be skimmed: -/s/style.css -j/head.js -j/body.js
         if forceNoSkim || "-" `BS.isPrefixOf` url
-          then raw zimHtml
-          else html $ procArticle zimHtml <>
+          then raw $ fixColors $ BS.concat $ BSL.toChunks zimHtml
+          else html $ fixColorsT $ procArticle zimHtml <>
               DTLE.decodeUtf8With errLol (BSL.concat $ map snd rest)
-
-        {-
-        when (url == "A/\232\143\156\229\150\174.html") $ liftIO $ do
-            BSLC.writeFile "/home/danl/the-html" zimHtml
-            writeFile "/home/danl/the-tags" $
-                unlines $ map show $ TS.parseTags zimHtml
-            DTLI.writeFile "/home/danl/the-res" $
-                DTLE.decodeUtf8With errLol $ 
-                --BSLC.filter (`notElem` ("\xa0\x40\x69\x64" :: String)) $
-                --BSLC.map (\x -> if x == '\x40' then '@' else x) $
-                --BSLC.map (\x -> if x == '\xa0' then '@' else x) $
-                TS.renderTags $ TS.parseTags zimHtml
-                -}
       _ -> do
         liftIO . putStrLn $ "Invalid URL: " ++ show url
         status status404
