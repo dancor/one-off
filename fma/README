@@ -1,0 +1,20 @@
+- https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#techs=FMA&ig_expand=3175
+- Note that unrolling loops 4x usually best for simd.
+  (combine accumulators at end)
+  So you may have 4 cores each doing 4x simd-on-8-floats, so 128 fmas in flight
+  at once.
+  Should you double for hyperthreading? Maybe not: Intel recommends just using
+  number of true cores for tensorflow eg:
+  https://www.intel.com/content/www/us/en/developer/articles/technical/maximize-tensorflow-performance-on-cpu-considerations-and-recommendations-for-inference.html
+- mmintrin.h - X86 MMX
+  xmmintrin.h - X86 SSE1
+  emmintrin.h - X86 SSE2
+  X86: MMX, SSE, SSE2 Types and Debugging
+  The X86 compatibles with MMX, SSE1 and SSE2 have the following types:
+  MMX: __m64 64 bits of integers broken down as
+       eight 8-bit integers, four 16-bit shorts or two 32-bit integers.
+  SSE1: __m128 128 bits: four single precision floats.
+  SSE2: __m128i 128 bits of any size packed integers,
+        __m128d 128 bits: two doubles.
+- Assume quad-core can have 128 fmas in flight.
+- How to do more calculation and less loading and storing?
