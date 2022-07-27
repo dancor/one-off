@@ -1,4 +1,4 @@
-all: serve restart stop
+all: serve restart
 
 
 serve: src/serve.hs
