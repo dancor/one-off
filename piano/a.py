@@ -6,6 +6,7 @@ from pydub import AudioSegment
 import pyxhook
 from sofa.read_sf2 import fluidsynth
 import sofa.read_sf2.read_sf2 as s
+from time import time, sleep
 l = s.sf2_loader('/home/danl/Documents/MuseScore2/Soundfonts/' +
     'SGM-v2.01-YamahaGrand-Guit-Bass-v2.7.sf2')
 kToNote = {}
@@ -85,24 +86,34 @@ def e2n(e):
     if k == 'Left': return 105 # "A7"
     if k == 'Super_R': return 106 # "A#7"
     if k == 'Control_R': return 107 # "B7"
-    if k == 'Alt_R': return 108 # "C8"
+    #if k == 'Alt_R': return 108 # "C8"
+    if k == 'Alt_L': return 108 # "C8" # bug in my setup I guess
     return 0
-def onKeyUp(e): print("up: ", e.Key)
+ns = {}
+def onKeyUp(e):
+    n = e2n(e)
+    if not n: return
+    ns[n] = False
+    l.synth.noteoff(0, n)
 def onKeyDown(e):
     n = e2n(e)
-    if n:
+    if not n: return
+    if not n in ns or not ns[n]:
         l.synth.noteon(0, n, 100)
-        arrs = []
-        arrs.append(l.synth.get_samples(44100 * 2))
-        l.synth.noteoff(0, n)
-        arrs.append(l.synth.get_samples(44100 * 1))
-        audArr = numpy.concatenate(arrs, axis=None)
-        samps = fluidsynth.raw_audio_string(audArr)
-        a = AudioSegment.from_raw(BytesIO(samps),
-            sample_width=2, channels=2, frame_rate=44100)
-        mp.pygame.mixer.Sound(buffer=a.raw_data).play()
+        ns[n] = True
 hook = pyxhook.HookManager()
 hook.KeyDown = onKeyDown
 hook.KeyUp = onKeyUp
 hook.HookKeyboard()
 hook.start()
+tGoal = time()
+while True:
+    tGoal += 0.2
+    arrs = []
+    arrs.append(l.synth.get_samples(44100))
+    audArr = numpy.concatenate(arrs, axis=None)
+    samps = fluidsynth.raw_audio_string(audArr)
+    a = AudioSegment.from_raw(BytesIO(samps),
+        sample_width=2, channels=2, frame_rate=44100)
+    mp.pygame.mixer.Sound(buffer=a.raw_data).play()
+    sleep(tGoal - time())
