@@ -43,27 +43,29 @@ int main(int argc, char **argv){
   nue(new_fluid_audio_driver(sett, s));
   int ns[109];
   for (int n = 0; n <= 108; n++) ns[n] = 0;
+  XFlush(d);
   while(1){
     XNextEvent(d, &e); 
     switch(e.type){
     case KeyPress:
       n = e2n(e);
       if (!n) break;
-      if (ns[n] == 1) break;
-      printf("on1 ns[%d] = %d\n", n, ns[n]);
+      //if (ns[n] == 1) break;
+      printf("on %d\n", n);
       fluid_synth_noteon(s, 0, n, 80);
       ns[n] = 1;
-      printf("on2 ns[%d] = %d\n", n, ns[n]);
       break;
     case KeyRelease:
-      XPeekEvent(d, &pe);
-      if (pe.type == KeyPress && pe.xkey.time == e.xkey.time &&
-        pe.xkey.keycode == e.xkey.keycode) break;
+      if (XPending(d) > 0) {
+        XPeekEvent(d, &pe);
+        if (pe.type == KeyPress && pe.xkey.time == e.xkey.time &&
+          pe.xkey.keycode == e.xkey.keycode) break;
+      }
       n = e2n(e);
       if (!n) break;
       fluid_synth_noteoff(s, 0, n);
       ns[n] = 0;
-      printf("off ns[%d] = %d\n", n, ns[n]);
+      printf("off %d\n", n);
     }
   }
 }
