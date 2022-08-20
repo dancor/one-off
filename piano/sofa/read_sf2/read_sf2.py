@@ -19,32 +19,7 @@ except mp.pygame.error:
     has_audio_interface = False
 
 
-def play_sound(audio, mode=0):
-    #if mp.pygame.mixer.get_busy():
-    #    mp.pygame.mixer.stop()
-    current_audio = audio
-    if mode == 0:
-        if current_audio.channels == 1:
-            current_audio = current_audio.set_frame_rate(44100).set_channels(2)
-        current_sound_object = mp.pygame.mixer.Sound(
-            buffer=current_audio.raw_data)
-        current_sound_object.play()
-    elif mode == 1:
-        capture = get_capture()
-        try:
-            current_file = BytesIO()
-            current_audio.export(current_file, format='wav')
-            current_sound_object = mp.pygame.mixer.Sound(file=current_file)
-        except:
-            current_path = os.getcwd()
-            os.chdir(os.path.dirname(__file__))
-            current_audio.export('temp.wav', format='wav')
-            current_sound_object = mp.pygame.mixer.Sound(file='temp.wav')
-            os.remove('temp.wav')
-            os.chdir(current_path)
-        current_sound_object.play()
-        reset_capture(capture)
-
+def play_sound(audio): mp.pygame.mixer.Sound(buffer=audio.raw_data).play()
 
 def stop():
     mp.pygame.mixer.stop()
@@ -1017,6 +992,7 @@ current preset name: {self.get_current_instrument()}'''
                                          channel, start_time, sample_width,
                                          channels, frame_rate, name, format,
                                          True, effects, bpm, export_args)
+        #play_sound(current_audio,1)
         play_sound(current_audio)
 
     def play_chord(self,
