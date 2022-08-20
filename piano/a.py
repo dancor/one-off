@@ -1,6 +1,9 @@
 import os
 import pyxhook
-import sf2_loader as s
+#import sofa as s
+import sofa.read_sf2.read_sf2 as s
+#import sf2_loader as s
+#import read_sf2.read_sf2 as s
 l = s.sf2_loader('/home/danl/Documents/MuseScore2/Soundfonts/SGM-v2.01-YamahaGrand-Guit-Bass-v2.7.sf2')
 
 kToNote = {}
@@ -34,7 +37,8 @@ def onKeyDown(e):
     elif e.Key == 'e': note = "G3"
     elif e.Key == 'i': note = "G#3"
     elif e.Key == 'o': note = "A3"
-    elif e.Key == 'apostrophe': note = "A#3"
+    #elif e.Key == 'apostrophe': note = "A#3"
+    elif e.Key == 'Multi_key': note = "A#3"
     elif e.Key == 'Return': note = "B3"
     elif e.Key == 'q': note = "C4"
     elif e.Key == 'w': note = "C#4"
@@ -85,7 +89,10 @@ def onKeyDown(e):
     elif e.Key == 'Super_R': note = "A#7"
     elif e.Key == 'Control_R': note = "B7"
     elif e.Key == 'Alt_R': note = "C8"
-    if note: l.play_note(note)
+    if note:
+        #a = l.export_note(note)
+        #s.play_sound(a)
+        l.play_note(note)
   
 new_hook = pyxhook.HookManager()
 new_hook.KeyDown = onKeyDown
