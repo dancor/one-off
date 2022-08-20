@@ -93,13 +93,13 @@ def onKeyDown(e):
     elif e.Key == 'Alt_R': n = 108 # "C8"
     if n:
         l.synth.noteon(0, n, 100)
-        whole_arrays = []
-        whole_arrays.append(l.synth.get_samples(int(44100 * 2)))
+        arrs = []
+        arrs.append(l.synth.get_samples(44100 * 2))
         l.synth.noteoff(0, n)
-        whole_arrays.append(l.synth.get_samples(int(44100 * 1)))
-        audio_array = numpy.concatenate(whole_arrays, axis=None)
-        current_samples = fluidsynth.raw_audio_string(audio_array)
-        a = AudioSegment.from_raw(BytesIO(current_samples),
+        arrs.append(l.synth.get_samples(44100 * 1))
+        audArr = numpy.concatenate(arrs, axis=None)
+        samps = fluidsynth.raw_audio_string(audArr)
+        a = AudioSegment.from_raw(BytesIO(samps),
             sample_width=2, channels=2, frame_rate=44100)
         mp.pygame.mixer.Sound(buffer=a.raw_data).play()
   
