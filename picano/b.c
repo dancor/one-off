@@ -50,8 +50,8 @@ int main(int argc, char **argv){
     case KeyPress:
       n = e2n(e);
       if (!n) break;
-      //if (ns[n] == 1) break;
-      printf("on %d\n", n);
+      if (ns[n] == 1) break;
+      //printf("on %d\n", n);
       fluid_synth_noteon(s, 0, n, 80);
       ns[n] = 1;
       break;
@@ -65,7 +65,7 @@ int main(int argc, char **argv){
       if (!n) break;
       fluid_synth_noteoff(s, 0, n);
       ns[n] = 0;
-      printf("off %d\n", n);
+      //printf("off %d\n", n);
     }
   }
 }
