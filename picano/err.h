@@ -1,11 +1,12 @@
 #pragma once
 #include <errno.h>
+#include <string.h>
 #include "types.h"
 #define noe(a) negOneErrs((a), __FILE__, __LINE__);
 inline i32 negOneErrs(const i32 r, const char *file, const int line) {
   if (r != -1) return r;
   fprintf(stderr, "Aborting at %s line %d; error %s.\n", 
-    r, file, line, strerror(errno));
+    file, line, strerror(errno));
   exit(1);
 }
 #define nie(a) negI32Errs((a), __FILE__, __LINE__);
@@ -16,7 +17,7 @@ inline i32 negI32Errs(const i32 r, const char *file, const int line) {
   exit(1);
 }
 #define nue(a) nullErrs((a), __FILE__, __LINE__);
-inline void* nullErrs(const void* r, const char *file, const int line) {
+inline void* nullErrs(void* r, const char *file, const int line) {
   if (r) return r;
   fprintf(stderr, "Aborting at %s line %d; error %s.\n", 
     file, line, strerror(errno));
