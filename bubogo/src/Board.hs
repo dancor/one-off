@@ -27,7 +27,7 @@ newMutBoardOf :: a -> IO (MutBoardOf a)
 newMutBoardOf = MV.replicate (19 * 19)
 
 bIndex :: Coord -> Int
-bIndex (Coord column row) = 19 * row + column
+bIndex (Coord column row) = fromIntegral $ 19 * row + column
 
 bRead :: BoardOf a -> Coord -> a
 bRead b c = b ! bIndex c

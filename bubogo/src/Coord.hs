@@ -3,11 +3,12 @@ module Coord where
 import Control.Monad
 import Data.Char
 import Data.Maybe
+import GHC.Int (Int32)
 import qualified Text.ParserCombinators.Parsec as Psec
 
 data Coord = Coord
-  { cColumn :: !Int
-  , cRow    :: !Int
+  { cColumn :: !Int32
+  , cRow    :: !Int32
   } deriving (Eq, Show)
 
 readMb :: Read a => String -> Maybe a
@@ -16,17 +17,16 @@ readMb s = fmap fst . listToMaybe $ reads s
 -- switch to coordParser?; better errors that way?
 readCoord :: String -> Maybe Coord
 readCoord (columnCh:rowStr) =
-    let columnMb
-          | 'A' <= columnCh && columnCh <= 'T' && columnCh /= 'I'
-          = Just (ord columnCh - ord 'A' - if columnCh > 'I' then 1 else 0)
-          | 'a' <= columnCh && columnCh <= 't' && columnCh /= 'i'
-          = Just (ord columnCh - ord 'a' - if columnCh > 'i' then 1 else 0)
-          | otherwise
-          = Nothing
-        rowMb = readMb rowStr
-    in case (columnMb, rowMb) of
-      (Just column, Just row) -> Just $ Coord column (19 - row)
-      _ -> Nothing
+  let columnMb
+        | 'A' <= columnCh && columnCh <= 'T' && columnCh /= 'I'
+        = Just (ord columnCh - ord 'A' - if columnCh > 'I' then 1 else 0)
+        | 'a' <= columnCh && columnCh <= 't' && columnCh /= 'i'
+        = Just (ord columnCh - ord 'a' - if columnCh > 'i' then 1 else 0)
+        | otherwise = Nothing
+      rowMb = readMb rowStr
+  in case (columnMb, rowMb) of
+    (Just column, Just row) -> Just $ Coord (fromIntegral column) (19 - row)
+    _ -> Nothing
 readCoord _ = Nothing
 
 coordParser :: Psec.Parser Coord
@@ -45,7 +45,7 @@ coordParser = do
         let row = 19 - rowPreFlip
         when (column < 0 || column >= 19 || row < 0 || row >= 19) $
             fail "Out of range"
-        return $ Coord column row
+        return $ Coord (fromIntegral column) row
       Nothing -> fail "Bad column"
 
 allCoords :: [Coord]
@@ -59,10 +59,10 @@ coordNeighbors (Coord column row) = concat
     , if row    == 18 then [] else [Coord column (row + 1)]
     ]
 
-showColumn :: Int -> String
-showColumn x = [chr (x + ord 'A' + if x >= 8 then 1 else 0)]
+showColumn :: Int32 -> String
+showColumn x = [chr (fromIntegral x + ord 'A' + if x >= 8 then 1 else 0)]
 
-showRow :: Int -> String
+showRow :: Int32 -> String
 showRow y = show (19 - y)
 
 showCoord :: Coord -> String
