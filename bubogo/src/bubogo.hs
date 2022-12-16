@@ -24,12 +24,8 @@ lineColor   = V4 0x00 0x00 0x00 0xff
 whiteColor  = V4 0xff 0xff 0xff 0xff
 blackColor  = V4 0x44 0x44 0x44 0xff
 recentColor = V4 0xff 0x88 0x88 0xff
-fromI :: Num a => Int -> a
-fromI = fromIntegral
 toD :: Integral a => a -> Double
 toD = fromIntegral
-toI :: Integral a => a -> Int
-toI = fromIntegral
 data AppState = AppState
   { sWinW            :: Int32
   , sWinH            :: Int32
@@ -154,21 +150,9 @@ evsToNeedsPresentAndClicks (e:es) =
 appProcEvents :: AppState -> [Event] -> IO ()
 appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
     sTexture=textureVar} es = do
-  let (doPres, cs) = evsToNeedsPresentAndClicks es
-  print $ catMaybes $ map (posToCell st) cs
-  when doPres $ present renderer
-  {-
-      procPress event = case eventPayload event of
-        MouseButtonEvent
-          (MouseButtonEventData _ Pressed _ ButtonLeft _ (P (V2 x y))) ->
-          posToCell st (toI x) (toI y)
-        _ -> Nothing
-      procResize event = case eventPayload event of
-        WindowResizedEvent (WindowResizedEventData _ (V2 x y)) ->
-          Just (toI x, toI y)
-        _ -> Nothing
-  (st2, renderDue, presentDue) <- case catMaybes $ map procPress events of
-    (x,y):_ -> do
+  let (presDue,cs) = evsToNeedsPresentAndClicks es
+  (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
+    V2 x y:_ -> do
         print (x, y) -- debug
         boards@(board:prevBoards) <- atomically $ readTVar boardVar
         case bRead board (Coord y x) of
@@ -196,8 +180,15 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
             board3 <- bPlayMoves board2 [engineMove]
             atomically $ writeTVar boardVar (board3:boards)
             return (st {sRecent = engineCoordMb}, True, True)
-          _ -> return (st, False, any needsPresent events)
-    _ -> return (st, False, any needsPresent events)
+          _ -> return (st, False, presDue)
+    _ -> return (st, False, presDue)
+  when presDue2 $ present renderer
+  appLoop st2
+  {-
+      procResize event = case eventPayload event of
+        WindowResizedEvent (WindowResizedEventData _ (V2 x y)) ->
+          Just (toI x, toI y)
+        _ -> Nothing
   let (st3, renderDue2, presentDue2) =
         case catMaybes $ map procResize events of
           (w,h):_ -> (st2 {sWinW = w, sWinH = h}, True, True)
@@ -223,6 +214,5 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
   when presentDue3 $ present renderer
   appLoop st4
   -}
-  appLoop st
 appLoop :: AppState -> IO ()
 appLoop st = liftM2 (:) waitEvent pollEvents >>= appProcEvents st
