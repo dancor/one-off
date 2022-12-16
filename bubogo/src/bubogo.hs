@@ -39,7 +39,7 @@ data AppState = AppState
   }
 genWindowContent :: AppState -> IO AppState
 genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
-  board:_ <- atomically $ readTVar $ sBoardVar st
+  bd:_ <- atomically $ readTVar $ sBoardVar st
   let sqSize = min winW winH
       cellSize = sqSize `div` 19
       halfCell = cellSize `div` 2
@@ -65,10 +65,10 @@ genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
     fill blackColor
     mapM_ (\[x,y] -> circle (adj $ cellCenter x y) markerR) $
         sequence $ replicate 2 [3,9,15]
-    sequence_ [sequence_ [when (bRead board (Coord y x) == Just Black) $
+    sequence_ [sequence_ [when (bRead bd (Coord y x) == Just Black) $
         circle (cellXY x y) (toD cellSize)| x <- [0..18]] | y <- [0..18]]
     fill whiteColor
-    sequence_ [sequence_ [when (bRead board (Coord y x) == Just White) $
+    sequence_ [sequence_ [when (bRead bd (Coord y x) == Just White) $
         circle (cellXY x y) (toD cellSize)| x <- [0..18]] | y <- [0..18]]
     case sRecent st of
       Just (Coord y x) -> fill recentColor >>
@@ -151,11 +151,11 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
   let (presDue,cs) = evsToNeedsPresentAndClicks es
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
     V2 x y:_ -> do
-      boards@(board:prevBoards) <- atomically $ readTVar bV
-      case bRead board (Coord y x) of
+      bds@(bd:prevBds) <- atomically $ readTVar bV
+      case bRead bd (Coord y x) of
         Nothing -> do
           let userMove = Move Black $ Coord y x
-              userMoves = if null prevBoards then
+              userMoves = if null prevBds then
                 [ Move Black $ Coord 3 15
                 , Move Black $ Coord 15 3
                 , Move Black $ Coord 3 3
@@ -164,8 +164,8 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
                 , Move Black $ Coord 9 15
                 ] else [userMove]
           atomically $ writeTQueue (sUserMoveQueue st) userMoves
-          board2 <- bPlayMoves board userMoves
-          atomically $ writeTVar bV (board2:boards)
+          board2 <- bPlayMoves bd userMoves
+          atomically $ writeTVar bV (board2:bds)
           _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
           texture <- atomically $ readTVar textureVar
           copy rend texture Nothing Nothing
@@ -175,7 +175,7 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
                 Move _ engineCoord -> Just engineCoord
                 _ -> Nothing
           board3 <- bPlayMoves board2 [engineMove]
-          atomically $ writeTVar bV (board3:boards)
+          atomically $ writeTVar bV (board3:bds)
           return (st {sRecent = engineCoordMb}, True, True)
         _ -> return (st, False, presDue)
     _ -> return (st, False, presDue)
@@ -192,10 +192,10 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
           _ -> (st2, renderDue, presentDue)
   (renderDue3, presentDue3) <- if any isUPress events
     then do
-      boards <- atomically $ readTVar bV
-      case boards of
-        _:(prevBoards@(_:_:_)) -> do
-          atomically $ writeTVar bV prevBoards
+      bds <- atomically $ readTVar bV
+      case bds of
+        _:(prevBds@(_:_:_)) -> do
+          atomically $ writeTVar bV prevBds
           atomically $ writeTQueue (sUserMoveQueue st) []
           atomically $ writeTQueue (sUserMoveQueue st) []
           return (True, True)
