@@ -90,15 +90,15 @@ main = initializeAll >> do
     { windowInitialSize = V2 (fromIntegral winW) (fromIntegral winH)
     , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
     , windowResizable = True}
-  renderer <- createRenderer window (-1) $ defaultRenderer
+  rend <- createRenderer window (-1) $ defaultRenderer
       --{rendererType = AcceleratedVSyncRenderer} -- black screen..
       {rendererType = UnacceleratedRenderer}
   st <- genWindowContent $ AppState winW winH 0 0 0
-    engineMoveQueue userMoveQueue renderer textureVar
+    engineMoveQueue userMoveQueue rend textureVar
     boardVar Nothing
   texture <- atomically $ readTVar textureVar
-  copy renderer texture Nothing Nothing
-  present renderer
+  copy rend texture Nothing Nothing
+  present rend
   let go e moves = do
         userMoves <- atomically $ readTQueue userMoveQueue
         let vanishRedo :: IOError -> IO (Engine, Maybe Move)
@@ -115,7 +115,7 @@ main = initializeAll >> do
             tryWithE e2 = do
               case userMoves of
                 [] -> do
-                  slog "Doing undo with engine.."
+                  slog "Doing undo with engine.." >>
                   ePut e "undo"
                   slog "Done."
                   go e (drop 1 moves)
@@ -148,7 +148,7 @@ evsToNeedsPresentAndClicks (e:es) =
   (evNeedsPresent e || p, evToClick e ++ cs)
   where (p, cs) = evsToNeedsPresentAndClicks es
 appProcEvs :: AppState -> [Event] -> IO ()
-appProcEvs st@AppState{sBoardVar=bV,sRenderer=renderer,
+appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
     sTexture=textureVar} es = do
   let (presDue,cs) = evsToNeedsPresentAndClicks es
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
@@ -171,8 +171,8 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=renderer,
           atomically $ writeTVar bV (board2:boards)
           _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
           texture <- atomically $ readTVar textureVar
-          copy renderer texture Nothing Nothing
-          present renderer
+          copy rend texture Nothing Nothing
+          present rend
           Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
           let engineCoordMb = case engineMove of
                 Move _ engineCoord -> Just engineCoord
@@ -182,7 +182,7 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=renderer,
           return (st {sRecent = engineCoordMb}, True, True)
         _ -> return (st, False, presDue)
     _ -> return (st, False, presDue)
-  when presDue2 $ present renderer
+  when presDue2 $ present rend
   appLoop st2
   {-
       procResize event = case eventPayload event of
@@ -208,10 +208,10 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=renderer,
     then do
       st4 <- genWindowContent st3
       texture2 <- atomically $ readTVar textureVar
-      copy renderer texture2 Nothing Nothing
+      copy rend texture2 Nothing Nothing
       return st4
     else return st3
-  when presentDue3 $ present renderer
+  when presentDue3 $ present rend
   appLoop st4
   -}
 appLoop :: AppState -> IO ()
