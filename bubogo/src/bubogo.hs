@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
--- trying to figure out why sdl2 doesn't send any events?
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
@@ -225,6 +224,5 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
   appLoop st4
   -}
   appLoop st
-
 appLoop :: AppState -> IO ()
 appLoop st = liftM2 (:) waitEvent pollEvents >>= appProcEvents st
