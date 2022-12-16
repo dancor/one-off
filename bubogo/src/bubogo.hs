@@ -7,8 +7,6 @@ import Control.Monad
 import Data.Maybe
 import GHC.Int (Int32)
 import GHC.IO.Exception
-import GHC.IO.Handle.FD (stdout)
-import GHC.IO.Handle (hFlush)
 import Graphics.Rendering.Cairo.Canvas hiding (toD)
 import "sdl2-cairo" SDL.Cairo
 import "sdl2" SDL
