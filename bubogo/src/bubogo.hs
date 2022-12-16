@@ -147,40 +147,40 @@ evsToNeedsPresentAndClicks [] = (False, [])
 evsToNeedsPresentAndClicks (e:es) =
   (evNeedsPresent e || p, evToClick e ++ cs)
   where (p, cs) = evsToNeedsPresentAndClicks es
-appProcEvs :: AppState -> [Event] -> IO ()
+appProcEvs :: AppState -> Event -> IO ()
 appProcEvs st@AppState{sBoardVar=boardVar,sRenderer=renderer,
     sTexture=textureVar} es = do
   let (presDue,cs) = evsToNeedsPresentAndClicks es
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
     V2 x y:_ -> do
-        print (x, y) -- debug
-        boards@(board:prevBoards) <- atomically $ readTVar boardVar
-        case bRead board (Coord y x) of
-          Nothing -> do
-            let userMove = Move Black $ Coord y x
-                userMoves = if null prevBoards
-                  then
-                    [ Move Black $ Coord 3 15
-                    , Move Black $ Coord 15 3
-                    , Move Black $ Coord 3 3
-                    , Move Black $ Coord 15 15
-                    ]
-                  else [userMove]
-            atomically $ writeTQueue (sUserMoveQueue st) userMoves
-            board2 <- bPlayMoves board userMoves
-            atomically $ writeTVar boardVar (board2:boards)
-            _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
-            texture <- atomically $ readTVar textureVar
-            copy renderer texture Nothing Nothing
-            present renderer
-            Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
-            let engineCoordMb = case engineMove of
-                  Move _ engineCoord -> Just engineCoord
-                  _ -> Nothing
-            board3 <- bPlayMoves board2 [engineMove]
-            atomically $ writeTVar boardVar (board3:boards)
-            return (st {sRecent = engineCoordMb}, True, True)
-          _ -> return (st, False, presDue)
+      print (x, y) -- debug
+      boards@(board:prevBoards) <- atomically $ readTVar boardVar
+      case bRead board (Coord y x) of
+        Nothing -> do
+          let userMove = Move Black $ Coord y x
+              userMoves = if null prevBoards
+                then
+                  [ Move Black $ Coord 3 15
+                  , Move Black $ Coord 15 3
+                  , Move Black $ Coord 3 3
+                  , Move Black $ Coord 15 15
+                  ]
+                else [userMove]
+          atomically $ writeTQueue (sUserMoveQueue st) userMoves
+          board2 <- bPlayMoves board userMoves
+          atomically $ writeTVar boardVar (board2:boards)
+          _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
+          texture <- atomically $ readTVar textureVar
+          copy renderer texture Nothing Nothing
+          present renderer
+          Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
+          let engineCoordMb = case engineMove of
+                Move _ engineCoord -> Just engineCoord
+                _ -> Nothing
+          board3 <- bPlayMoves board2 [engineMove]
+          atomically $ writeTVar boardVar (board3:boards)
+          return (st {sRecent = engineCoordMb}, True, True)
+        _ -> return (st, False, presDue)
     _ -> return (st, False, presDue)
   when presDue2 $ present renderer
   appLoop st2
