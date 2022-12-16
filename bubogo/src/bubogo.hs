@@ -115,7 +115,7 @@ main = initializeAll >> do
             tryWithE e2 = do
               case userMoves of
                 [] -> do
-                  slog "Doing undo with engine.." >>
+                  slog "Doing undo with engine.."
                   ePut e "undo"
                   slog "Done."
                   go e (drop 1 moves)
