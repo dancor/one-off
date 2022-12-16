@@ -91,7 +91,7 @@ main = initializeAll >> do
     , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
     , windowResizable = True}
   renderer <- createRenderer window (-1) $ defaultRenderer
-      --{rendererType = AcceleratedVSyncRenderer}
+      --{rendererType = AcceleratedVSyncRenderer} -- black screen..
       {rendererType = UnacceleratedRenderer}
   st <- genWindowContent $ AppState winW winH 0 0 0
     engineMoveQueue userMoveQueue renderer textureVar
@@ -147,8 +147,8 @@ evsToNeedsPresentAndClicks [] = (False, [])
 evsToNeedsPresentAndClicks (e:es) =
   (evNeedsPresent e || p, evToClick e ++ cs)
   where (p, cs) = evsToNeedsPresentAndClicks es
-appProcEvents :: AppState -> [Event] -> IO ()
-appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
+appProcEvs :: AppState -> [Event] -> IO ()
+appProcEvs st@AppState{sBoardVar=boardVar,sRenderer=renderer,
     sTexture=textureVar} es = do
   let (presDue,cs) = evsToNeedsPresentAndClicks es
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
@@ -163,7 +163,7 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
                     [ Move Black $ Coord 3 15
                     , Move Black $ Coord 15 3
                     , Move Black $ Coord 3 3
-                    -- , Move Black $ Coord 15 15
+                    , Move Black $ Coord 15 15
                     ]
                   else [userMove]
             atomically $ writeTQueue (sUserMoveQueue st) userMoves
@@ -215,4 +215,4 @@ appProcEvents st@AppState{sBoardVar=boardVar,sRenderer=renderer,
   appLoop st4
   -}
 appLoop :: AppState -> IO ()
-appLoop st = liftM2 (:) waitEvent pollEvents >>= appProcEvents st
+appLoop st = liftM2 (:) waitEvent pollEvents >>= appProcEvs st
