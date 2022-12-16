@@ -151,19 +151,18 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
   let (presDue,cs) = evsToNeedsPresentAndClicks es
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
     V2 x y:_ -> do
-      print (x, y) -- debug
       boards@(board:prevBoards) <- atomically $ readTVar bV
       case bRead board (Coord y x) of
         Nothing -> do
           let userMove = Move Black $ Coord y x
-              userMoves = if null prevBoards
-                then
-                  [ Move Black $ Coord 3 15
-                  , Move Black $ Coord 15 3
-                  , Move Black $ Coord 3 3
-                  , Move Black $ Coord 15 15
-                  ]
-                else [userMove]
+              userMoves = if null prevBoards then
+                [ Move Black $ Coord 3 15
+                , Move Black $ Coord 15 3
+                , Move Black $ Coord 3 3
+                , Move Black $ Coord 15 15
+                , Move Black $ Coord 9 3
+                , Move Black $ Coord 9 15
+                ] else [userMove]
           atomically $ writeTQueue (sUserMoveQueue st) userMoves
           board2 <- bPlayMoves board userMoves
           atomically $ writeTVar bV (board2:boards)
