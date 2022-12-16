@@ -147,14 +147,14 @@ evsToNeedsPresentAndClicks [] = (False, [])
 evsToNeedsPresentAndClicks (e:es) =
   (evNeedsPresent e || p, evToClick e ++ cs)
   where (p, cs) = evsToNeedsPresentAndClicks es
-appProcEvs :: AppState -> Event -> IO ()
-appProcEvs st@AppState{sBoardVar=boardVar,sRenderer=renderer,
+appProcEvs :: AppState -> [Event] -> IO ()
+appProcEvs st@AppState{sBoardVar=bV,sRenderer=renderer,
     sTexture=textureVar} es = do
   let (presDue,cs) = evsToNeedsPresentAndClicks es
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
     V2 x y:_ -> do
       print (x, y) -- debug
-      boards@(board:prevBoards) <- atomically $ readTVar boardVar
+      boards@(board:prevBoards) <- atomically $ readTVar bV
       case bRead board (Coord y x) of
         Nothing -> do
           let userMove = Move Black $ Coord y x
@@ -168,7 +168,7 @@ appProcEvs st@AppState{sBoardVar=boardVar,sRenderer=renderer,
                 else [userMove]
           atomically $ writeTQueue (sUserMoveQueue st) userMoves
           board2 <- bPlayMoves board userMoves
-          atomically $ writeTVar boardVar (board2:boards)
+          atomically $ writeTVar bV (board2:boards)
           _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
           texture <- atomically $ readTVar textureVar
           copy renderer texture Nothing Nothing
@@ -178,7 +178,7 @@ appProcEvs st@AppState{sBoardVar=boardVar,sRenderer=renderer,
                 Move _ engineCoord -> Just engineCoord
                 _ -> Nothing
           board3 <- bPlayMoves board2 [engineMove]
-          atomically $ writeTVar boardVar (board3:boards)
+          atomically $ writeTVar bV (board3:boards)
           return (st {sRecent = engineCoordMb}, True, True)
         _ -> return (st, False, presDue)
     _ -> return (st, False, presDue)
@@ -195,10 +195,10 @@ appProcEvs st@AppState{sBoardVar=boardVar,sRenderer=renderer,
           _ -> (st2, renderDue, presentDue)
   (renderDue3, presentDue3) <- if any isUPress events
     then do
-      boards <- atomically $ readTVar boardVar
+      boards <- atomically $ readTVar bV
       case boards of
         _:(prevBoards@(_:_:_)) -> do
-          atomically $ writeTVar boardVar prevBoards
+          atomically $ writeTVar bV prevBoards
           atomically $ writeTQueue (sUserMoveQueue st) []
           atomically $ writeTQueue (sUserMoveQueue st) []
           return (True, True)
