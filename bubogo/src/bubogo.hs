@@ -1,9 +1,11 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 import Control.Concurrent
 import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad
+import Data.List
 import Data.Maybe
 import GHC.Int (Int32)
 import GHC.IO.Exception
@@ -121,7 +123,6 @@ main = initializeAll >> do
               (,) e2 <$> eGenMove e2 White
         (e3, engineMove) <- handle vanishRedo (tryWithE e)
         atomically $ writeTQueue engineMoveQueue engineMove
-        --computeScore boardVar
         go e3 ((maybeToList engineMove):userMoves:moves)
   _ <- forkIO $ startEngine >>= \e -> go e []
   appLoop st
@@ -132,32 +133,32 @@ posToCell st (V2 x y) =
   where
   cellX = (x - sBoardLeftX st) `div` sCellSize st
   cellY = (y - sBoardTopY st)  `div` sCellSize st
-evNeedsPresent :: Event -> Bool
-evNeedsPresent event = case eventPayload event of
-  WindowExposedEvent _ -> True; WindowMovedEvent _ -> True;
-  WindowShownEvent _ -> True; _ -> False
-evToClick :: Event -> [V2 Int32]
-evToClick e = case eventPayload e of
-  MouseButtonEvent (MouseButtonEventData _ Pressed _ ButtonLeft _ (P v)) -> [v]
-  _ -> []
-evToResize :: Event -> [V2 Int32]
-evToResize e = case eventPayload e of
-  WindowResizedEvent (WindowResizedEventData _ v) -> [v]; _ -> []
-evToUPress :: Event -> Bool
-evToUPress event = case eventPayload event of
+data EAcc = EAcc
+  { ePresDue :: !Bool
+  , eClick   :: !(Maybe (V2 Int32))
+  , eResize  :: !(Maybe (V2 Int32))
+  , eKey     :: !(Maybe Char)}
+accEs :: EAcc -> Event -> EAcc
+accEs !a e = let
+  presDue = a {ePresDue = True}
+  in case eventPayload e of
+  WindowExposedEvent _ -> presDue
+  WindowMovedEvent   _ -> presDue
+  WindowShownEvent   _ -> presDue
+  WindowResizedEvent (WindowResizedEventData _ v) -> a {eResize = Just v}
+  MouseButtonEvent (MouseButtonEventData _ Pressed _ ButtonLeft _ (P v)) -> 
+    a {eClick = Just v}
   KeyboardEvent keyboardEvent ->
-    keyboardEventKeyMotion keyboardEvent == Pressed &&
-    keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeU
-  _ -> False
-evsToPcu :: [Event] -> (Bool, [V2 Int32]) -- needsPresent clicks U-press
-evsToPcu [] = (False, [])
-evsToPcu (e:es) =
-  (evNeedsPresent e || p, evToClick e ++ cs) where (p, cs) = evsToPcu es
+    if keyboardEventKeyMotion keyboardEvent == Pressed
+      then case keysymKeycode (keyboardEventKeysym keyboardEvent) of
+        KeycodeU -> a {eKey = Just 'u'}; _ -> a
+      else a
+  _ -> a
 appProcEvs :: AppState -> [Event] -> IO ()
 appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
-  let (presDue,cs) = evsToPcu es in do
-  (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
-    V2 x y:_ -> do
+  let eAcc = foldl' accEs (EAcc False Nothing Nothing Nothing) es in do
+  (st2,didClick) <- case posToCell st =<< eClick eAcc of
+    Just (V2 x y) -> do
       bds@(bd:prevBds) <- atomically $ readTVar bV
       case bRead bd (Coord y x) of
         Nothing -> do
@@ -181,14 +182,14 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
           board3 <- bPlayMoves board2 [engineMove]
           atomically $ writeTVar bV (board3:bds)
           let recent = case engineMove of Move _ a -> Just a; _ -> Nothing
-          return (st {sRecent = recent}, True, True)
-        _ -> return (st, False, presDue)
-    _ -> return (st, False, presDue)
-  let (st3,rendDue2,presDue3) = case concatMap evToResize es of
-        V2 w h:_ -> (st2 {sWinW = w, sWinH = h}, True, True)
-        _ -> (st2, rendDue, presDue2)
-  (rendDue3,presDue4) <- if any evToUPress es
-    then do
+          return (st {sRecent = recent}, True)
+        _ -> return (st, False)
+    _ -> return (st, False)
+  let (st3,didResize) = case eResize eAcc of
+        Just (V2 w h) -> (st2 {sWinW = w, sWinH = h}, True)
+        _ -> (st2, False)
+  didUndo <- case eKey eAcc of
+    Just 'u' -> do
       bds <- atomically $ readTVar bV
       case bds of
         _:(prevBds@(_:_:_)) -> do
@@ -196,17 +197,15 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
           atomically $ writeTQueue (sUserMoveQueue st) []
           atomically $ writeTQueue (sUserMoveQueue st) []
           slog "Did undo in game tree."
-          return (True, True)
-        _ -> slog "Nothing to undo in game tree." >> return (False, False)
-    else return (rendDue2, presDue3)
-  st4 <- if rendDue3
-    then do
+          return True
+        _ -> slog "Nothing to undo in game tree." >> return False
+    _ -> return False
+  (st4,didRend) <- if didClick || didResize || didUndo then do
       st4 <- genWindowContent st3
       texture2 <- atomically $ readTVar textureVar
       copy rend texture2 Nothing Nothing
-      return st4
-    else return st3
-  when presDue4 $ present rend
-  appLoop st4
+      return (st4, True)
+    else return (st3, False)
+  when (ePresDue eAcc || didRend) (present rend) >> appLoop st4
 appLoop :: AppState -> IO ()
 appLoop st = liftM2 (:) waitEvent pollEvents >>= appProcEvs st
