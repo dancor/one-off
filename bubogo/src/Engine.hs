@@ -55,6 +55,15 @@ eSetBoard e b = do
 eSetMoves :: Engine -> [Move] -> IO ()
 eSetMoves e moves = ePut e "clear_board" >> mapM_ (ePlayMove e) moves
 
+eScore :: Engine -> IO ()
+eScore e = do
+  ePut e "final_score"
+  hFlush (eInH e)
+  l <- hGetLine (eOutH e)
+  slog $ "OUT: " ++ l
+  l2 <- hGetLine (eOutH e)
+  slog $ "OUT: " ++ l2
+
 eGenMove :: Engine -> Color -> IO (Maybe Move)
 eGenMove e color = do
     ePut e $ "genmove " ++ colorLtr color

@@ -33,7 +33,7 @@ data AppState = AppState
   , sBoardTopY       :: !Int32
   , sCellSize        :: !Int32
   , sEngineMoveQueue :: !(TQueue (Maybe Move))
-  , sUserMoveQueue   :: !(TQueue [Move])
+  , sUserMoveQueue   :: !(TQueue [Maybe Move])
   , sRenderer        :: !Renderer
   , sTexture         :: !(TVar Texture)
   , sBoardVar        :: !(TVar [Board])
@@ -116,21 +116,21 @@ main = initializeAll >> do
               case userMoves of
                 [] -> do
                   slog "Doing undo with engine.."
-                  ePut e "undo"
+                  ePut e2 "undo"
                   slog "Done."
-                  go e (drop 1 moves)
-                _ -> mapM_ (ePlayMove e2) userMoves
+                  go e2 (drop 1 moves)
+                [Nothing] -> eScore e2 >> go e2 moves
+                _ -> mapM_ (ePlayMove e2 . fromJust) userMoves
               (,) e2 <$> eGenMove e2 White
         (e3, engineMove) <- handle vanishRedo (tryWithE e)
         atomically $ writeTQueue engineMoveQueue engineMove
-        go e3 ((maybeToList engineMove):userMoves:moves)
+        go e3 ((maybeToList engineMove):map fromJust userMoves:moves)
   _ <- forkIO $ startEngine >>= \e -> go e []
   appLoop st
 posToCell :: AppState -> V2 Int32 -> Maybe (V2 Int32)
 posToCell st (V2 x y) =
   if cellX >= 0 && cellX <= 18 && cellY >= 0 && cellY <= 18
-  then Just (V2 cellX cellY) else Nothing
-  where
+  then Just (V2 cellX cellY) else Nothing where
   cellX = (x - sBoardLeftX st) `div` sCellSize st
   cellY = (y - sBoardTopY st)  `div` sCellSize st
 data EAcc = EAcc
@@ -147,7 +147,9 @@ accEs !a e = let p = a {ePresDue = True} in case eventPayload e of
   KeyboardEvent keyboardEvent ->
     if keyboardEventKeyMotion keyboardEvent == Pressed
       then case keysymKeycode (keyboardEventKeysym keyboardEvent) of
-        KeycodeU -> a {eKey = Just 'u'}; _ -> a
+        KeycodeU -> a {eKey = Just 'u'}
+        KeycodeF -> a {eKey = Just 'f'}
+        _ -> a
       else a
   _ -> a
 appProcEvs :: AppState -> [Event] -> IO ()
@@ -167,7 +169,7 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
                 , Move Black $ Coord 9 3
                 , Move Black $ Coord 9 15
                 ] else [userMove]
-          atomically $ writeTQueue (sUserMoveQueue st) userMoves
+          atomically $ writeTQueue (sUserMoveQueue st) $ map Just userMoves
           board2 <- bPlayMoves bd userMoves
           atomically $ writeTVar bV (board2:bds)
           _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
@@ -195,6 +197,9 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
           slog "Did undo in game tree."
           return True
         _ -> slog "Nothing to undo in game tree." >> return False
+    Just 'f' -> do
+      atomically $ writeTQueue (sUserMoveQueue st) [Nothing]
+      return False
     _ -> return False
   (st4,didRend) <- if didClick || didResize || didUndo then do
       st4 <- genWindowContent st3
