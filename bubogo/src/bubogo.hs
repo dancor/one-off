@@ -139,12 +139,9 @@ data EAcc = EAcc
   , eResize  :: !(Maybe (V2 Int32))
   , eKey     :: !(Maybe Char)}
 accEs :: EAcc -> Event -> EAcc
-accEs !a e = let
-  presDue = a {ePresDue = True}
+accEs !a e = let p = a {ePresDue = True}
   in case eventPayload e of
-  WindowExposedEvent _ -> presDue
-  WindowMovedEvent   _ -> presDue
-  WindowShownEvent   _ -> presDue
+  WindowExposedEvent _ -> p; WindowMovedEvent _ -> p; WindowShownEvent _ -> p
   WindowResizedEvent (WindowResizedEventData _ v) -> a {eResize = Just v}
   MouseButtonEvent (MouseButtonEventData _ Pressed _ ButtonLeft _ (P v)) -> 
     a {eClick = Just v}
