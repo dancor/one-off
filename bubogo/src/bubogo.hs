@@ -52,7 +52,7 @@ genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
       cellCenter :: Int32 -> Int32 -> V2 Double
       cellCenter x y = V2 (toD $ colCenterX x) (toD $ rowCenterY y)
       cellXY x y =
-          V2 (toD $ colCenterX x - halfCell) (toD $ rowCenterY y - halfCell)
+        V2 (toD $ colCenterX x - halfCell) (toD $ rowCenterY y - halfCell)
       markerR = toD cellSize / 4
       adj (V2 x y) = V2 (x - markerR / 2) (y - markerR / 2)
   texture <- createCairoTexture (sRenderer st) $
@@ -89,8 +89,8 @@ main = initializeAll >> do
     , windowPosition = Absolute $ P $ V2 0 700 -- FIXME just for dev
     , windowResizable = True}
   rend <- createRenderer window (-1) $ defaultRenderer
-      --{rendererType = AcceleratedVSyncRenderer} -- black screen..
-      {rendererType = UnacceleratedRenderer}
+    --{rendererType = AcceleratedVSyncRenderer} -- black screen..
+    {rendererType = UnacceleratedRenderer}
   st <- genWindowContent $ AppState winW winH 0 0 0
     engineMoveQueue userMoveQueue rend textureVar
     boardVar Nothing
@@ -171,12 +171,10 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
           copy rend texture Nothing Nothing
           present rend
           Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
-          let engineCoordMb = case engineMove of
-                Move _ engineCoord -> Just engineCoord
-                _ -> Nothing
           board3 <- bPlayMoves board2 [engineMove]
           atomically $ writeTVar bV (board3:bds)
-          return (st {sRecent = engineCoordMb}, True, True)
+          let recent = case engineMove of Move _ a -> Just a; _ -> Nothing
+          return (st {sRecent = recent}, True, True)
         _ -> return (st, False, presDue)
     _ -> return (st, False, presDue)
   when presDue2 $ present rend
