@@ -18,7 +18,8 @@ import Coord
 import Engine
 import Move
 bgColor, boardColor, lineColor, whiteColor, blackColor, recentColor :: V4 Byte
-bgColor     = V4 0xcc 0xff 0xcc 0xff
+--bgColor     = V4 0xcc 0xff 0xcc 0xff
+bgColor     = V4 0x00 0x00 0x00 0xff
 boardColor  = V4 0xee 0xee 0x00 0xff
 lineColor   = V4 0x00 0x00 0x00 0xff
 whiteColor  = V4 0xff 0xff 0xff 0xff
@@ -119,7 +120,7 @@ main = initializeAll >> do
                   ePut e2 "undo"
                   slog "Done."
                   go e2 (drop 1 moves)
-                [Nothing] -> eScore e2 >> go e2 moves
+                [Nothing] -> slog "score" >> eScore e2 >> go e2 moves
                 _ -> mapM_ (ePlayMove e2 . fromJust) userMoves
               (,) e2 <$> eGenMove e2 White
         (e3, engineMove) <- handle vanishRedo (tryWithE e)
