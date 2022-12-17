@@ -140,15 +140,22 @@ evToClick :: Event -> [V2 Int32]
 evToClick e = case eventPayload e of
   MouseButtonEvent (MouseButtonEventData _ Pressed _ ButtonLeft _ (P v)) -> [v]
   _ -> []
-evsToNeedsPresentAndClicks :: [Event] -> (Bool, [V2 Int32])
-evsToNeedsPresentAndClicks [] = (False, [])
-evsToNeedsPresentAndClicks (e:es) =
-  (evNeedsPresent e || p, evToClick e ++ cs)
-  where (p, cs) = evsToNeedsPresentAndClicks es
+evToResize :: Event -> [V2 Int32]
+evToResize e = case eventPayload e of
+  WindowResizedEvent (WindowResizedEventData _ v) -> [v]; _ -> []
+evToUPress :: Event -> Bool
+evToUPress event = case eventPayload event of
+  KeyboardEvent keyboardEvent ->
+    keyboardEventKeyMotion keyboardEvent == Pressed &&
+    keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeU
+  _ -> False
+evsToPcu :: [Event] -> (Bool, [V2 Int32]) -- needsPresent clicks U-press
+evsToPcu [] = (False, [])
+evsToPcu (e:es) =
+  (evNeedsPresent e || p, evToClick e ++ cs) where (p, cs) = evsToPcu es
 appProcEvs :: AppState -> [Event] -> IO ()
-appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
-    sTexture=textureVar} es = do
-  let (presDue,cs) = evsToNeedsPresentAndClicks es
+appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
+  let (presDue,cs) = evsToPcu es in do
   (st2,rendDue,presDue2) <- case catMaybes $ map (posToCell st) cs of
     V2 x y:_ -> do
       bds@(bd:prevBds) <- atomically $ readTVar bV
@@ -177,18 +184,10 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
           return (st {sRecent = recent}, True, True)
         _ -> return (st, False, presDue)
     _ -> return (st, False, presDue)
-  when presDue2 $ present rend
-  appLoop st2
-  {-
-      procResize event = case eventPayload event of
-        WindowResizedEvent (WindowResizedEventData _ (V2 x y)) ->
-          Just (toI x, toI y)
-        _ -> Nothing
-  let (st3, renderDue2, presentDue2) =
-        case catMaybes $ map procResize events of
-          (w,h):_ -> (st2 {sWinW = w, sWinH = h}, True, True)
-          _ -> (st2, renderDue, presentDue)
-  (renderDue3, presentDue3) <- if any isUPress events
+  let (st3,rendDue2,presDue3) = case concatMap evToResize es of
+        V2 w h:_ -> (st2 {sWinW = w, sWinH = h}, True, True)
+        _ -> (st2, rendDue, presDue2)
+  (rendDue3,presDue4) <- if any evToUPress es
     then do
       bds <- atomically $ readTVar bV
       case bds of
@@ -196,18 +195,18 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend,
           atomically $ writeTVar bV prevBds
           atomically $ writeTQueue (sUserMoveQueue st) []
           atomically $ writeTQueue (sUserMoveQueue st) []
+          slog "Did undo in game tree."
           return (True, True)
-        _ -> return (False, False)
-    else return (renderDue2, presentDue2)
-  st4 <- if renderDue3
+        _ -> slog "Nothing to undo in game tree." >> return (False, False)
+    else return (rendDue2, presDue3)
+  st4 <- if rendDue3
     then do
       st4 <- genWindowContent st3
       texture2 <- atomically $ readTVar textureVar
       copy rend texture2 Nothing Nothing
       return st4
     else return st3
-  when presentDue3 $ present rend
+  when presDue4 $ present rend
   appLoop st4
-  -}
 appLoop :: AppState -> IO ()
 appLoop st = liftM2 (:) waitEvent pollEvents >>= appProcEvs st

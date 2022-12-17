@@ -13,8 +13,8 @@ import Coord
 import Move
 
 slog :: String -> IO ()
--- slog = putStrLn
-slog = const $ return ()
+slog = putStrLn
+--slog = const $ return ()
 
 data Engine = Engine
   { eInH  :: !Handle
