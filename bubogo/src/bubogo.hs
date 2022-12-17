@@ -25,17 +25,17 @@ recentColor = V4 0xff 0x88 0x88 0xff
 toD :: Integral a => a -> Double
 toD = fromIntegral
 data AppState = AppState
-  { sWinW            :: Int32
-  , sWinH            :: Int32
-  , sBoardLeftX      :: Int32
-  , sBoardTopY       :: Int32
-  , sCellSize        :: Int32
-  , sEngineMoveQueue :: TQueue (Maybe Move)
-  , sUserMoveQueue   :: TQueue [Move]
-  , sRenderer        :: Renderer
-  , sTexture         :: TVar Texture
-  , sBoardVar        :: TVar [Board]
-  , sRecent          :: Maybe Coord
+  { sWinW            :: !Int32
+  , sWinH            :: !Int32
+  , sBoardLeftX      :: !Int32
+  , sBoardTopY       :: !Int32
+  , sCellSize        :: !Int32
+  , sEngineMoveQueue :: !(TQueue (Maybe Move))
+  , sUserMoveQueue   :: !(TQueue [Move])
+  , sRenderer        :: !Renderer
+  , sTexture         :: !(TVar Texture)
+  , sBoardVar        :: !(TVar [Board])
+  , sRecent          :: !(Maybe Coord)
   }
 genWindowContent :: AppState -> IO AppState
 genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
