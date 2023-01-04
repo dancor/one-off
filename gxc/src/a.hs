@@ -51,12 +51,18 @@ trigI = 39
 ang :: S -> S; ang x = '<':x++">"
 gen :: [Int] -> Tree -> [S]
 gen pre (Tree m) = concatMap (genB pre) $ IM.toList m
-render give get = concatMap (ang . o2n) give ++ ":" ++ show get
+render give get = concatMap (ang . o2n) give ++ ":\"" ++ f get ++ "\"" where
+  f ('\\':r) = "\\\\" ++ f r; f ('"':r) = "\\\"" ++ f r; f (x:r) = x : f r
+  f [] = ""
+isSingEnd :: IM Tree -> Bool
+isSingEnd = f . IM.elems where f [Tree m] = IM.null m; f _ = False
 genB :: [Int] -> (Int, Tree) -> [S]
 genB pre (i, Tree m) = if IM.null m then [render pre [chr i]]
-  else 
-    [render (pre ++ [i, k]) (map chr $ pre ++ [i, k]) | Key _ k <- normKeys, IM.notMember k m] ++
-    gen (pre ++ [i]) (Tree m)
+  else (if isSingEnd m then [] else
+    [ render (pre ++ [i, k]) (map chr $ pre ++ [i, k])
+    --[ render (pre ++ [i, k]) (map chr $ pre ++ [i, k]) ++ show m
+    | Key _ k <- normKeys, IM.notMember k m]
+  ) ++ gen (pre ++ [i]) (Tree m)
 main :: IO ()
 main = do
   let t = trUnions $ map codeTr $ -- take 16 $
