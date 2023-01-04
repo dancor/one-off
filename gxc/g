@@ -1,2 +1,2 @@
 #!/bin/sh
-make && exec ./gxc "$@" | lee
+make && exec ./gxc "$@" > out

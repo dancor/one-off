@@ -50,7 +50,11 @@ trigI :: Int
 trigI = 39
 ang :: S -> S; ang x = '<':x++">"
 gen :: [Int] -> Tree -> [S]
-gen pre (Tree m) = concatMap (genB pre) $ IM.toList m
+gen pre (Tree m) =
+  (if isSingEnd m then [] else
+  --[ render (pre ++ [k]) (map chr $ pre ++ [k]) ++ show m
+  [ render (pre ++ [k]) (map chr $ pre ++ [k])
+  | Key _ k <- normKeys, IM.notMember k m]) ++ concatMap (genB pre) (IM.toList m)
 render give get = concatMap (ang . o2n) give ++ ":\"" ++ f get ++ "\"" where
   f ('\\':r) = "\\\\" ++ f r; f ('"':r) = "\\\"" ++ f r; f (x:r) = x : f r
   f [] = ""
@@ -58,11 +62,12 @@ isSingEnd :: IM Tree -> Bool
 isSingEnd = f . IM.elems where f [Tree m] = IM.null m; f _ = False
 genB :: [Int] -> (Int, Tree) -> [S]
 genB pre (i, Tree m) = if IM.null m then [render pre [chr i]]
-  else (if isSingEnd m then [] else
+  else 
+    {- (if isSingEnd m then [] else
     [ render (pre ++ [i, k]) (map chr $ pre ++ [i, k])
     --[ render (pre ++ [i, k]) (map chr $ pre ++ [i, k]) ++ show m
     | Key _ k <- normKeys, IM.notMember k m]
-  ) ++ gen (pre ++ [i]) (Tree m)
+  ) ++ -} gen (pre ++ [i]) (Tree m)
 main :: IO ()
 main = do
   let t = trUnions $ map codeTr $ -- take 16 $
@@ -83,5 +88,4 @@ main = do
         [(["h"],"ʻ")] ++
         [(["a","e"],"æ")] ++ [(["A","e"],"Æ")] ++
         [(["o","e"],"œ")] ++ [(["O","e"],"Œ")] ++ -}
-  putStrLn "<F13><F13>:\"'\""
-  mapM_ putStrLn $ gen [trigI] t
+  mapM_ putStrLn $ "<F13><F13>:\"'\"" : tail (gen [trigI] t)
