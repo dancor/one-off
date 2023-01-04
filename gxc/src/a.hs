@@ -1,20 +1,22 @@
-#!/usr/local/bin/rhs
+-- Gen .XCompose
+-- Includes fail-out functionality where partial codes are sent
+-- pinyin 3caron; esperanto u(breve <circumflex
 import qualified Data.IntMap as IM
 import Data.Char (chr, ord, toUpper)
 import Data.List (foldl')
 import Data.List.Split (chunksOf)
+import Data.Maybe (fromJust)
 type Ch = Int -- store characters by their ord
 data Key = Key {_kName :: S, _kCh :: Ch}; ck c = Key [c] (ord c)
-data Tree = Node (IM Tree) deriving Show
+data Tree = Tree {untree :: IM Tree} deriving Show
 type IM = IM.IntMap
 type S = String
-type Tr = Tree
 type Code = S -- Last Char is the result of typing in the Chars before it
-lol :: Tr -> IO ()
+lol :: Tree -> IO ()
 lol t = lol2 0 t
-lol2 :: Int -> Tr -> IO ()
-lol2 d (Node m) = mapM_ (lol3 d) $ IM.toList m
-lol3 :: Int -> (Int, Tr) -> IO ()
+lol2 :: Int -> Tree -> IO ()
+lol2 d (Tree m) = mapM_ (lol3 d) $ IM.toList m
+lol3 :: Int -> (Int, Tree) -> IO ()
 lol3 d (i, t) = putStrLn (replicate d '-' ++ [chr i]) >> lol2 (d + 1) t
 lowCap :: Char -> S -> S -> S -> [Code]
 lowCap mod ltrs lows caps = zipWith (\l c -> [mod, l, c]) ltrs lows ++
@@ -29,14 +31,35 @@ symbKeys = Key "space" (ord ' ') : (map (\[s, n] -> Key n (ord $ head s)) $
   "_ underscore + plus : colon { braceleft } braceright | bar \" quotedbl " ++
   "< less > greated ? question")
 normKeys :: [Key]
-normKeys = symbKeys ++ map ck (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'])
+normKeys = Key trig trigI : symbKeys ++ 
+  map ck (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'])
 -- At each node, complete partial codes for all normKeys
-addCode :: Code -> Tr -> Tr
-addCode [] t = t
-addCode (c:cR) (Node m) = Node $ IM.insertWith (\_ t -> addCode cR t) (ord c) (Node IM.empty) m
+ordNameM :: IM S
+ordNameM = IM.fromList $ map (\(Key name o) -> (o, name)) normKeys
+o2n i = case IM.lookup i ordNameM of Just x -> x; _ -> [chr i]
+codeTr :: Code -> Tree
+codeTr [] = Tree IM.empty
+codeTr (c:cR) = Tree $ IM.singleton (ord c) $ codeTr cR
+trUnion :: Tree -> Tree -> Tree
+trUnion (Tree a) (Tree b) = Tree (IM.unionWith trUnion a b)
+trUnions :: [Tree] -> Tree
+trUnions = Tree . IM.unionsWith trUnion . map untree
+trig :: S
+trig = "F13"
+trigI :: Int
+trigI = 39
+ang :: S -> S; ang x = '<':x++">"
+gen :: [Int] -> Tree -> [S]
+gen pre (Tree m) = concatMap (genB pre) $ IM.toList m
+render give get = concatMap (ang . o2n) give ++ ":" ++ show get
+genB :: [Int] -> (Int, Tree) -> [S]
+genB pre (i, Tree m) = if IM.null m then [render pre [chr i]]
+  else 
+    [render (pre ++ [i, k]) (map chr $ pre ++ [i, k]) | Key _ k <- normKeys, IM.notMember k m] ++
+    gen (pre ++ [i]) (Tree m)
 main :: IO ()
 main = do
-  let codes = 
+  let t = trUnions $ map codeTr $ -- take 16 $
         lowCap '1' "aeiouv" "āēīōūǖ" "ĀĒĪŌŪǕ" ++
         lowCap '2' "aceinosuvz" "áćéíńóśúǘź" "ÁĆÉÍÓŃŚÚǗŹ" ++
         lowCap '3' "aeiouv" "ǎěǐǒǔǚ" "ǍĚǏǑǓǙ" ++
@@ -54,54 +77,5 @@ main = do
         [(["h"],"ʻ")] ++
         [(["a","e"],"æ")] ++ [(["A","e"],"Æ")] ++
         [(["o","e"],"œ")] ++ [(["O","e"],"Œ")] ++ -}
-  print codes
-  lol codes
-
-{-
-type S = String
-trig :: S
-trig = "F13"
-codes :: IM
-codes = [Node "1" [Node "a" [Node "ā" []]]]
-gen :: [S] -> [Tree S] -> [S]
-gen pre ts = 
-  map (\k -> ([kName k], "'" ++ kS k)) 
-main :: IO ()
-main = do
-  mapM_ print codes
-  gen [trig] codes
--- Gen .XCompose
--- Includes some fail-out functionality where partial codes can be sent.
--- pinyin 3caron; esperanto u(breve <circumflex
-import Control.Arrow
-import Data.Char (toUpper)
-import Data.List.Split (chunksOf)
-keyC = kk 'c'; keyN = kk 'n'; key1 = kk '1'; key2 = kk '2'; key3 = kk '3'
-key4 = kk '4'; key9 = kk '9'
-keyComma = Key "comma" ","
-lowCap mod ltrs lows caps = 
-  zipWith (\l c -> ([mod, [l]], [c])) ltrs lows ++
-  zipWith (\l c -> ([mod, [toUpper l]], [c])) ltrs caps
-main = writeFile "/home/danl/.XCompose" $ unlines $ ("#include \"%L\"" :) $
-  map (\(ks, s) -> concatMap (("<" ++) . (++ ">")) ks ++ ":\"" ++ s ++ "\"") $
-  map (first (trig :)) $ (([trig], "'") :) $
-  lowCap "1" "aeiouv" "āēīōūǖ" "ĀĒĪŌŪǕ" ++
-  lowCap "2" "aceinosuvz" "áćéíńóśúǘź" "ÁĆÉÍÓŃŚÚǗŹ" ++
-  lowCap "3" "aeiouv" "ǎěǐǒǔǚ" "ǍĚǏǑǓǙ" ++
-  lowCap "4" "aeiouv" "àèìòùǜ" "ÀÈÌÒÙǛ" ++
-  lowCap "6" "aceghijosuyz" "âĉêĝĥîĵôŝûŷẑ" "ÂĈÊĜĤÎĴÔŜÛŶẐ"  ++
-  lowCap "semicolon" "aeiou" "äëïöü" "ÄËÏÖÜ" ++
-  lowCap "9" "u" "ŭ" "Ŭ" ++
-  lowCap "o" "a" "å" "Å" ++
-  lowCap "c" "c" "ç" "Ç" ++
-  lowCap "n" "ano" "ãñõ" "ÃÑÕ" ++
-  lowCap "s" "s" "ß" "ẞ" ++
-  lowCap "slash" "lo" "łø" "ŁØ" ++
-  lowCap "period" "z" "ż" "Ż" ++
-  lowCap "comma" "ae" "ąę" "ĄĘ" ++
-  [(["h"],"ʻ")] ++
-  [(["a","e"],"æ")] ++ [(["A","e"],"Æ")] ++
-  [(["o","e"],"œ")] ++ [(["O","e"],"Œ")] ++
-  map (\k -> ([kName k], "'" ++ kS k)) (specials ++ map (\c -> Key [c] [c]) (
-    ['0'..'9'] ++ ['A'..'Z'] ++ "abdefgijklmopqrstuvwxyz"))
--}
+  putStrLn "<F13><F13>:\"'\""
+  mapM_ putStrLn $ gen [trigI] t
