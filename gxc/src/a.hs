@@ -71,6 +71,7 @@ genB pre (i, Tree m) = if IM.null m then [render pre [chr i]]
 main :: IO ()
 main = do
   let t = trUnions $ map codeTr $ -- take 16 $
+        "hʻ":"aeæ":"AeÆ":"oeœ":"OeŒ":
         lowCap '1' "aeiouv" "āēīōūǖ" "ĀĒĪŌŪǕ" ++
         lowCap '2' "aceinosuvz" "áćéíńóśúǘź" "ÁĆÉÍÓŃŚÚǗŹ" ++
         lowCap '3' "aeiouv" "ǎěǐǒǔǚ" "ǍĚǏǑǓǙ" ++
@@ -84,8 +85,5 @@ main = do
         lowCap 's' "s" "ß" "ẞ" ++
         lowCap '/' "lo" "łø" "ŁØ" ++
         lowCap '.' "z" "ż" "Ż" ++
-        lowCap ',' "ae" "ąę" "ĄĘ" ++
-        [(["h"],"ʻ")] ++
-        [(["a","e"],"æ")] ++ [(["A","e"],"Æ")] ++
-        [(["o","e"],"œ")] ++ [(["O","e"],"Œ")]
+        lowCap ',' "ae" "ąę" "ĄĘ"
   mapM_ putStrLn $ "<F13><F13>:\"'\"" : tail (gen [trigI] t)
