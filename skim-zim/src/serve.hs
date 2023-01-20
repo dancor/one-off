@@ -33,6 +33,7 @@ keepLangs =
   , "Greek"
   , "Chinese"
   , "French"
+  , "Greenlandic"
   , "Hebrew"
   , "Hawaiian"
   -- , "Hindi"
@@ -40,6 +41,9 @@ keepLangs =
   , "Mandarin"
   , "Middle English"
   , "Middle French"
+  , "Norwegian"
+  , "Norwegian Bokmål"
+  , "Norwegian Nynorsk"
   , "Old English"
   , "Old French"
   , "Proto-Indo-European"  -- maybe just all Proto- ?
@@ -49,6 +53,7 @@ keepLangs =
   , "Portuguese"
   -- , "Sanskrit"
   , "Spanish"
+  , "Swedish"
   , "Translingual"
   ]
 isH2Id :: TS.Tag BSL.ByteString -> Bool
