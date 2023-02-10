@@ -9,7 +9,7 @@ import Data.List
 import Data.Maybe
 import GHC.Int (Int32)
 import GHC.IO.Exception
-import Graphics.Rendering.Cairo.Canvas hiding (toD)
+import "cairo-canvas" Graphics.Rendering.Cairo.Canvas hiding (toD)
 import "sdl2-cairo" SDL.Cairo
 import "sdl2" SDL
 import Board
@@ -27,19 +27,18 @@ blackColor  = V4 0x44 0x44 0x44 0xff
 recentColor = V4 0xff 0x88 0x88 0xff
 toD :: Integral a => a -> Double
 toD = fromIntegral
-data AppState = AppState
-  { sWinW            :: !Int32
-  , sWinH            :: !Int32
-  , sBoardLeftX      :: !Int32
-  , sBoardTopY       :: !Int32
-  , sCellSize        :: !Int32
-  , sEngineMoveQueue :: !(TQueue (Maybe Move))
-  , sUserMoveQueue   :: !(TQueue [Maybe Move])
-  , sRenderer        :: !Renderer
-  , sTexture         :: !(TVar Texture)
-  , sBoardVar        :: !(TVar [Board])
-  , sRecent          :: !(Maybe Coord)
-  }
+data AppState = AppState {
+  sWinW            :: !Int32,
+  sWinH            :: !Int32,
+  sBoardLeftX      :: !Int32,
+  sBoardTopY       :: !Int32,
+  sCellSize        :: !Int32,
+  sEngineMoveQueue :: !(TQueue (Maybe Move)),
+  sUserMoveQueue   :: !(TQueue [Maybe Move]),
+  sRenderer        :: !Renderer,
+  sTexture         :: !(TVar Texture),
+  sBoardVar        :: !(TVar [Board]),
+  sRecent          :: !(Maybe Coord)}
 genWindowContent :: AppState -> IO AppState
 genWindowContent st@AppState{sWinW=winW,sWinH=winH,sTexture=textureVar} = do
   bd:_ <- atomically $ readTVar $ sBoardVar st
@@ -105,13 +104,10 @@ main = initializeAll >> do
         let vanishRedo :: IOError -> IO (Engine, Maybe Move)
             vanishRedo exc = if ioe_type exc `elem` [EOF, ResourceVanished]
               then do
-                slog "Engine vanished. Restarting..."
-                e2 <- startEngine
-                slog "Done."
-                slog "Replaying moves.."
+                e2 <- slog "Engine vanished. Restarting..." >> startEngine
+                slog "Done. Replaying moves.."
                 mapM_ (ePlayMove e2) $ reverse $ concat moves
-                slog "Done."
-                tryWithE e2
+                slog "Done." >> tryWithE e2
               else throwIO exc
             tryWithE e2 = do
               case userMoves of
