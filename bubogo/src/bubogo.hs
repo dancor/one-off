@@ -33,8 +33,8 @@ data AppState = AppState {
   sBoardLeftX      :: !Int32,
   sBoardTopY       :: !Int32,
   sCellSize        :: !Int32,
-  sEngineMoveQueue :: !(TQueue (Maybe Move)),
-  sUserMoveQueue   :: !(TQueue [Maybe Move]),
+  sFromE           :: !(TQueue (Maybe Move)),
+  sToE             :: !(TQueue [Maybe Move]),
   sRenderer        :: !Renderer,
   sTexture         :: !(TVar Texture),
   sBoardVar        :: !(TVar [Board]),
@@ -166,14 +166,14 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
                 , Move Black $ Coord 9 3
                 , Move Black $ Coord 9 15
                 ] else [userMove]
-          atomically $ writeTQueue (sUserMoveQueue st) $ map Just userMoves
+          atomically $ writeTQueue (sToE st) $ map Just userMoves
           board2 <- bPlayMoves bd userMoves
           atomically $ writeTVar bV (board2:bds)
           _ <- genWindowContent $ st {sRecent = Just $ Coord y x}
           texture <- atomically $ readTVar textureVar
           copy rend texture Nothing Nothing
           present rend
-          Just engineMove <- atomically $ readTQueue (sEngineMoveQueue st)
+          Just engineMove <- atomically $ readTQueue (sFromE st)
           board3 <- bPlayMoves board2 [engineMove]
           atomically $ writeTVar bV (board3:bds)
           let recent = case engineMove of Move _ a -> Just a; _ -> Nothing
@@ -189,16 +189,16 @@ appProcEvs st@AppState{sBoardVar=bV,sRenderer=rend, sTexture=textureVar} es =
       case bds of
         _:(prevBds@(_:_:_)) -> do
           atomically $ writeTVar bV prevBds
-          atomically $ writeTQueue (sUserMoveQueue st) []
-          atomically $ writeTQueue (sUserMoveQueue st) []
+          atomically $ writeTQueue (sToE st) []
+          atomically $ writeTQueue (sToE st) []
           slog "Did undo in game tree."
           return True
         _ -> slog "Nothing to undo in game tree." >> return False
     Just 'f' -> do
-      atomically $ writeTQueue (sUserMoveQueue st) [Nothing]
+      atomically $ writeTQueue (sToE st) [Nothing]
       return False
     _ -> return False
-  (st4,didRend) <- if didClick || didResize || didUndo then do
+  (st4,didRend) <- if didClick||didResize||didUndo then do
       st4 <- genWindowContent st3
       texture2 <- atomically $ readTVar textureVar
       copy rend texture2 Nothing Nothing

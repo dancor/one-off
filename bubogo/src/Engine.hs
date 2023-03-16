@@ -19,7 +19,8 @@ startEngine = do
   hSetBuffering inH  NoBuffering >> hSetBuffering outH NoBuffering
   hSetBuffering errH NoBuffering
   let e = Engine inH outH errH
-  ePut e "time_settings 0 1 1" >> return e
+  --ePut e "time_settings 0 1 1" >> return e
+  return e
 ePut :: Engine -> String -> IO ()
 ePut e s = slog ("IN: " ++ s) >> hPutStrLn (eInH e) s
 ePlayMove :: Engine -> Move -> IO ()
@@ -27,8 +28,8 @@ ePlayMove _ Pass = return ()
 ePlayMove e (Move color (Coord column row)) = ePut e $
   "play " ++ colorLtr color ++ " " ++ showColumn column ++ showRow row
 eSetBoard :: Engine -> Board -> IO ()
-eSetBoard e b = ePut e "clear_board" >> forM_ allCoords $ \c ->
-  case bRead b c of Just color -> ePlayMove e (Move color c); _ -> return ()
+eSetBoard e b = ePut e "clear_board" >> forM_ allCoords (\c ->
+  case bRead b c of Just color -> ePlayMove e (Move color c); _ -> return ())
 eSetMoves :: Engine -> [Move] -> IO ()
 eSetMoves e moves = ePut e "clear_board" >> mapM_ (ePlayMove e) moves
 eScore :: Engine -> IO ()

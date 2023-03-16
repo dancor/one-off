@@ -109,7 +109,8 @@ procArticle zimHtml = DTLE.decodeUtf8With errLol . TS.renderTags $
       (TS.parseTags zimHtml)
   (enH2s, nonEnKeptH2s) = partition ((== "English") . h2IdLang . head) $
       filter ((`elem` keepLangs) . h2IdLang . head) h2s
-  (ptH2s, otherKeptH2s) = partition ((== "Portuguese") . h2IdLang . head)
+  --(ptH2s, otherKeptH2s) = partition ((== "Portuguese") . h2IdLang . head)
+  (ptH2s, otherKeptH2s) = partition ((== "Polish") . h2IdLang . head)
       nonEnKeptH2s
   modifiedKeptH2s = map modifyH2 $ ptH2s ++ otherKeptH2s ++ enH2s
   modifyH2 h2 =
