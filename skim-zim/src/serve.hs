@@ -7,9 +7,9 @@ import qualified Data.ByteString.Lazy.Char8 as BSLC
 import qualified Data.ByteString.Search as BSS
 import Data.List
 import Data.Maybe
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Encoding as T
 import Data.Text.Lazy (toStrict, fromStrict)
-import qualified Data.Text.Lazy as DTL
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as DTLE
 import Data.Word
 import Network.HTTP.Types.Status (status404)
@@ -22,7 +22,7 @@ main = getArgs >>= \fps -> scotty 3000 (
 redirectToZimMainPage :: [FilePath] -> ActionM ()
 redirectToZimMainPage fps = 
   liftIO (fmap catMaybes $ mapM getMainPageUrl fps) >>= \res -> case res of
-    Url url : _ -> redirect . fromStrict $ decodeUtf8 url
+    Url url : _ -> redirect . fromStrict $ T.decodeUtf8 url
     _ -> status status404 >> text "Could not find ZIM file main page."
 keepLangs :: [BSL.ByteString]
 keepLangs =
@@ -91,8 +91,8 @@ fixColors :: BS.ByteString -> BSLC.ByteString
 fixColors = BSS.replace
   ("background-color: white" :: BS.ByteString)
   ("background-color:#777777" :: BS.ByteString)
-fixColorsT :: DTL.Text -> DTL.Text
-fixColorsT = DTL.replace
+fixColorsT :: TL.Text -> TL.Text
+fixColorsT = TL.replace
   ("background-color: white")
   ("background-color:#777777")
 -- Modify the wiktionary article html to only keep the h2 headings that
@@ -101,7 +101,7 @@ fixColorsT = DTL.replace
 -- 
 -- If in the future we actually modify the .zim file we can actually remove
 -- articles where no h2 entries remain.
-procArticle :: BSL.ByteString -> DTL.Text
+procArticle :: BSL.ByteString -> TL.Text
 procArticle zimHtml = DTLE.decodeUtf8With errLol . TS.renderTags $
   preH2 ++ concat modifiedKeptH2s ++ theEnd where
   (preH2, h2s, theEnd) =
@@ -128,21 +128,24 @@ errLol :: String -> Maybe Word8 -> Maybe Char
 errLol _ _ = Nothing
 serveZimUrl :: [FilePath] -> ActionM ()
 serveZimUrl fps = do
-  urlOrig <- (BS.tail . encodeUtf8 . toStrict) <$> param "path"
-  let (url, forceNoSkim) = if "raw/" `BS.isPrefixOf` urlOrig
-        then (BS.drop 4 urlOrig, True)
-        else (urlOrig, False)
+  urlOrig <- TL.drop 1 <$> param "path"
+  let urlOrigB = BS.tail . T.encodeUtf8 $ toStrict urlOrig
+  let (url, forceNoSkim) = if "raw/" `BS.isPrefixOf` urlOrigB
+        then (BS.drop 4 urlOrigB, True)
+        else (urlOrigB, False)
   res <- liftIO $ fmap catMaybes $ mapM (`getContent` Url url) fps
   case res of
     (mimeType, zimHtml) : rest -> do
       liftIO . putStrLn $ "Serving: " ++ show url
-      setHeader "Content-Type" (fromStrict $ decodeUtf8 mimeType)
+      setHeader "Content-Type" (fromStrict $ T.decodeUtf8 mimeType)
       -- These shouldn't be skimmed: -/s/style.css -j/head.js -j/body.js
       if forceNoSkim || "-" `BS.isPrefixOf` url
         then raw $ fixColors $ BS.concat $ BSL.toChunks zimHtml
         else html $ fixColorsT $ procArticle zimHtml <>
             DTLE.decodeUtf8With errLol (BSL.concat $ map snd rest)
     _ -> do
-      liftIO . putStrLn $ "Invalid URL: " ++ show url
+      Just (Url u) <- liftIO $ getMainPageUrl (head fps)
       status status404
-      text $ "Invalid URL!"
+      text $ urlOrig <> " " <> TL.fromStrict (T.decodeUtf8 u)
+      --text $ -- "Invalid URL: " <> DTLE.decodeUtf8' url <> " " <>
+      --  TL.pack (show e)
