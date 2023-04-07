@@ -1,2 +1,2 @@
 b: a.c
-	g++ -o b a.c -lzim
+	g++ -O3 -o b a.c -lzim
