@@ -6,7 +6,8 @@
 #include <zim/entry.h>
 #include <zim/item.h>
 using namespace std;
-const char*preGood = "    <summary class=\"section-heading\"><h2 id=\"Polish";
+const char*preGood1 = "    <summary class=\"section-heading\"><h2 id=\"Polish";
+const char*preGood2 = "    <summary class=\"section-heading\"><h2 id=\"English";
 const char*pre = "    <summary class=\"section-heading\"><h2 id=\"";
 int main(int argc, char**argv) {try {
   zim::Archive a("/home/d/data/wik/t/en.zim");
@@ -18,8 +19,9 @@ int main(int argc, char**argv) {try {
   string l;
   bool copy = true;
   while (getline(ss, l, '\n')) {
-    if (!l.rfind(preGood, 0)) copy = true;
-    else {if (!l.rfind(pre, 0)) copy = false;}
+    if (!l.rfind(preGood1, 0)) copy = true;
+    else if (!l.rfind(preGood2, 0)) copy = true;
+    else if (!l.rfind(pre, 0)) copy = false;
     if (copy) f << l << "\n";
   }
   /*int lineBeg = 0;
