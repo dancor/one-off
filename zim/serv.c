@@ -28,37 +28,37 @@ awaitClient:
   memset(m, 0, sizeof(m));
   if (recvfrom(conn, m, sizeof(m), 0, (struct sockaddr*)&ca, &al) > 0) {
     char *wd = m + 5; while (wd[0] == '/') wd++;
-    u8 haveData = 1, full = 0;
+    u8 haveData, full = 0;
     if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
     char *wdEnd = wd; while (wdEnd[0] != ' ') wdEnd++; wdEnd[0] = '\0';
 
     zim::Blob data;
-    try {data = arc.getEntryByTitle(wd).getItem().getData();} catch 
-      (const std::exception& e) {haveData = 0;}
+    try {data = arc.getEntryByTitle(wd).getItem().getData(); haveData = 1;}
+      catch (const std::exception& e) {haveData = 0;}
     const char *r1 = NULL; int r1l = 0;
     if (haveData) {
       if (!full) {
         int cN = data.size() + 1; char*c = (char*)malloc(cN);
         memcpy(c, data.data(), cN - 1); c[cN - 1] = 0;
-        printf("lol1\n");
-        stringstream ss(c); free(c); string l, ls; u8 copy = 1;
-        printf("lol2\n");
+        stringstream ss(c); /*free(c);*/ string l, ls; u8 copy = 1;
         while (getline(ss, l, '\n')) {
           if (!l.rfind(pre1, 0)) copy = 1; else if (!l.rfind(pre2, 0)) copy = 1;
           else if (!l.rfind(pre3, 0)) copy = 1;
           else if (!l.rfind(pre4, 0)) copy = 1;
           else if (!l.rfind(pre, 0)) copy = 0;
           if (copy) {ls += l; ls += "\n";}}
-        printf("lol3\n");
         r1 = ls.c_str(); r1l = ls.length();
       } else {r1 = data.data(); r1l = data.size();}
     }
     printf("lol4\n");
     string r = 
       "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
-    printf("lol5\n");
-    r += to_string(r1l); r += "\r\n\r\n"; if (r1l) r += r1;
-    printf("lol6\n");
+    printf("lol1\n");
+    r += to_string(r1l);
+    printf("lol2\n");
+    r += "\r\n\r\n";
+    printf("lol3 %d %c\n", r1l, r1l ? r1[0] : '#');
+    if (r1l) r += r1;
+    printf("lol4\n");
     sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
-    printf("lol7\n");
   } close(conn); goto awaitClient;}
