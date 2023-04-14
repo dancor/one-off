@@ -35,7 +35,6 @@ awaitClient:
     zim::Blob data;
     try {data = arc.getEntryByTitle(wd).getItem().getData(); haveData = 1;}
       catch (const std::exception& e) {haveData = 0;}
-    const char *r1 = NULL; int r1l = 0;
     if (haveData) {
       if (!full) {
         int cN = data.size() + 1; char*c = (char*)malloc(cN); u8 copy = 1;
@@ -46,14 +45,19 @@ awaitClient:
           else if (!l.rfind(pre4, 0)) copy = 1;
           else if (!l.rfind(pre, 0)) copy = 0;
           if (copy) {ls += l; ls += "\n";}}
-        r1 = ls.c_str(); r1l = ls.length();
-        char lol[9999]; strncpy(lol, r1, 9997); lol[9998] = 0;
-        printf("%s\n", lol);
-      } else {r1 = data.data(); r1l = data.size();}}
-    string r = 
-      "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
-    r += to_string(r1l);
-    r += "\r\n\r\n";
-    if (r1l) r += r1;
-    sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
+        string r = 
+          "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
+        r += to_string(ls.length());
+        r += "\r\n\r\n";
+        r += ls;
+        sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
+      } else {
+        string r = 
+          "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
+        r += to_string(data.size());
+        r += "\r\n\r\n";
+        r += data.data();
+        sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
+      }
+    }
   } close(conn); goto awaitClient;}
