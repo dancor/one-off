@@ -15,7 +15,7 @@ const char*pre3 = "    <summary class=\"section-heading\"><h2 id=\"Polish";
 const char*pre4 = "    <summary class=\"section-heading\"><h2 id=\"Spanish";
 const char*pre  = "    <summary class=\"section-heading\"><h2 id=\"";
 int main(int argc, char **argv) {
-  string l, ls; 
+  string l, ls; stringstream ss;
   zim::Archive arc("/home/d/data/wik/t/en.zim");
   int conn, s = socket(PF_INET, SOCK_STREAM, 0);
   nie(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)));
@@ -38,10 +38,8 @@ awaitClient:
     const char *r1 = NULL; int r1l = 0;
     if (haveData) {
       if (!full) {
-        int cN = data.size() + 1; char*c = (char*)malloc(cN);
-        memcpy(c, data.data(), cN - 1); c[cN - 1] = 0;
-        stringstream ss(c); free(c);
-        u8 copy = 1;
+        int cN = data.size() + 1; char*c = (char*)malloc(cN); u8 copy = 1;
+        memcpy(c, data.data(), cN - 1); c[cN - 1] = 0; ss << c; free(c);
         while (getline(ss, l, '\n')) {
           if (!l.rfind(pre1, 0)) copy = 1; else if (!l.rfind(pre2, 0)) copy = 1;
           else if (!l.rfind(pre3, 0)) copy = 1;
@@ -49,6 +47,8 @@ awaitClient:
           else if (!l.rfind(pre, 0)) copy = 0;
           if (copy) {ls += l; ls += "\n";}}
         r1 = ls.c_str(); r1l = ls.length();
+        char lol[9999]; strncpy(lol, r1, 9997); lol[9998] = 0;
+        printf("%s\n", lol);
       } else {r1 = data.data(); r1l = data.size();}}
     string r = 
       "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
