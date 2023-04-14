@@ -23,7 +23,7 @@ doNextChar:
   t[0] = s[0]; s++; t++; goto doNextChar;
 }
 int main(int argc, char **argv) {
-  string r, l, ls; stringstream ss; char*c;
+  string r, l, ls; stringstream ss; char *c, *c2;
   zim::Archive arc("/home/d/data/wik/t/en.zim");
   int cN, cN1, conn, s = socket(PF_INET, SOCK_STREAM, 0);
   nie(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)));
@@ -41,8 +41,6 @@ awaitClient:
     if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
     char *wdEnd = wd; while (wdEnd[0] != ' ') wdEnd++; wdEnd[0] = '\0';
     percentDecode(wd);
-    //printf("wd[%s]\n", wd);
-    printf("wd[%s] %d %d %d\n", wd, wd[0], wd[1], wd[2]);
     zim::Blob data;
     try {data = arc.getEntryByTitle(wd).getItem().getData(); haveData = 1;}
       catch (const std::exception& e) {haveData = 0;}
@@ -50,7 +48,7 @@ awaitClient:
       if (!full) {
         u8 copy = 1; cN1 = data.size(), cN = cN1 + 1; c = (char*)malloc(cN);
         memcpy(c, data.data(), cN1); c[cN1] = 0; ss<<c;
-        //printf("%s\n", c);
+        c2 = c + 1600; c2[200] = 0; printf("%s\n", c2);
         free(c);
         while (getline(ss, l, '\n')) {
           if (!l.rfind(pre1, 0)) copy = 1; else if (!l.rfind(pre2, 0)) copy = 1;
