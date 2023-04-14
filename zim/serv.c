@@ -48,17 +48,30 @@ awaitClient:
           else if (!l.rfind(pre, 0)) copy = 0;
           if (copy) {ls += l; ls += "\n";}}
         r1 = ls.c_str(); r1l = ls.length();
-      } else {r1 = data.data(); r1l = data.size();}
-    }
-    printf("lol4\n");
     string r = 
       "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
     printf("lol1\n");
     r += to_string(r1l);
     printf("lol2\n");
     r += "\r\n\r\n";
+    printf("lol3 %d\n", r1l);
     printf("lol3 %d %c\n", r1l, r1l ? r1[0] : '#');
     if (r1l) r += r1;
     printf("lol4\n");
     sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
+      } else {
+        r1 = data.data(); r1l = data.size();
+    string r = 
+      "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
+    printf("lol1\n");
+    r += to_string(r1l);
+    printf("lol2\n");
+    r += "\r\n\r\n";
+    printf("lol3 %d\n", r1l);
+    printf("lol3 %d %c\n", r1l, r1l ? r1[0] : '#');
+    if (r1l) r += r1;
+    printf("lol4\n");
+    sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
+      }
+    }
   } close(conn); goto awaitClient;}
