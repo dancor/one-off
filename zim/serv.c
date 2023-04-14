@@ -15,6 +15,7 @@ const char*pre3 = "    <summary class=\"section-heading\"><h2 id=\"Polish";
 const char*pre4 = "    <summary class=\"section-heading\"><h2 id=\"Spanish";
 const char*pre  = "    <summary class=\"section-heading\"><h2 id=\"";
 int main(int argc, char **argv) {
+  string l, ls; 
   zim::Archive arc("/home/d/data/wik/t/en.zim");
   int conn, s = socket(PF_INET, SOCK_STREAM, 0);
   nie(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)));
@@ -31,7 +32,6 @@ awaitClient:
     u8 haveData, full = 0;
     if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
     char *wdEnd = wd; while (wdEnd[0] != ' ') wdEnd++; wdEnd[0] = '\0';
-
     zim::Blob data;
     try {data = arc.getEntryByTitle(wd).getItem().getData(); haveData = 1;}
       catch (const std::exception& e) {haveData = 0;}
@@ -40,7 +40,8 @@ awaitClient:
       if (!full) {
         int cN = data.size() + 1; char*c = (char*)malloc(cN);
         memcpy(c, data.data(), cN - 1); c[cN - 1] = 0;
-        stringstream ss(c); /*free(c);*/ string l, ls; u8 copy = 1;
+        stringstream ss(c); free(c);
+        u8 copy = 1;
         while (getline(ss, l, '\n')) {
           if (!l.rfind(pre1, 0)) copy = 1; else if (!l.rfind(pre2, 0)) copy = 1;
           else if (!l.rfind(pre3, 0)) copy = 1;
@@ -48,30 +49,11 @@ awaitClient:
           else if (!l.rfind(pre, 0)) copy = 0;
           if (copy) {ls += l; ls += "\n";}}
         r1 = ls.c_str(); r1l = ls.length();
+      } else {r1 = data.data(); r1l = data.size();}}
     string r = 
       "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
-    printf("lol1\n");
     r += to_string(r1l);
-    printf("lol2\n");
     r += "\r\n\r\n";
-    printf("lol3 %d\n", r1l);
-    printf("lol3 %d %c\n", r1l, r1l ? r1[0] : '#');
     if (r1l) r += r1;
-    printf("lol4\n");
     sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
-      } else {
-        r1 = data.data(); r1l = data.size();
-    string r = 
-      "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ";
-    printf("lol1\n");
-    r += to_string(r1l);
-    printf("lol2\n");
-    r += "\r\n\r\n";
-    printf("lol3 %d\n", r1l);
-    printf("lol3 %d %c\n", r1l, r1l ? r1[0] : '#');
-    if (r1l) r += r1;
-    printf("lol4\n");
-    sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
-      }
-    }
   } close(conn); goto awaitClient;}
