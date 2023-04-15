@@ -77,10 +77,11 @@ doLine:
     } else {
       wdLen = strlen(wd); dLen = strlen(s1) + wdLen + strlen(s2);
       d = (char*)malloc(dLen + 1); snprintf(d, dLen + 1, "%s%s%s", s1, wd, s2);
-      cLen = strlen(http) + 999 + dLen; cN = cLen + 1; c = (char*)malloc(cN);
-      snprintf(c, cN, "%s%d\r\n\r\n%s", http, dLen, d);
-      //char*e=escStr(c);printf("c[%.*s]\n",199,e);free(e);
+      cN = strlen(http) + 999 + dLen; c = (char*)malloc(cN);
+      snprintf(c, cN, "%s%d\r\n\r\n%s", http, dLen, d); cLen = strlen(c);
       sendto(conn, c, cLen, 0, (struct sockaddr*)&sa, al);
+      //printf("dLen[%d] cLen[%d]\n", dLen, cLen);
+      //char*e=escStr(c);printf("c[%.*s]\n",199,e);free(e);
       free(c); free(d);
     }
   } close(conn); goto awaitClient;}
