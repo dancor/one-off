@@ -36,11 +36,10 @@ awaitClient:
   inet_ntop(AF_INET, (struct in_addr*)&ca.sin_addr, cliIp, sizeof(cliIp));
   memset(m, 0, sizeof(m));
   if (recvfrom(conn, m, sizeof(m), 0, (struct sockaddr*)&ca, &al) > 0) {
-    char *wd = m + 5; while (wd[0] == '/') wd++;
+    char *wd = m + 5; percentDecode(wd); while (wd[0] == '/') wd++;
     u8 haveData, full = 0;
     if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
     char *wdEnd = wd; while (wdEnd[0] != ' ') wdEnd++; wdEnd[0] = '\0';
-    percentDecode(wd);
     try {data = arc.getEntryByTitle((char*)wd).getItem().getData();
       haveData = 1;} catch (const std::exception& e) {haveData = 0;}
     if (haveData) {
