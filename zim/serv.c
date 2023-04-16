@@ -12,17 +12,26 @@ using namespace std;
 const int one = 1;
 const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
   *http = "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ",
-  *postWd = " HTTP/1.1", *enwik = "enwik",
-  *s1 = "<html><body>", *s2 = ": no entry</body></html>";
+  *postWd = " HTTP/1.1", *s1 = "<html><body>", *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
-inline void percentDecode(char *s) {char *t = s; while (*s) {*t = *s != '%' ?
+inline void urlDecode(char *s) {char *t = s; while (*s) {*t = *s != '%' ?
   *s : h2i(*++s)<<4 + h2i(*++s); s++; t++;} *t = 0;}
+inline int readWikChoice(char *s, char **t/*, char **langKeep*/) {
+  int l = (int)strlen(s); if (l >= 6 && s[0] == 'e' && s[1] == 'n' &&
+      s[2] == 'w' && s[3] == 'i' && s[4] == 'k' && s[6] == '/') {
+    *t = s + 7;
+    switch (s[5]) {
+    case 'i': return 0; break;
+    case 't': return 1; break;
+    default: return -1;}
+  } else return -1;}
 int main(int argc, char **argv) {
-  string r;
-  char *c, *c1, *c2, *c3, *d, *d1, cliIp[32], m[1024]; ptrdiff_t diff;
-  zim::Archive enwikt("/home/d/data/wik/t/en.zim"),
-    enwiki("/home/d/data/wik/i/en.zim"); zim::Blob data;
-  int cN, conn, cLen, dLen, s = socket(PF_INET, SOCK_STREAM, 0), wdLen; u8 copy;
+  char *c, *c1, *c2, *c3, *d, *d1, *wd, *wdEnd, cliIp[32], m[1024];
+  ptrdiff_t diff;
+  u8 copy; int arcI;
+  zim::Archive arc0("/home/d/data/wik/i/en.zim"),
+    arc1("/home/d/data/wik/t/en.zim"), arc[2]={arc0,arc1}; zim::Blob data;
+  int cN, conn, cLen, dLen, s = socket(PF_INET, SOCK_STREAM, 0), wdLen;
   nie(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)));
   struct sockaddr_in ca, sa; bzero(&sa, sizeof(sa)); sa.sin_family = AF_INET;
   sa.sin_addr.s_addr = htonl(INADDR_ANY); sa.sin_port = htons(atoi(argv[1]));
@@ -33,13 +42,20 @@ awaitClient:
   inet_ntop(AF_INET, (struct in_addr*)&ca.sin_addr, cliIp, sizeof(cliIp));
   memset(m, 0, sizeof(m));
   if (recvfrom(conn, m, sizeof(m), 0, (struct sockaddr*)&ca, &al) > 0) {
-    char *wd = m + 5; percentDecode(wd); while (wd[0] == '/') wd++;
-    //char*e=escStr(wd);printf("wd[%.*s]\n",199,wd);free(e);
-    u8 haveData = 0, full = 0;
-    if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
-    char *wdEnd = strchr(wd, '\n');
+    wd = m + 5; urlDecode(wd);
+    //char*e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
+    arcI = readWikChoice(wd, &wd);
+    //printf("arcI[%d]\n", arcI);
+    //e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
+    wdEnd = 0;
+    u8 haveData = 0, full = 1;
+    if (arcI != -1) {
+      //while (wd[0] == '/') wd++;
+      //if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
+      wdEnd = strchr(wd, '\n');
+    }
     if (wdEnd) {wdEnd[-strlen(postWd) - 1] = 0;
-      try {data = enwikt.getEntryByTitle((char*)wd).getItem().getData();
+      try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
         haveData = 1;} catch (const std::exception& e) {}}
     if (haveData) {
       if (!full) {
@@ -66,11 +82,10 @@ doLine:
         sendto(conn, c, strlen((char*)c), 0, (struct sockaddr*)&sa, al);
         free(c); free(d);
       } else {
-        r = http;
-        r += to_string(data.size());
-        r += "\r\n\r\n";
-        r += data.data();
-        sendto(conn, r.c_str(), r.length(), 0, (struct sockaddr*)&sa, al);
+        char *r; int rL =
+          asprintf(&r, "%s%zd\r\n\r\n%s", http, data.size(), data.data());
+        if (rL != -1) {
+          sendto(conn, r, rL, 0, (struct sockaddr*)&sa, al); free(r);}
       }
     } else {
       wdLen = strlen(wd); dLen = strlen(s1) + wdLen + strlen(s2);

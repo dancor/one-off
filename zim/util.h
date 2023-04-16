@@ -8,11 +8,11 @@ inline int strDiffN(const char *a, const char *b, const size_t n) {
   return 0 != strncmp(a, b, n);}
 inline u8 startsW(const char *a, const char *b) { // a startsW b
   return strEqN(a, b, strlen(b));}
-inline char* escStr(const char *a) { // assumes enough malloc, maybe 3x needed
+inline char* escStr(const char *a) { // do \ -> \\ too..
   char *b0 = (char*)malloc(3 * strlen(a) + 1), *b = b0;
 nextChar:
-  if ((u8)a[0] > 31) {b[0] = a[0]; a++; b++; goto nextChar;}
-  if (a[0]) {b[0] = '\\'; switch (a[0]) {
+  if ((u8)*a > 31) {*b++ = *a++; goto nextChar;}
+  if (*a) {*b = '\\'; switch (*a) {
     case  7: b[1] = 'a'; b += 2; break; case  8: b[1] = 'b'; b += 2; break;
     case  9: b[1] = 't'; b += 2; break; case 10: b[1] = 'n'; b += 2; break;
     case 11: b[1] = 'v'; b += 2; break; case 12: b[1] = 'f'; b += 2; break;
@@ -35,5 +35,5 @@ nextChar:
     case 29: b[1] = '2'; b[2] = '9'; b += 3; break;
     case 30: b[1] = '3'; b[2] = '0'; b += 3; break;
     case 31: b[1] = '3'; b[2] = '1'; b += 3; break;
-    default: b[2] = a[0] + '0'; b += 2;} a++; goto nextChar;}
-  b[0] = 0; return b0;}
+    default: b[2] = *a + '0'; b += 2;} a++; goto nextChar;}
+  *b = 0; return b0;}
