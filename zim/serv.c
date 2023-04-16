@@ -8,7 +8,9 @@ using namespace std;
 const int one = 1;
 const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
   *http = "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ",
-  *postWd = " HTTP/1.1", *s1 = "<html><body>", *s2 = ": no entry</body></html>";
+  *postWd = " HTTP/1.1", *s1 = 
+  "<html><head><meta charset=\"utf-8\"></head><body>",
+  *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
 inline void urlDecode(char *s) {char *t = s; while (*s) {*t = (*s != '%') ?
   *s : ((h2i(*++s)<<4) + h2i(*++s)); s++; t++;} *t = 0;}
@@ -53,12 +55,9 @@ awaitClient:
       wdEnd = strchr(wd, '\n');
     }
     if (wdEnd) {wdEnd[-strlen(postWd) - 1] = 0;
+      if (arcI == 0) *wd = toupper(*wd);
       try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
         haveData = 1;} catch (const std::exception& e) {}
-      if (!haveData) {*wd = toupper(*wd);
-        try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
-          haveData = 1;} catch (const std::exception& e) {}
-      }
     }
     if (haveData) {
       if (!full) {
