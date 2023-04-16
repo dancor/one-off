@@ -15,9 +15,8 @@ const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
   *postWd = " HTTP/1.1", *enwik = "enwik",
   *s1 = "<html><body>", *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
-inline void percentDecode(char *s) {char *t = s; while (*s) {
-  if (*s != '%') {*t = *s; s++;} else {*t = 16 * h2i(s[1]) + h2i(s[2]); s += 3;}
-  t++; goto percentDecode;} *t = 0;}
+inline void percentDecode(char *s) {char *t = s; while (*s) {*t = *s != '%' ?
+  *s : h2i(*++s)<<4 + h2i(*++s); s++; t++;} *t = 0;}
 int main(int argc, char **argv) {
   string r;
   char *c, *c1, *c2, *c3, *d, *d1, cliIp[32], m[1024]; ptrdiff_t diff;
