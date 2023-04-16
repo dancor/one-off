@@ -11,15 +11,18 @@ const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
   *http = "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ",
   *postWd = " HTTP/1.1", *s1 = "<html><body>", *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
-inline void urlDecode(char *s) {char *t = s; while (*s) {*t = *s != '%' ?
-  *s : h2i(*++s)<<4 + h2i(*++s); s++; t++;} *t = 0;}
-inline int readWikChoice(char *s, char **t/*, char **langKeep*/) {
-  int l = (int)strlen(s); if (l >= 6 && s[0] == 'e' && s[1] == 'n' &&
-      s[2] == 'w' && s[3] == 'i' && s[4] == 'k' && s[6] == '/') {
+inline void urlDecode(char *s) {char *t = s; while (*s) {*t = (*s != '%') ?
+  *s : ((h2i(*++s)<<4) + h2i(*++s)); s++; t++;} *t = 0;}
+inline int readWikChoice(char *s, char **t, u8 *full) {
+  int l = (int)strlen(s); if (l >= 7 && s[0] == 'e' && s[1] == 'n' &&
+      s[2] == 'w' && s[3] == 'i' && s[4] == 'k') {
     *t = s + 7;
     switch (s[5]) {
-    case 'i': return 0; break;
-    case 't': return 1; break;
+    case 'i': if (s[6] == '/') return 0; else return -1; break;
+    case 't': 
+      if (l >= 9 && s[6] == 'p' && s[7] == 'l' && s[8] == '/') {
+        *full = 0; *t = s + 9; return 1;}
+      if (s[6] == '/') return 1; else return -1; break;
     default: return -1;}
   } else return -1;}
 int main(int argc, char **argv) {
@@ -39,13 +42,12 @@ awaitClient:
   inet_ntop(AF_INET, (struct in_addr*)&ca.sin_addr, cliIp, sizeof(cliIp));
   memset(m, 0, sizeof(m));
   if (recvfrom(conn, m, sizeof(m), 0, (struct sockaddr*)&ca, &al) > 0) {
-    wd = m + 5; urlDecode(wd);
-    //char*e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
-    arcI = readWikChoice(wd, &wd);
-    //printf("arcI[%d]\n", arcI);
+    u8 haveData = 0, full = 1; wdEnd = 0;
+    wd = m + 5;
+    //char*e;
     //e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
-    wdEnd = 0;
-    u8 haveData = 0, full = 1;
+    urlDecode(wd);
+    arcI = readWikChoice(wd, &wd, &full);
     if (arcI != -1) {
       //while (wd[0] == '/') wd++;
       //if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
@@ -94,3 +96,5 @@ doLine:
       free(c); free(d);
     }
   } close(conn); goto awaitClient;}
+//printf("arcI[%d]\n", arcI);
+//e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
