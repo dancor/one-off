@@ -6,10 +6,9 @@
 #include <zim/item.h>
 using namespace std;
 const int one = 1;
-const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
-  *http = "HTTP/1.1 200 OK\r\n Content-type:text/html\r\n Content-length: ",
-  *postWd = " HTTP/1.1", *s1 = 
-  "<html><head><meta charset=\"utf-8\"></head><body>",
+const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"", *http = 
+  "HTTP/1.1 200 OK\r\n Content-length: ", *postWd = " HTTP/1.1", *s1 = 
+  "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>",
   *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
 inline void urlDecode(char *s) {char *t = s; while (*s) {*t = (*s != '%') ?
