@@ -3,7 +3,6 @@
 #include <arpa/inet.h> // inet_ntop
 #include <unistd.h> // close
 #include <zim/archive.h>
-#include <zim/entry.h>
 #include <zim/item.h>
 using namespace std;
 const int one = 1;
@@ -55,7 +54,12 @@ awaitClient:
     }
     if (wdEnd) {wdEnd[-strlen(postWd) - 1] = 0;
       try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
-        haveData = 1;} catch (const std::exception& e) {}}
+        haveData = 1;} catch (const std::exception& e) {}
+      if (!haveData) {*wd = toupper(*wd);
+        try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
+          haveData = 1;} catch (const std::exception& e) {}
+      }
+    }
     if (haveData) {
       if (!full) {
         cN = data.size(); c = (char*)malloc(cN + 999);
