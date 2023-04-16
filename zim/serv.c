@@ -16,11 +16,10 @@ const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
   *s1 = "<html><body>", *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
 inline void percentDecode(char *s) {char *t = s;
-percentDecode:
-  if (!s[0]) {t[0] = 0; return;}
-  if (s[0] == '%') {t[0] = 16 * h2i(s[1]) + h2i(s[2]);
-    s += 3; t++; goto percentDecode;}
-  t[0] = s[0]; s++; t++; goto percentDecode;}
+percentDecode: if (s[0]) {
+    if (s[0] != '%') {t[0] = s[0]; s++; t++; goto percentDecode;}
+    t[0] = 16 * h2i(s[1]) + h2i(s[2]); s += 3; t++; goto percentDecode;}
+  t[0] = 0;}
 int main(int argc, char **argv) {
   string r;
   char *c, *c1, *c2, *c3, *d, *d1, cliIp[32], m[1024]; ptrdiff_t diff;
