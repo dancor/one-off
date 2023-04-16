@@ -8,7 +8,8 @@ using namespace std;
 const int one = 1;
 const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"", *http = 
   "HTTP/1.1 200 OK\r\n Content-length: ", *postWd = " HTTP/1.1", *s1 = 
-  "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>",
+  //"<!doctype html><html><head><meta charset=\"utf-8\"></head><body>",
+  "<html><head><meta charset=\"utf-8\"></head><body>",
   *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
 inline void urlDecode(char *s) {char *t = s; while (*s) {*t = (*s != '%') ?
@@ -47,17 +48,15 @@ awaitClient:
     //char*e;
     //e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
     urlDecode(wd);
-    arcI = readWikChoice(wd, &wd, &full);
+    wdEnd = strchr(wd, '\n');
+    arcI = -1;
+    if (wdEnd) {
+      wdEnd[-strlen(postWd) - 1] = 0;
+      arcI = readWikChoice(wd, &wd, &full);}
     if (arcI != -1) {
-      //while (wd[0] == '/') wd++;
-      //if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
-      wdEnd = strchr(wd, '\n');
-    }
-    if (wdEnd) {wdEnd[-strlen(postWd) - 1] = 0;
       if (arcI == 0) *wd = toupper(*wd);
       try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
-        haveData = 1;} catch (const std::exception& e) {}
-    }
+        haveData = 1;} catch (const std::exception& e) {}}
     if (haveData) {
       if (!full) {
         cN = data.size(); c = (char*)malloc(cN + 999);
