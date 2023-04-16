@@ -1,9 +1,6 @@
 #include "err.h"
 #include "util.h"
 #include <arpa/inet.h> // inet_ntop
-#include <fstream>
-#include <iostream>
-#include <sstream>
 #include <unistd.h> // close
 #include <zim/archive.h>
 #include <zim/entry.h>
