@@ -6,10 +6,16 @@
 #include <zim/item.h>
 using namespace std;
 const int one = 1;
-const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"", *http = 
-  "HTTP/1.1 200 OK\r\n Content-length: ", *postWd = " HTTP/1.1", *s1 = 
-  //"<!doctype html><html><head><meta charset=\"utf-8\"></head><body>",
-  "<html><head><meta charset=\"utf-8\"></head><body>",
+const char
+  *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
+  *hHtml = 
+    "HTTP/1.1 200 OK\r\n Content-length: ",
+  *hJs = 
+"HTTP/1.1 200 OK\r\n Content-type: application/javascript\r\n Content-length: ",
+  *postWd =
+  " HTTP/1.1", *s1 = 
+  "<!doctype html><html><head><meta charset=\"utf-8\"></head><body>",
+  //"<html><head><meta charset=\"utf-8\"></head><body>",
   *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
 inline void urlDecode(char *s) {char *t = s; while (*s) {*t = (*s != '%') ?
@@ -78,22 +84,25 @@ doLine:
         }
         strcpy(d1, c1); dLen = (int)strlen(d);
         //printf("dLen[%d]\n", dLen);
-        snprintf(c, 2 * cN, "%s%d\r\n\r\n%.*s", http, dLen, dLen, d);
+        snprintf(c, 2 * cN, "%s%d\r\n\r\n%.*s", hHtml, dLen, dLen, d);
         sendto(conn, c, strlen((char*)c), 0, (struct sockaddr*)&sa, al);
         free(c); free(d);
       } else {
         char *r; int rL =
-          asprintf(&r, "%s%zd\r\n\r\n%s", http, data.size(), data.data());
+          asprintf(&r, "%s%zd\r\n\r\n%s", hHtml, data.size(), data.data());
         if (rL != -1) {
           sendto(conn, r, rL, 0, (struct sockaddr*)&sa, al); free(r);}
       }
     } else {
-      wdLen = strlen(wd); dLen = strlen(s1) + wdLen + strlen(s2);
+      wdLen = strlen(wd);
+      u8 isJs = wd[wdLen - 1] == 's';
+      if (isJs)
+      dLen = strlen(s1) + wdLen + strlen(s2);
       d = (char*)malloc(dLen + 1); snprintf(d, dLen + 1, "%s%s%s", s1, wd, s2);
-      cN = strlen(http) + 999 + dLen; c = (char*)malloc(cN);
-      snprintf(c, cN, "%s%d\r\n\r\n%s", http, dLen, d); cLen = strlen(c);
-      sendto(conn, c, cLen, 0, (struct sockaddr*)&sa, al);
-      //printf("dLen[%d] cLen[%d]\n", dLen, cLen);
+      cN = strlen(hHtml) + 999 + dLen; c = (char*)malloc(cN);
+      snprintf(c, cN, "%s%d\r\n\r\n%s", isJs ? hHtml : hJs, isJs ? 0 : dLen,
+        isJs ? "" : d);
+      cLen = strlen(c); sendto(conn, c, cLen, 0, (struct sockaddr*)&sa, al);
       free(c); free(d);
     }
   } close(conn); goto awaitClient;}
