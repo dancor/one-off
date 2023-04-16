@@ -15,11 +15,9 @@ const char *pre  = "    <summary class=\"section-heading\"><h2 id=\"",
   *postWd = " HTTP/1.1", *enwik = "enwik",
   *s1 = "<html><body>", *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
-inline void percentDecode(char *s) {char *t = s;
-percentDecode: if (s[0]) {
-    if (s[0] != '%') {t[0] = s[0]; s++; t++; goto percentDecode;}
-    t[0] = 16 * h2i(s[1]) + h2i(s[2]); s += 3; t++; goto percentDecode;}
-  t[0] = 0;}
+inline void percentDecode(char *s) {char *t = s; while (*s) {
+  if (*s != '%') {*t = *s; s++;} else {*t = 16 * h2i(s[1]) + h2i(s[2]); s += 3;}
+  t++; goto percentDecode;} *t = 0;}
 int main(int argc, char **argv) {
   string r;
   char *c, *c1, *c2, *c3, *d, *d1, cliIp[32], m[1024]; ptrdiff_t diff;
@@ -42,7 +40,7 @@ awaitClient:
     if (wd[0] == 'f' && wd[1] == '/') {wd += 2; full = 1;}
     char *wdEnd = strchr(wd, '\n');
     if (wdEnd) {wdEnd[-strlen(postWd) - 1] = 0;
-      try {data = enwiki.getEntryByTitle((char*)wd).getItem().getData();
+      try {data = enwikt.getEntryByTitle((char*)wd).getItem().getData();
         haveData = 1;} catch (const std::exception& e) {}}
     if (haveData) {
       if (!full) {
