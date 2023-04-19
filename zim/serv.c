@@ -19,7 +19,7 @@ const char
   *s2 = ": no entry</body></html>";
 inline char h2i(char h) {return h - (h < 65 ? 48 : 55);}
 inline void urlDecode(char *s) {char *t = s; while (*s) {*t = (*s != '%') ?
-  *s : ((h2i(*++s)<<4) + h2i(*++s)); s++; t++;} *t = 0;}
+  ((*s != '_') ? *s : ' ') : ((h2i(*++s)<<4) + h2i(*++s)); s++; t++;} *t = 0;}
 inline int readWikChoice(char *s, char **t, u8 *full) {
   int l = (int)strlen(s); if (l >= 7 && s[0] == 'e' && s[1] == 'n' &&
       s[2] == 'w' && s[3] == 'i' && s[4] == 'k') {
@@ -51,14 +51,15 @@ awaitClient:
   if (recvfrom(conn, m, sizeof(m), 0, (struct sockaddr*)&ca, &al) > 0) {
     u8 haveData = 0, full = 1; wdEnd = 0;
     wd = m + 5;
-    //char*e;
-    //e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
     urlDecode(wd);
     wdEnd = strchr(wd, '\n');
     arcI = -1;
     if (wdEnd) {
       wdEnd[-strlen(postWd) - 1] = 0;
+      //char*e;
+      //e=escStr(wd);printf("wd[%.*s]\n",199,e);free(e);
       arcI = readWikChoice(wd, &wd, &full);}
+      while (*wd == '/') wd++;
     if (arcI != -1) {
       if (arcI == 0) *wd = toupper(*wd);
       try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
