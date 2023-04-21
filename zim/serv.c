@@ -62,7 +62,7 @@ awaitClient:
       while (*wd == '/') wd++;
     if (arcI != -1) {
       if (arcI == 0) *wd = toupper(*wd);
-      try {data = arc[arcI].getEntryByTitle((char*)wd).getItem().getData();
+      try {data = arc[arcI].getEntryByTitle((char*)wd).getItem(true).getData();
         haveData = 1;} catch (const std::exception& e) {}}
     if (haveData) {
       if (!full) {
