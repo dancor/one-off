@@ -36,13 +36,13 @@ int main(int argc, char **argv){
     BlackPixel(d, scr), WhitePixel(d, scr));
   XSelectInput(d, w, KeyPressMask|KeyReleaseMask); XMapWindow(d, w);
   XEvent e, pe;
-  fluid_settings_t *settings = nue(new_fluid_settings());
-  fluid_synth_t *s = nue(new_fluid_synth(settings));
+  fluid_settings_t *settings = zre(new_fluid_settings());
+  fluid_synth_t *s = nge(new_fluid_synth(settings));
   fluid_synth_chorus_on(s, -1, 0); // 0 = FALSE; disable chorus all groups
   fluid_synth_reverb_on(s, -1, 0); // 0 = FALSE; disable reverb all groups
-  noe(fluid_synth_sfload(s, "/home/danl/Documents/MuseScore2/Soundfonts/"
+  nge(fluid_synth_sfload(s, "/home/danl/Documents/MuseScore2/Soundfonts/"
     "SGM-v2.01-YamahaGrand-Guit-Bass-v2.7.sf2", 1));
-  nue(new_fluid_audio_driver(settings, s));
+  nge(new_fluid_audio_driver(settings, s));
   int ns[109];
   for (int n = 0; n <= 108; n++) ns[n] = 0;
   XFlush(d);
