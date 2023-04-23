@@ -3,15 +3,14 @@
 #include <unistd.h>
 #include "err.h"
 #include <X11/Xlib.h>
-int e2n(XEvent e){
-  int k = e.xkey.keycode;
+inline int e2n(XEvent e){int k = e.xkey.keycode;
   if (k >= 52 && k <= 62) return k - 52 + 36; // z C2
-  if (k == 111) return 47; // up B2
   if (k >= 38 && k <= 48) return k - 38 + 48; // a C3
-  if (k == 36) return 59; // return B3
   if (k >= 24 && k <= 35) return k - 24 + 60; // q C4
   if (k >= 10 && k <= 21) return k - 10 + 72; // 1 C5
   if (k >= 67 && k <= 76) return k - 67 + 84; // f1 C6
+  if (k == 111) return 47; // up B2
+  if (k == 36) return 59; // return B3
   if (k == 95) return 94; // f11 A#6
   if (k == 96) return 95; // f12 B6
   if (k == 127) return 96; // pause C7
@@ -27,10 +26,8 @@ int e2n(XEvent e){
   if (k == 105) return 106; // ctrlR A#7
   if (k == 135) return 107; // winR B7
   if (k == 108) return 108; // altR C7
-  return 0;
-}
-int main(int argc, char **argv){
-  Display *d = XOpenDisplay(NULL);
+  return 0;}
+int main(int argc, char **argv){Display *d = XOpenDisplay(NULL);
   int n, scr = DefaultScreen(d);
   Window w = XCreateSimpleWindow(d, RootWindow(d, scr), 10, 10, 200, 200, 1,
     BlackPixel(d, scr), WhitePixel(d, scr));
@@ -49,25 +46,13 @@ int main(int argc, char **argv){
   while(1){
     XNextEvent(d, &e); 
     switch(e.type){
-    case KeyPress:
-      n = e2n(e);
-      if (!n) break;
-      if (ns[n] == 1) break;
-      //printf("on %d\n", n);
-      fluid_synth_noteon(s, 0, n, 80);
-      ns[n] = 1;
-      break;
+    case KeyPress: n = e2n(e); if (!n) break; if (ns[n] == 1) break;
+      fluid_synth_noteon(s, 0, n, 80); ns[n] = 1; break;
     case KeyRelease:
-      if (XPending(d) > 0) {
-        XPeekEvent(d, &pe);
+      if (XPending(d) > 0) {XPeekEvent(d, &pe);
         if (pe.type == KeyPress && pe.xkey.time == e.xkey.time &&
-          pe.xkey.keycode == e.xkey.keycode) break;
-      }
-      n = e2n(e);
-      if (!n) break;
-      fluid_synth_noteoff(s, 0, n);
-      ns[n] = 0;
-      //printf("off %d\n", n);
+          pe.xkey.keycode == e.xkey.keycode) break;}
+      n = e2n(e); if (!n) break; fluid_synth_noteoff(s, 0, n); ns[n] = 0;
     }
   }
 }

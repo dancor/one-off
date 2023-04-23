@@ -1,2 +1,2 @@
 #!/bin/sh
-make && exec ./a "$@"
+make && exec nice -n -20 ./a "$@"
