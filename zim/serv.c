@@ -36,8 +36,8 @@ int main(int argc, char **argv) {
   char *c, *c1, *c2, *c3, *d, *d1, *wd, *wdEnd, cliIp[32], m[1024];
   ptrdiff_t diff;
   u8 copy; int arcI;
-  zim::Archive arc0("/home/d/data/wik/i/en.zim"),
-    arc1("/home/d/data/wik/t/en.zim"), arc[2]={arc0,arc1}; zim::Blob data;
+  zim::Archive arc0("/home/d/d/w/i/en.zim"),
+    arc1("/home/d/d/w/t/en.zim"), arc[2]={arc0,arc1}; zim::Blob data;
   int cN, conn, cLen, dLen, s = socket(PF_INET, SOCK_STREAM, 0), wdLen;
   nie(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)));
   struct sockaddr_in ca, sa; bzero(&sa, sizeof(sa)); sa.sin_family = AF_INET;
@@ -73,8 +73,9 @@ doLine:
         //c2 = c + 1600; c2[200] = 0; printf("%s\n", c2);
         if (startsW(c1, pre)) {
           c2 = c1 + strlen((char*)pre);
-          if (startsW(c2, "Eng") || startsW(c2, "Ger") || startsW(c2, "Pol") ||
-              startsW(c2, "Spa")) copy = 1; else copy = 0;
+          copy = (startsW(c2, "Eng") || startsW(c2, "Dan") ||
+              startsW(c2, "Ger") || startsW(c2, "Pol") || startsW(c2, "Spa")) ?
+              1 : 0;
         }
         c2 = strchr(c1, '\n');
         if (c2) {
