@@ -74,6 +74,7 @@ doLine:
         if (startsW(c1, pre)) {
           c2 = c1 + strlen((char*)pre);
           copy = (startsW(c2, "Eng") || startsW(c2, "Dan") ||
+              startsW(c2, "Swe") || startsW(c2, "Norwegian B") ||
               startsW(c2, "Ger") || startsW(c2, "Pol") || startsW(c2, "Spa")) ?
               1 : 0;
         }
