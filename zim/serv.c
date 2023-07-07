@@ -73,10 +73,15 @@ doLine:
         //c2 = c + 1600; c2[200] = 0; printf("%s\n", c2);
         if (startsW(c1, pre)) {
           c2 = c1 + strlen((char*)pre);
-          copy = (startsW(c2, "Eng") || startsW(c2, "Dan") ||
-              startsW(c2, "Swe") || startsW(c2, "Norwegian B") ||
-              startsW(c2, "Ger") || startsW(c2, "Pol") || startsW(c2, "Spa")) ?
-              1 : 0;
+          copy = (startsW(c2,"Eng")||
+              //startsW(c2,"Norwegian_B")||startsW(c2,"Dan")||
+              //startsW(c2,"Swe")||
+              //startsW(c2,"Pol")||
+              //startsW(c2,"Por")||
+              startsW(c2,"Po")||
+              startsW(c2,"Spa")||
+              startsW(c2,"Ger")
+              )?1:0;
         }
         c2 = strchr(c1, '\n');
         if (c2) {
