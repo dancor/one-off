@@ -78,6 +78,8 @@ doLine:
               //startsW(c2,"Swe")||
               //startsW(c2,"Pol")||
               //startsW(c2,"Por")||
+              startsW(c2,"Chinese")||
+              startsW(c2,"French")||
               startsW(c2,"Po")||
               startsW(c2,"Spa")||
               startsW(c2,"Ger")
