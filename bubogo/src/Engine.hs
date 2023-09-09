@@ -14,7 +14,7 @@ data Engine = Engine {eInH  :: !Handle, eOutH :: !Handle, eErrH :: !Handle}
 startEngine :: IO Engine
 startEngine = do
   (Just inH, Just outH, Just errH, _engProc) <- createProcess $
-    (proc "gtp-engine" [])
+    (proc "gtpEngine" [])
     {std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe}
   hSetBuffering inH  NoBuffering >> hSetBuffering outH NoBuffering
   hSetBuffering errH NoBuffering

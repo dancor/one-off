@@ -11,7 +11,8 @@
 type T = Text
 
 main :: IO ()
-main = T.writeFile "/home/danl/.fluxbox/keys" $ T.unlines $ genCodes :
+--main = T.writeFile "/home/danl/.fluxbox/keys" $ T.unlines $ genCodes :
+main = T.writeFile "out" $ T.unlines $ genCodes :
     map ("Mod4 " <>) mod4Codes ++ map ("Control Mod1 " <>) mod4Codes
 
 sh :: Show a => a -> T
@@ -36,18 +37,27 @@ ms = concatMap (\(a,s) -> [
     ("o", "10 's2 4' b5")] 
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
     ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
-ts = "t 9 :Exec wmv 0.0+" : concat
-    [tsH lpos width | lpos <- [0..8], width <- [1..9-lpos]] ++
-    concat (zipWith (\a n -> forms (T.singleton a <> " :Exec wmv " <> n))
-        "arstd" ["0", "1", "2", "3", "4+"])
+ts = map("t "<>)$concat$
+  [sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 0 w 10|
+    x<-[0..9],w<-[1..10-x]]++
+  ["q "<>sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 0 w 5|
+    x<-[0..9],w<-[1..10-x]]++
+  ["w "<>sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 0 w 8|
+    x<-[0..9],w<-[1..10-x]]++
+  ["f "<>sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 5 w 5|
+    x<-[0..9],w<-[1..10-x]]
   where
-    tsH :: Int -> Int -> [T]
-    tsH lpos width = forms $ sh lpos <> " " <> sh width <> " :Exec wmv " <>
-        sh (i2f lpos / 2) <>
-        if lpos + width == 9 then "+" else "+" <> sh (i2f width / 2)
-    forms :: T -> [T]
-    forms x = ["t " <> x, "t q " <> x <> " +.5", "t w " <> x <> " +.87", 
-        "t z " <> x <> " .5+"]
+  wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 1," <>
+    T.intercalate " " (map sh [240*x,160*y,240*w,160*h])
+  {-
+  tsH :: Int -> Int -> [T]
+  tsH lpos width = forms $ sh lpos <> " " <> sh width <>
+      " :Exec wmctrl -r :ACTIVE: -e 1," <>
+      sh (i2f lpos / 2) <>
+      if lpos + width == 9 then "+" else "+" <> sh (i2f width / 2)
+  forms :: T -> [T]
+  forms x = ["t " <> x, "t q " <> x <> " +.5", "t w " <> x <> " +.87", 
+      "t z " <> x <> " .5+"]-}
 
 mod4Codes :: [T]
 mod4Codes = T.lines [r|d :ToggleDecor
