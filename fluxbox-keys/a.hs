@@ -38,11 +38,11 @@ ms = concatMap (\(a,s) -> [
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
     ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
 ts = map("t "<>)$
-  [x2k x<>" "<>x2k w<>wcmd x 0 w 16|
+  [x2k x<>(if x<15 then " "<>x2k w else "")<>wcmd x 0 w 16|
     x<-[0..15],w<-[1..16-x]]++
   ["q "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 0 w 8|
     x<-[0..15],w<-[1..16-x]]++
-  ["w "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 0 w 13|
+  ["w "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 0 w 14|
     x<-[0..15],w<-[1..16-x]]++
   ["p "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 8 w 8|
     x<-[0..15],w<-[1..16-x]]
