@@ -37,19 +37,27 @@ ms = concatMap (\(a,s) -> [
     ("o", "10 's2 4' b5")] 
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
     ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
-ts = map("t "<>)$concat$
-  [sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 0 w 10|
-    x<-[0..9],w<-[1..10-x]]++
-  ["q "<>sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 0 w 5|
-    x<-[0..9],w<-[1..10-x]]++
-  ["w "<>sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 0 w 8|
-    x<-[0..9],w<-[1..10-x]]++
-  ["f "<>sh x<>" "<>sh(if w==10 then 0 else w)<>" "<>wcmd x 5 w 5|
-    x<-[0..9],w<-[1..10-x]]
+ts = map("t "<>)$
+  [x2k x<>" "<>x2k w<>wcmd x 0 w 16|
+    x<-[0..15],w<-[1..16-x]]++
+  ["q "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 0 w 8|
+    x<-[0..15],w<-[1..16-x]]++
+  ["w "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 0 w 13|
+    x<-[0..15],w<-[1..16-x]]++
+  ["p "<>x2k x<>" "<>x2k(if w==10 then 0 else w)<>wcmd x 8 w 8|
+    x<-[0..15],w<-[1..16-x]]
   where
-  wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 1," <>
-    T.intercalate " " (map sh [240*x,160*y,240*w,160*h])
+  --x2k x = "`1234567890-="!!x
+  --x2k x=("grave":map T.singleton"1234567890"++["minus","equal"])!!(x`mod`13)
+  --y2k y=("grave":map T.singleton"1234567890"++["minus","equal"])!!(y`mod`13)
+  x2k x = T.singleton$"0123456789abcdef"!!(x`mod`16)
+  y2k=x2k
+  wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
+    T.intercalate "," (map sh [160*x,90*y,160*w,90*h])
   {-
+  wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
+    T.intercalate "," (map sh [xPix,120*y,min wPixMax (200*w),120*h])
+    where xPix = 200 * x; wPixMax = 2560 - xPix
   tsH :: Int -> Int -> [T]
   tsH lpos width = forms $ sh lpos <> " " <> sh width <>
       " :Exec wmctrl -r :ACTIVE: -e 1," <>
