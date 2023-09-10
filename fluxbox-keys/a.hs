@@ -10,7 +10,7 @@ type T = Text
 main :: IO ()
 --main = T.writeFile "/home/danl/.fluxbox/keys" $ T.unlines $ genCodes :
 main = T.writeFile "out" $ T.unlines $ genCodes :
-    map ("Mod4 " <>) mod4Codes ++ map ("Control Mod1 " <>) mod4Codes
+    map ("Mod4 " <>) mod4Codes -- ++ map ("Control Mod1 " <>) mod4Codes
 sh :: Show a => a -> T
 sh = T.pack . show
 i2f :: Int -> Float
