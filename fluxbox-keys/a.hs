@@ -1,11 +1,11 @@
 #include <h>
--- Mod4 codes:
--- b: black-make-terminal
--- m: make-terminal
+-- b: blackMakeTerm
+-- g: geom
+-- m: makeTerm
 -- r: run
--- t: travel-window-to
--- s: switch-focus
--- z: zap-invisible
+-- s: switchFocus
+-- t: takeTo
+-- z: zapInvisible
 type T = Text
 main :: IO ()
 --main = T.writeFile "/home/danl/.fluxbox/keys" $ T.unlines $ genCodes :
@@ -15,7 +15,7 @@ sh :: Show a => a -> T
 sh = T.pack . show
 i2f :: Int -> Float
 i2f = fromIntegral
-ms, ss, ts :: [T]
+ms, ss, tgs :: [T]
 ms = concatMap (\(a,s) -> [
   "m " <> a <> " :Exec multiplexed-positioned-titled-xt " <> s,
   "b " <> a <> " :Exec multiplexed-positioned-titled-xt -b " <> s]) [
@@ -31,11 +31,12 @@ ms = concatMap (\(a,s) -> [
   ("o", "10 's2 4' b5")] 
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
   ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
-ts = map ("t "<>) $
+tgs = map ("t "<>)
   [ pre <> x2k x <> (if x < 15 then " " <> x2k w else "") <> wcmd x y w h
   | (pre, y, h) <- [("", 0, 16), ("q ", 0, 8), ("w ", 0, 14), ("p ", 8, 8)],
-  x <- [0..15], w <- [1 .. 16 - x]]
-  where
+  x <- [0..15], w <- [1 .. 16 - x]] ++ map ("v " <>)
+  [
+  | x <- [0..15], y <- [0..15], w <- [1 .. 16 - x], h <- [1 .. 16 - y]] where
   x2k x = T.singleton $ "0123456789abcdef" !! (x `mod` 16)
   wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
     T.intercalate "," (map sh [160 * x, 90 * y, 160 * w, 90 * h])
@@ -81,7 +82,7 @@ r h :Exec ff -f -p 2
 r i :Exec ff -g -p 2
 r j :Exec ff -f -p s
 r k :Exec ff -g -p s
-r x :Exec xt|] ++ ms ++ ss ++ ts
+r x :Exec xt|] ++ ms ++ ss ++ tgs
 
 genCodes :: T
 genCodes = [r|Mod1 Tab :NextWindow groups
