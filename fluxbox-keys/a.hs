@@ -1,7 +1,6 @@
 #include <h>
--- b: blackMakeTerm
+-- may bring back?..: b: blackMakeTerm
 -- g: geom
--- m: makeTerm
 -- r: run
 -- s: switchFocus
 -- t: takeTo
@@ -15,92 +14,104 @@ sh :: Show a => a -> T
 sh = T.pack . show
 i2f :: Int -> Float
 i2f = fromIntegral
-ms, ss, tgs :: [T]
-ms = concatMap (\(a,s) -> [
-  "m " <> a <> " :Exec multiplexed-positioned-titled-xt " <> s,
-  "b " <> a <> " :Exec multiplexed-positioned-titled-xt -b " <> s]) [
-  ("a", "1 0 a1"),
-  ("r", "2 1 a2"),
-  ("s", "3 2 a3"),
-  ("t", "4 3 a4"),
-  ("d", "5 4 a5"),
-  ("h", "6 's2 0' b1"),
-  ("n", "7 's2 1' b2"),
-  ("e", "8 's2 2' b3"),
-  ("i", "9 's2 3' b4"),
-  ("o", "10 's2 4' b5")] 
-ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
-  ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
-tgs = ["t " <> pre <> x2k x <> (if x < 15 then " " <> x2k w else "") <>
-  wcmd x y w h | (pre, y, h) <- [("", 0, 16), ("q ", 0, 8), ("w ", 0, 14),
-  ("p ", 8, 8)], x <- [0..15], w <- [1 .. 16 - x]] ++ 
-  [ "g " <> x2k x <> " " <> x2k y <> (if x < 15 || y < 15 then " " <> x2k w <>
-  (if y < 15 then " " <> x2k h else "") else "")
-  | x <- [0..15], y <- [0..15], w <- [1 .. 16 - x], h <- [1 .. 16 - y]] where
-  x2k x = T.singleton $ "0123456789abcdef" !! (x `mod` 16)
-  wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
-    T.intercalate "," (map sh [160 * x, 90 * y, 160 * w, 90 * h])
-{-
-v 0 2 3 0 1 :Exec wmv 0      +0.333
-v 0 2 3 1 1 :Exec wmv 0 0.333+0.334 # hack fit
-v 0 2 3 2 1 :Exec wmv 0 0.666+0.335 # hack fit
-v 0 2 3 0 2 :Exec wmv 0      +0.668 # hack fit
-v 0 2 3 1 2 :Exec wmv 0 0.333+0.668 # hack fit
-v 9 3 0 1 :Exec wmv 0+      +0.333
-v 9 3 1 1 :Exec wmv 0+ 0.333+0.334 # hack fit
-v 9 3 2 1 :Exec wmv 0+ 0.666+0.335 # hack fit
-v 9 3 0 2 :Exec wmv 0+      +0.668 # hack fit
-v 9 3 1 2 :Exec wmv 0+ 0.333+0.668 # hack fit
--}
-
-mod4Codes :: [T]
-mod4Codes = T.lines [r|d :ToggleDecor
-x r :Reconfig
-x m :RootMenu
-x u :Exec unity-control-center
-w :ClientMenu
-F7 :Exec arst
-n :Exec hide-notifier
-r n :Exec show-notifier
-a :Exec my-fcitx-remote -os danarabic  ; sleep 0.5; fid
-j :Exec my-fcitx-remote -os mozc       ; sleep 0.5; fid
-3 :Exec my-fcitx-remote -os ipa-x-sampa; sleep 0.5; fid
-p :Exec my-fcitx-remote -os pinyin     ; sleep 0.5; fid
-k :Exec my-fcitx-remote -os dankorean  ; sleep 0.5; fid
-h :Exec my-fcitx-remote -os danhebrew  ; sleep 0.5; fid
-c :Exec my-fcitx-remote -c             ; fid
-F3 :Exec lower-brightness
-F4 :Exec raise-brightness
-F7 :Exec adjvol -m
-F8 :Exec adjvol -l
-F9 :Exec adjvol -r
-F10 :Exec adjvol -s 70
-r b :Exec torb 
-r f :Exec ff -f           
-r g :Exec ff -g           
-r h :Exec ff -f -p 2     
-r i :Exec ff -g -p 2
-r j :Exec ff -f -p s
-r k :Exec ff -g -p s
-r x :Exec xt|] ++ ms ++ ss ++ tgs
-
 genCodes :: T
-genCodes = [r|Mod1 Tab :NextWindow groups
-Mod1 Shift Tab :PrevWindow groups
-Mod1 F4 :Close
-OnTitlebar Move1 :StartMoving
-OnLeftGrip Move1 :StartResizing bottomleft
-OnRightGrip Move1 :StartResizing bottomright
-OnWindowBorder Move1 :StartMoving
-OnTitlebar Mouse3 :WindowMenu
-XF86AudioLowerVolume :Exec adjvol -l
-XF86AudioRaiseVolume :Exec adjvol -r
-XF86AudioMute :Exec adjvol -m
-232 :Exec lower-brightness
+genCodes = [r|232 :Exec lower-brightness
 233 :Exec raise-brightness
-XF86Launch1 :Exec adjvol -s 70
+Mod1 F4 :Close
+Mod1 Tab :NextWindow groups
+Modl Shift Tab :PrevWindow groups
 OnDesktop Mouse1 :HideMenus
 OnDesktop Mouse2 :WorkspaceMenu
 OnDesktop Mouse3 :RootMenu
 OnDesktop Mouse4 :NextWorkspace
-OnDesktop Mouse5 :PrevWorkspace|]
+OnDesktop Mouse5 :PrevWorkspace
+OnLeftGrip Move1 :StartResizing bottomleft
+OnRightGrip Move1 :StartResizing bottomright
+OnTitlebar Mouse3 :WindowMenu
+OnTitlebar Move1 :StartMoving
+OnWindowBorder Move1 :StartMoving
+XF86AudioLowerVolume :Exec adjvol -l
+XF86AudioMute :Exec adjvol -m
+XF86AudioRaiseVolume :Exec adjvol -r
+XF86Launch1 :Exec adjvol -s 70|]
+mod4Codes :: [T]
+mod4Codes = T.lines [r|d :ToggleDecor
+F10 :Exec adjvol -s 70
+F3 :Exec lower-brightness
+F4 :Exec raise-brightness
+F7 :Exec adjvol -m
+F7 :Exec arst
+F8 :Exec adjvol -l
+F9 :Exec adjvol -r
+n :Exec hide-notifier
+w :ClientMenu
+x m :RootMenu
+x r :Reconfig
+x u :Exec unity-control-center
+r b :Exec torb 
+r c :Exec signal
+r f :Exec firefox
+r g :Exec azgo
+r o :Exec show-notifier
+r Shift x :Exec xterm
+r x :Exec runBigNiteTerm1
+r y :Exec runBigNiteTerm2
+r z :Exec runBigNiteTerm3
+r a :exec xt -b -- -T pbydv1 -geometry 80x36+0+0 -e sh -c s\ 1
+r r :exec xt -ab -- -T pbydv2 -geometry 80x36+800+0 -e sh -c s\ 2
+r s :exec xt -b -- -T pbydv3 -geometry 80x36+1600+0 -e sh -c s\ 3
+r n :exec xt -ab -- -T pbydv4 -geometry 80x36+0+720 -e sh -c s\ 4
+r e :exec xt -b -- -T pbydv5 -geometry 80x36+800+720 -e sh -c s\ 5
+r i :exec xt -ab -- -T pbydv6 -geometry 80x36+1600+720 -e sh -c s\ 6
+s a :Exec wmctrl -a pbydv1 # ars nei t
+s b :Exec wmctrl -a Tor\ Browser
+s c :Exec wmctrl -a signal
+s e :Exec wmctrl -a pbydv5
+s f :Exec ~/p/dancomp/c/focusWeb f
+s g :Exec ~/p/dancomp/c/focusWeb g
+s h :Exec ~/p/dancomp/c/focusWeb h
+s i :Exec wmctrl -a pbydv6
+s n :Exec wmctrl -a pbydv4
+s o :Exec wmctrl -a pbydvn
+s p :Exec wmctrl -a evince
+s r :Exec wmctrl -a pbydv2
+s s :Exec wmctrl -a pbydv3
+s t :Exec wmctrl -a pbydv7
+s x :Exec wmctrl -a pbydvx
+s y :Exec wmctrl -a pbydvy
+s z :Exec wmctrl -a pbydvz
+t a :exec wmctrl -r :ACTIVE: -e 0,0,0,800,720
+t r :exec wmctrl -r :ACTIVE: -e 0,800,0,800,720
+t s :exec wmctrl -r :ACTIVE: -e 0,1600,0,800,720
+t n :exec wmctrl -r :ACTIVE: -e 0,0,720,800,720
+t e :exec wmctrl -r :ACTIVE: -e 0,800,720,800,720
+t i :exec wmctrl -r :ACTIVE: -e 0,1600,720,800,720
+t z :Exec wmv 0
+t q z :Exec wmv 0 +.5
+t w z :Exec wmv 0 +.87
+t f z :Exec wmv 0 .5+
+t x :Exec wmv 1
+t q x :Exec wmv 1 +.5
+t w x :Exec wmv 1 +.87
+t f x :Exec wmv 1 .5+
+t c :Exec wmv 2
+t q c :Exec wmv 2 +.5
+t w c :Exec wmv 2 +.87
+t f c :Exec wmv 2 .5+
+t v :Exec wmv 3
+t q v :Exec wmv 3 +.5
+t w v :Exec wmv 3 +.87
+t f v :Exec wmv 3 .5+
+t b :Exec wmv 4+
+t q b :Exec wmv 4+ +.5
+t w b :Exec wmv 4+ +.87
+t f b :Exec wmv 4+ .5+|] ++
+  ["t " <> pre <> x2k x <> (if x < 15 then " " <> x2k w else "") <>
+  wcmd x y w h | (pre, y, h) <- [("", 0, 16), ("q ", 0, 8), ("w ", 0, 14),
+  ("p ", 8, 8)], x <- [0..15], w <- [1 .. 16 - x]] ++ 
+  [ "g " <> x2k x <> " " <> x2k y <> (if x < 15 || y < 15 then " " <> x2k w <>
+  (if y < 15 then " " <> x2k h else "") else "") <> wcmd x y w h
+  | x <- [0..15], y <- [0..15], w <- [1 .. 16 - x], h <- [1 .. 16 - y]] where
+  x2k x = T.singleton $ "0123456789abcdef" !! (x `mod` 16)
+  wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
+    T.intercalate "," (map sh [160 * x, 90 * y, 160 * w, 90 * h])
