@@ -31,11 +31,11 @@ ms = concatMap (\(a,s) -> [
   ("o", "10 's2 4' b5")] 
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
   ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
-tgs = map ("t "<>)
-  [ pre <> x2k x <> (if x < 15 then " " <> x2k w else "") <> wcmd x y w h
-  | (pre, y, h) <- [("", 0, 16), ("q ", 0, 8), ("w ", 0, 14), ("p ", 8, 8)],
-  x <- [0..15], w <- [1 .. 16 - x]] ++ map ("v " <>)
-  [
+tgs = ["t " <> pre <> x2k x <> (if x < 15 then " " <> x2k w else "") <>
+  wcmd x y w h | (pre, y, h) <- [("", 0, 16), ("q ", 0, 8), ("w ", 0, 14),
+  ("p ", 8, 8)], x <- [0..15], w <- [1 .. 16 - x]] ++ 
+  [ "g " <> x2k x <> " " <> x2k y <> (if x < 15 || y < 15 then " " <> x2k w <>
+  (if y < 15 then " " <> x2k h else "") else "")
   | x <- [0..15], y <- [0..15], w <- [1 .. 16 - x], h <- [1 .. 16 - y]] where
   x2k x = T.singleton $ "0123456789abcdef" !! (x `mod` 16)
   wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
