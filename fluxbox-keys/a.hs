@@ -128,27 +128,3 @@ OnDesktop Mouse2 :WorkspaceMenu
 OnDesktop Mouse3 :RootMenu
 OnDesktop Mouse4 :NextWorkspace
 OnDesktop Mouse5 :PrevWorkspace|]
-
-{-
-Control Mod1 w :ClientMenu
-# Clon works:
-#Mod4 Control F1 :ClientMenu
-#Control Mod4 F1 :ClientMenu
-#Mod4 Mod1 F1 :ClientMenu
-#Mod1 Mod4 F1 :ClientMenu
-#Mod1 F1 Control F1 :ClientMenu
-#Control F1 Mod1 F1 :ClientMenu
-# Clon doesn't work:
-#Mod1 Control F1 :ClientMenu
-#Control Mod1 F1 :ClientMenu
-# Alt_R 108, Control_R 135, F1 67.
-#67 :ClientMenu
-#108 67 :ClientMenu
-#135 67 :ClientMenu
-# works but interferes w/ other things so now Ctrl+C+C to make Ctrl+C..
-#108 135 67 :ClientMenu
-#135 108 67 :ClientMenu
-#108 135 w :ClientMenu
-#135 108 w :ClientMenu
--}
-
