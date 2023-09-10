@@ -1,0 +1,5 @@
+set -e
+rhs a.hs
+echo changes [[[
+diff ~/.fluxbox/keys out
+echo ]]] if good do: cp out ~/.fluxbox/keys

@@ -1,5 +1,5 @@
 #include <h>
--- may bring back?..: b: blackMakeTerm
+-- b: brightTerm
 -- g: geom
 -- r: run
 -- s: switchFocus
@@ -48,21 +48,30 @@ w :ClientMenu
 x m :RootMenu
 x r :Reconfig
 x u :Exec unity-control-center
+b a :exec runTerm1
+b r :exec runTerm2
+b s :exec runTerm3
+b n :exec runTerm4
+b e :exec runTerm5
+b i :exec runTerm6
+b x :Exec runBigTerm1
+b y :Exec runBigTerm2
+b z :Exec runBigTerm3
+r a :exec runNiteTerm1
+r r :exec runNiteTerm2
+r s :exec runNiteTerm3
+r n :exec runNiteTerm4
+r e :exec runNiteTerm5
+r i :exec runNiteTerm6
+r x :Exec runBigNiteTerm1
+r y :Exec runBigNiteTerm2
+r z :Exec runBigNiteTerm3
 r b :Exec torb 
 r c :Exec signal
 r f :Exec firefox
 r g :Exec azgo
 r o :Exec show-notifier
 r Shift x :Exec xterm
-r x :Exec runBigNiteTerm1
-r y :Exec runBigNiteTerm2
-r z :Exec runBigNiteTerm3
-r a :exec xt -b -- -T pbydv1 -geometry 80x36+0+0 -e sh -c s\ 1
-r r :exec xt -ab -- -T pbydv2 -geometry 80x36+800+0 -e sh -c s\ 2
-r s :exec xt -b -- -T pbydv3 -geometry 80x36+1600+0 -e sh -c s\ 3
-r n :exec xt -ab -- -T pbydv4 -geometry 80x36+0+720 -e sh -c s\ 4
-r e :exec xt -b -- -T pbydv5 -geometry 80x36+800+720 -e sh -c s\ 5
-r i :exec xt -ab -- -T pbydv6 -geometry 80x36+1600+720 -e sh -c s\ 6
 s a :Exec wmctrl -a pbydv1 # ars nei t
 s b :Exec wmctrl -a Tor\ Browser
 s c :Exec wmctrl -a signal
