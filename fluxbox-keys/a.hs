@@ -31,20 +31,14 @@ ms = concatMap (\(a,s) -> [
   ("o", "10 's2 4' b5")] 
 ss = concatMap (ssH . T.singleton) ("abcdefghinoprstw" :: String) where
   ssH t = ["s " <> t <> " :Exec wf " <> t, "z " <> t <> " :Exec wf -z " <> t]
-ts = map("t "<>)$
-  [      x2k x<>(if x<15 then " "<>x2k w else "")<>wcmd x 0 w 16|
-    x<-[0..15],w<-[1..16-x]]++
-  ["q "<>x2k x<>(if x<15 then " "<>x2k w else "")<>wcmd x 0 w 8|
-    x<-[0..15],w<-[1..16-x]]++
-  ["w "<>x2k x<>(if x<15 then " "<>x2k w else "")<>wcmd x 0 w 14|
-    x<-[0..15],w<-[1..16-x]]++
-  ["p "<>x2k x<>(if x<15 then " "<>x2k w else "")<>wcmd x 8 w 8|
-    x<-[0..15],w<-[1..16-x]]
+ts = map ("t "<>) $
+  [ pre <> x2k x <> (if x < 15 then " " <> x2k w else "") <> wcmd x y w h
+  | (pre, y, h) <- [("", 0, 16), ("q ", 0, 8), ("w ", 0, 14), ("p ", 8, 8)],
+  x <- [0..15], w <- [1 .. 16 - x]]
   where
-  x2k x = T.singleton$"0123456789abcdef"!!(x`mod`16)
-  y2k=x2k
+  x2k x = T.singleton $ "0123456789abcdef" !! (x `mod` 16)
   wcmd x y w h = " :Exec wmctrl -r :ACTIVE: -e 0," <>
-    T.intercalate "," (map sh [160*x,90*y,160*w,90*h])
+    T.intercalate "," (map sh [160 * x, 90 * y, 160 * w, 90 * h])
 {-
 v 0 2 3 0 1 :Exec wmv 0      +0.333
 v 0 2 3 1 1 :Exec wmv 0 0.333+0.334 # hack fit
