@@ -5,7 +5,8 @@ startDay y = fromGregorian y 3 1
 
 lpad c n s = replicate (n - length s) c <> s
 
-showDay n = formatTime defaultTimeLocale ("%F " <> lpad '0' 3 (show n) <> " %a")
+showDay n = formatTime defaultTimeLocale
+  ("%F d" <> lpad '0' 3 (show n) <> " %a")
 
 main = do
   args <- getArgs

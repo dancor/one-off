@@ -84,7 +84,18 @@ doLine:
               startsW(c2,"Mandarin")||
               startsW(c2,"Po")||
               startsW(c2,"Spa")||
-              startsW(c2,"Ger")
+              startsW(c2,"Ger")||
+              startsW(c2,"Arabic")||
+              startsW(c2,"Japanese")||
+              startsW(c2,"Korean")||
+              startsW(c2,"Russian")||
+              startsW(c2,"Algerian Arabic")||
+              startsW(c2,"Egyptian Arabic")||
+              startsW(c2,"Gulf Arabic")||
+              startsW(c2,"Hijazi Arabic")||
+              startsW(c2,"Iraqi Arabic")||
+              startsW(c2,"Lebanese Arabic")||
+              startsW(c2,"Moroccan Arabic")
               )?1:0;
         }
         c2 = strchr(c1, '\n');

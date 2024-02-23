@@ -1,3 +1,5 @@
+note: I switched to c version ~/p/o/zim
+
 skim-zim serves a wiktionary zim file with runtime article modification.
 
 todo:
