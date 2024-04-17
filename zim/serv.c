@@ -85,6 +85,8 @@ doLine:
               startsW(c2,"Po")||
               startsW(c2,"Spa")||
               startsW(c2,"Ger")||
+              startsW(c2,"Hebrew")||
+              startsW(c2,"Yiddish")||
               startsW(c2,"Arabic")||
               startsW(c2,"Japanese")||
               startsW(c2,"Korean")||
