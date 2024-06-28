@@ -1,0 +1,158 @@
+Country 	Standard & Poor's 	Moody's 	Fitch 	Scope
+Albania 	B+ 	B1 		
+Andorra 	BBB 	Baa2 	A- 	
+Angola 	CCC+ 	B3 	B- 	
+Argentina 	CCC+ 	Ca 	CCC- 	
+Armenia 	B+ 	Ba3 	B+ 	
+Aruba 	BBB+ 		BB+ 	
+Australia 	AAA 	Aaa 	AAA 	
+Austria 	AA+ 	Aa1 	AA+ 	AAA
+Azerbaijan 	BB+ 	Ba1 	BB+ 	
+Bahamas 	B+ 	B1 		
+Bahrain 	B+ 	B2 	B+ 	
+Bangladesh 	BB- 	Ba3 	BB- 	
+Barbados 	B- 	Caa1 	B 	
+Belarus 	CC 	Ca 	CCC 	
+Belgium 	AA 	Aa3 	AA- 	AA-
+Belize 	B- 	Caa2 		
+Benin 	B+ 	B1 	B+ 	
+Bermuda 	A+ 	A2 		
+Bolivia 	B+ 	Caa1 	B- 	
+Bosnia and Herzegovina 	B 	B3 		
+Botswana 	BBB+ 	A3 		
+Brazil 	BB- 	Ba2 	BB- 	
+Bulgaria 	BBB 	Baa1 	BBB 	BBB+
+Burkina Faso 	CCC+ 			
+Cambodia 	B 	B2 		
+Cameroon 	B- 	B2 	B 	
+Canada 	AAA 	Aaa 	AA+ 	
+Cape Verde 	B- 		B- 	
+Chile 	A+ 	A2 	A- 	
+China 	A+ 	A1 	A+ 	A
+Colombia 	BBB- 	Baa2 	BB+ 	
+Costa Rica 	B+ 	B2 	BB- 	
+Croatia 	NR 	Baa2 	BBB+ 	BBB+
+Cuba 		Ca 		
+Cyprus 	BBB- 	Ba1 	BBB 	BBB
+Czechia 	AA- 	Aa3 	AA- 	AA
+Democratic Republic of the Congo 	B- 	B3 		
+Denmark 	AAA 	Aaa 	AAA 	AAA
+Dominican Republic 	BB- 	BB- 	BB- 	
+Ecuador 	CCC- 	Caa3 	B- 	
+Egypt 	B 	B3 	B+ 	B
+El Salvador 	NR 	Caa3 	CC 	
+Estonia 	AA- 	A1 	AA- 	AA-
+Ethiopia 	CCC 	Caa2 	CCC 	
+Fiji 	BB- 	B1 		
+Finland 	AA+ 	Aa1 	AA+ 	AA+
+France 	AA 	Aa2 	AA- 	AA
+Gabon 	B 	Caa1 	B- 	
+Gambia 			CCC 	
+Georgia 	BB 	Ba2 	BB 	BB
+Germany 	AAA 	Aaa 	AAA 	AAA
+Ghana 	CCC 	Ca 	CC 	
+Greece 	BB- 	Ba3 	BB+ 	BB+
+Grenada 	BB- 			
+Guatemala 	BB 	Ba1 	BB 	
+Honduras 	BB- 	B1 	B- 	
+Hong Kong 	NR 	Aa3 	AA- 	
+Hungary 	BBB 	Baa2 	BBB 	BBB
+Iceland 	A 	A2 	A 	
+India 	BBB- 	Baa3 	BBB- 	
+Indonesia 	BBB 	Baa2 	BBB 	
+Iran 		B2 	B+ 	
+Iraq 	B- 	Caa1 	B- 	
+Ireland 	AA- 	Aa3 	AA- 	AA-
+Israel 	AA- 	A1 	A+ 	
+Italy 	BBB 	Baa3 	BBB 	BBB+
+Ivory Coast 		Ba3 	BB- 	
+Jamaica 	B+ 	B2 	B+ 	
+Japan 	A+ 	A1 	A 	A
+Jordan 	BB- 	B1 	BB- 	
+Kazakhstan 	BBB- 	Baa2 	BBB 	
+Kenya 	B 	B2 	B+ 	
+Kuwait 	AA- 	A1 	AA- 	
+Kyrgyzstan 	NR 	B3 		
+Laos 		Caa3 	CCC- 	
+Latvia 	A- 	A3 	A- 	A-
+Lebanon 	SD 	C 	RD 	
+Lesotho 			B 	
+Libya 	BB 		B 	
+Liechtenstein 	AAA 			
+Lithuania 	NR 	A2 	A 	A
+Luxembourg 	AAA 	AAA 	AAA 	AAA
+Macao 		Aa3 	AA 	
+Madagascar 	B- 			
+Malawi 			B- 	
+Malaysia 	A- 	A3 	BBB+ 	
+Maldives 		Caa1 	B- 	
+Mali 	B 	Caa2 	B- 	
+Malta 	A- 	A2 	A+ 	A+
+Mauritius 		Baa3 		
+Mexico 	BBB 	Baa2 	BBB- 	
+Moldova 		B3 	B- 	
+Mongolia 	B- 	B3 	B 	
+Montenegro 	B 	B1 		
+Montserrat 	BBB- 			
+Morocco 	BB+ 	Ba1 	BB+ 	
+Mozambique 	CCC+ 	Caa2 	CCC+ 	
+Namibia 		B1 	BB- 	
+Netherlands 	AAA 	Aaa 	AAA 	AAA
+New Zealand 	AA+ 	Aaa 	AA+ 	
+Nicaragua 	B- 	B3 	B- 	
+Niger 		B3 		
+Nigeria 	B- 	Caa1 	B- 	
+North Macedonia 	BB- 		BB+ 	
+Norway 	AAA 	Aaa 	AAA 	AAA
+Oman 	B+ 	Ba3 	BB 	
+Pakistan 	NR 	Caa3 	CCC- 	
+Panama 	BBB 	Baa2 	BBB- 	
+Papua New Guinea 	B- 	B2 	B+ 	
+Paraguay 	BB 	Ba1 	BB+ 	
+Peru 	BBB 	Baa1 	BBB 	
+Philippines 	BBB+ 	Baa2 	BBB 	
+Poland 	A- 	A2 	A- 	A+
+Portugal 	BBB 	Baa2 	BBB+ 	A-
+Puerto Rico 		Ba1 		
+Qatar 	NR 	Aa3 	AA- 	
+Republic of the Congo 	B- 	Caa2 	CCC+ 	
+Romania 	BBB- 	Baa3 	BBB- 	BBB-
+Russia 	CC 	Ca2 	BBB- 	NR
+Rwanda 	B+ 	B2 	B+ 	
+Saint Vincent and the Grenadines 		B3 		
+San Marino 			BB 	
+Saudi Arabia 	A- 	A1 	A+ 	
+Senegal 	B+ 	Ba3 		
+Serbia 	BB+ 	Ba2 	BB+ 	BB+
+Seychelles 	NR 		BB- 	
+Singapore 	Aaa 	Aaa 	AAA 	
+Slovakia 	A+ 	A2 	A 	A+
+Slovenia 	NR 	A3 	A 	A
+Solomon Islands 		B3 		
+South Africa 	BB- 	Ba2 	BB- 	BB+
+South Korea 	Aa2 	Aa2 	AA- 	
+Spain 	A 	Baa1 	A- 	A-
+Sri Lanka 	CCC 	Ca 	CCC 	
+Suriname 	CCC- 	Caa3 	C 	
+Swaziland 		B3 		
+Sweden 	AAA 	Aaa 	AAA 	AAA
+Switzerland 	AAA 	Aaa 	AAA 	AAA
+Taiwan 	AA- 	Aa3 	AA 	
+Tajikistan 	B- 	B3 		
+Tanzania 		B2 		
+Thailand 	BBB+ 	Baa1 	BBB+ 	
+Togo 	B 	B3 		
+Trinidad and Tobago 	BBB- 	Ba2 		
+Tunisia 	NR 	Caa2 	CCC+ 	
+Turkey 	B+ 	B3 	B 	B-
+Turkmenistan 			B+ 	
+Uganda 	B 	B2 	B+ 	
+Ukraine 	B- 	Ca 	CC 	CC
+United Arab Emirates 	AA 	Aa2 	AA- 	
+United Kingdom 	AA 	Aa3 	AA- 	AA
+Uruguay 	BBB+ 	Baa2 	BBB- 	
+USA 	AA+ 	Aaa 	AAA 	AA
+Uzbekistan 	BB- 	Ba3 	BB- 	
+Venezuela 	CCC- 	WR 	WD 	
+Vietnam 	BB 	Ba2 	BB 	
+Zambia 	CCC+ 	Ca 	C 	
