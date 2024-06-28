@@ -7,13 +7,14 @@
 #include <alsa/asoundlib.h>
 #include <sys/time.h>
 #include <math.h>
-static char *device = "plughw:0,0";
+//static char *device = "plughw:0,0";
+static char *device = "hw:0,0";
 static snd_pcm_format_t format = SND_PCM_FORMAT_S16;
 static unsigned int rate = 44100;
-static unsigned int channels = 1;
+static unsigned int channels = 2;
 static unsigned int buffer_time = 500000; // ring buffer length in us
 static unsigned int period_time = 100000; // period time in us
-static double freq = 440;
+static double freq = 880;
 static int verbose = 0;
 static int resample = 1; // enable alsa-lib resampling
 static int period_event = 0; // produce poll event after each period
