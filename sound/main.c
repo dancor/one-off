@@ -14,7 +14,7 @@ static unsigned int rate = 44100;
 static unsigned int channels = 2;
 static unsigned int buffer_time = 500000; // ring buffer length in us
 static unsigned int period_time = 100000; // period time in us
-static double freq = 880;
+static double freq = 440; //880/4;
 static int verbose = 0;
 static int resample = 1; // enable alsa-lib resampling
 static int period_event = 0; // produce poll event after each period
@@ -57,7 +57,15 @@ static void generate_sine(const snd_pcm_channel_area_t *areas,
     union {float f; int i;} fval;
     int res, i;
     if (is_float) {fval.f = sin(phase); res = fval.i;}
-    else res = sin(phase) * maxval;
+    else res =
+      // sine:
+      //(sin(2 * phase)) * maxval;
+      // sawtooth:
+      //(int)(phase * maxval / M_PI) % (2 * maxval) - maxval;
+      // oboe:
+      (0.022655*sin(phase) + 
+      (sin(2*phase) + 
+      ) * maxval;
     if (to_unsigned) res ^= 1U << (format_bits - 1);
     for (chn = 0; chn < channels; chn++) {
       // Generate data in native endian format

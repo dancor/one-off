@@ -1,0 +1,4 @@
+- Q: If sinewave B is x decibels lower than sinewave A, how much lower is its
+  amplitude?
+  - My A: AmpA = AmpB * 10^(x/20). See the "amplitude ratio" table at:
+    https://en.wikipedia.org/wiki/Decibel#Definition
