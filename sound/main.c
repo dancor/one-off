@@ -24,7 +24,7 @@ static snd_output_t *output = NULL;
 static void generate_sine(const snd_pcm_channel_area_t *areas, 
     snd_pcm_uframes_t offset, int count, double *_phase) {
   static double max_phase = 2. * M_PI;
-  double phase = *_phase;
+  double p = *_phase;
   double step = max_phase*freq/(double)rate;
   unsigned char *samples[channels];
   int steps[channels];
@@ -56,23 +56,38 @@ static void generate_sine(const snd_pcm_channel_area_t *areas,
   while (count-- > 0) {
     union {float f; int i;} fval;
     int res, i;
-    if (is_float) {fval.f = sin(phase); res = fval.i;}
+    if (is_float) {fval.f = sin(p); res = fval.i;}
     else {
       // sine:
-      //res = (sin(2 * phase)) * maxval;
-      // sawtooth:
-      //res = (int)(phase * maxval / M_PI) % (2 * maxval) - maxval;
+      res = (sin(p)) * maxval;
+      // piano+4over maxVol handCalc: *1.45fine *1.46clip interesting16bWorse
+      res = maxval * 0.5526698794903679 * (sin(p)+ 
+      0.2543314105987937  *sin(2*p)+ 
+      0.34118898351597987 *sin(3*p)+
+      0.14648730866134343 *sin(4*p)+ 
+      0.0673907050439862  *sin(5*p));
+      /*
+      // violin+4over maxVol handCalc:
+      res = (sin(p)+ 
+      0.5374585795503817*sin(2*p)+ 
+      0.5932735683657433*sin(3*p)+
+      0.22599560844343755*sin(4*p)+
+      0.22212630892984245*sin(5*p)) * maxval * 0.3877691310492119;
       // oboe+4over maxVol handCalc:
-      /*res = (sin(phase)+ 
-      4.430982144892988*sin(2*phase)+ 
-      2.2569399290287766*sin(3*phase)+
-      7.729475056081216*sin(4*phase)+
-      0.5273937757664384*sin(5*phase)) * maxval * 0.06271640725236245;*/
-      res = (sin(phase)+ 
-      4*sin(2*phase)+ 
-      2*sin(3*phase)+
-      8*sin(4*phase)+
-      0.5*sin(5*phase)) * maxval * 0.06451612903225806;
+      res = (sin(p)+ 
+      4.430982144892988*sin(2*p)+ 
+      2.2569399290287766*sin(3*p)+
+      7.729475056081216*sin(4*p)+
+      0.5273937757664384*sin(5*p)) * maxval * 0.06271640725236245;
+      // sawtooth:
+      res = (int)(p * maxval / M_PI) % (2 * maxval) - maxval;
+      // oboe+4over maxVol handCalc nearestHalfInt:
+      res = (sin(p)+ 
+      4*sin(2*p)+ 
+      2*sin(3*p)+
+      8*sin(4*p)+
+      0.5*sin(5*p)) * maxval * 0.06451612903225806;
+      */
     }
     if (to_unsigned) res ^= 1U << (format_bits - 1);
     for (chn = 0; chn < channels; chn++) {
@@ -86,11 +101,10 @@ static void generate_sine(const snd_pcm_channel_area_t *areas,
       }
       samples[chn] += steps[chn];
     }
-    phase += step;
-    if (phase >= max_phase)
-      phase -= max_phase;
+    p += step;
+    if (p >= max_phase) p -= max_phase;
   }
-  *_phase = phase;
+  *_phase = p;
 }
  
 static int set_hwparams(snd_pcm_t *handle,
@@ -773,8 +787,8 @@ int main(int argc, char *argv[]) {
       break;
     case 'f':
       freq = atoi(optarg);
-      freq = freq < 50 ? 50 : freq;
-      freq = freq > 5000 ? 5000 : freq;
+      //freq = freq < 50 ? 50 : freq;
+      //freq = freq > 5000 ? 5000 : freq;
       break;
     case 'b':
       buffer_time = atoi(optarg);
