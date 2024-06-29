@@ -14,7 +14,7 @@ static unsigned int rate = 44100;
 static unsigned int channels = 2;
 static unsigned int buffer_time = 500000; // ring buffer length in us
 static unsigned int period_time = 100000; // period time in us
-static double freq = 440; //880/4;
+static double freq = 440;
 static int verbose = 0;
 static int resample = 1; // enable alsa-lib resampling
 static int period_event = 0; // produce poll event after each period
@@ -57,15 +57,23 @@ static void generate_sine(const snd_pcm_channel_area_t *areas,
     union {float f; int i;} fval;
     int res, i;
     if (is_float) {fval.f = sin(phase); res = fval.i;}
-    else res =
+    else {
       // sine:
-      //(sin(2 * phase)) * maxval;
+      //res = (sin(2 * phase)) * maxval;
       // sawtooth:
-      //(int)(phase * maxval / M_PI) % (2 * maxval) - maxval;
-      // oboe:
-      (0.022655*sin(phase) + 
-      (sin(2*phase) + 
-      ) * maxval;
+      //res = (int)(phase * maxval / M_PI) % (2 * maxval) - maxval;
+      // oboe+4over maxVol handCalc:
+      /*res = (sin(phase)+ 
+      4.430982144892988*sin(2*phase)+ 
+      2.2569399290287766*sin(3*phase)+
+      7.729475056081216*sin(4*phase)+
+      0.5273937757664384*sin(5*phase)) * maxval * 0.06271640725236245;*/
+      res = (sin(phase)+ 
+      4*sin(2*phase)+ 
+      2*sin(3*phase)+
+      8*sin(4*phase)+
+      0.5*sin(5*phase)) * maxval * 0.06451612903225806;
+    }
     if (to_unsigned) res ^= 1U << (format_bits - 1);
     for (chn = 0; chn < channels; chn++) {
       // Generate data in native endian format
