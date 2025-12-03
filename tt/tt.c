@@ -2704,6 +2704,12 @@ xsetenv(void)
 }
 
 void
+expose(XEvent *ev)
+{
+  redraw();
+}
+
+void
 visibility(XEvent *ev)
 {
   XVisibilityEvent *e = &ev->xvisibility;
