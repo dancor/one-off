@@ -2746,6 +2746,7 @@ focus(XEvent *ev)
 char*
 kmap(KeySym k, uint state)
 {
+  return NULL;
   Key *kp; int i;
   // Check for mapped keys out of X11 function keys.
   for (i = 0; i < LEN(mappedkeys); i++) if (mappedkeys[i] == k) break;
