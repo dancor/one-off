@@ -294,10 +294,6 @@ double minlatency = 2, maxlatency = 33; // ms
 // this table sequentially, so any XK_ANY_MOD must be in the last
 // position for a key
 
-// If you want keys other than the X11 function keys (0xFD00 - 0xFFFF)
-// to be mapped below, add them to this array
-KeySym mappedkeys[] = {-1};
-
 // State bits to ignore when matching key or button events.  By default,
 // numlock (Mod2Mask) and keyboard layout (XK_SWITCH_MOD) are ignored
 uint ignoremod = Mod2Mask | XK_SWITCH_MOD;
