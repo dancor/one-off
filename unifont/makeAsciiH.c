@@ -7,7 +7,7 @@ int lineWantLen = 33; // includes newline
 int main(int argc, char **argv) {
   FILE *fi = eoz(fopen("u.hex", "r"));
   char line[256];
-  printf("const u1t font[]="); int colN = 16;
+  printf("const u1t aFont[]="); int colN = 16;
   int is1st = 1;
   for (int lineI = 0; fgets(line, sizeof(line), fi); lineI++) {
     if (lineI < 32) continue;

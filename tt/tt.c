@@ -2,12 +2,14 @@
 #include "ascii.h"
 // for setenv(), unsetenv() & pselect() from stdlib.h:
 //#define _POSIX_C_SOURCE 200112L
+/*
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
+*/
 #include <cairo/cairo-xlib.h>
 #include <cairo/cairo.h>
 #include <ctype.h>
