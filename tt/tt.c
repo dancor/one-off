@@ -2704,12 +2704,6 @@ xsetenv(void)
 }
 
 void
-expose(XEvent *ev)
-{
-  redraw();
-}
-
-void
 visibility(XEvent *ev)
 {
   XVisibilityEvent *e = &ev->xvisibility;
@@ -2777,7 +2771,7 @@ kpress(XEvent *ev)
   }
   // composed string from input method
   if (len == 0) return;
-  /*
+  /* old code:
   Rune c;
   if (len == 1 && e->state & Mod1Mask) {
     if (IS_SET(MODE_8BIT)) {
