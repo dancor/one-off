@@ -1,6 +1,12 @@
+.phone: rF
+C=gcc -O3 -Wall -Werror -ffast-math -fmax-errors=1 -fomit-frame-pointer \
+	-march=native
+rF: f
+	./$^
+f: flicker.c
+	$C -o $@ $^ -lxcb
 tt: tt.c
-	gcc -O3 -Wall -Werror -ffast-math -fmax-errors=1 -fomit-frame-pointer \
-		-march=native "-L$HOME/.local/lib" "-Wl,-rpath,$HOME/.local/lib" \
+	$C "-L$HOME/.local/lib" "-Wl,-rpath,$HOME/.local/lib" \
 		-lunistring -I/usr/include/pango-1.0 -I/usr/include/libmount \
 		-I/usr/include/blkid -I/usr/include/fribidi -I/usr/include/harfbuzz \
 		-I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include \

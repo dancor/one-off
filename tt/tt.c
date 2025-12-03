@@ -92,9 +92,8 @@ int cmdfd;
 // Block out the /usr/include/X11/extensions/render.h:29:25 Glyph:
 #define Glyph Glyph_
 
-// some 28byte utf8 sequences:
-// flags: England, Scotland, Wales, ManWomanKiss, ManManKiss, WomanWomanKiss
-typedef struct {char u[29]; ushort mode; // character code; attribute flags;
+// all utf8 sequences are <= 32byte. max attained by 95 kiss emojis
+typedef struct {char u[33]; ushort mode; // character code; attribute flags;
   uint32_t fg, bg;} Glyph; typedef Glyph *Line; // foreground/background
 typedef union {int i; uint ui; float f; const void *v; const char *s;} Arg;
 typedef struct {KeySym k; uint mask; char *s; signed char appkey, appcursor;}
@@ -1925,7 +1924,7 @@ tryCompose(char *a, char *b)
 {
   char *a0 = a + strlen(a), *aP = a0, *bP = b;
   do {
-    if (aP >= a + 28) {
+    if (aP >= a + 32) {
       *a0 = '\0';
       printf("noRoom2Compose(%s,%s) %li + %li %li\n",
         a, b, strlen(a), strlen(b), aP - a);
