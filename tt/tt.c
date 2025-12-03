@@ -268,7 +268,7 @@ uint blinktimeout = 800, // ms. 0 to disable. blinking attribute
   cols = 80, rows = 37,
   cursorthickness = 2, // thickness of underline and bar cursors
   doubleclicktimeout = 300, tripleclicktimeout = 600, // ms
-  mouseshape = XC_xterm, mousefg = 7, mousebg = 0, forcemousemod = ShiftMask;
+  , mousefg = 7, mousebg = 0, forcemousemod = ShiftMask;
   //defaultattr = 11
 float cwscale = 1.0, chscale = 1.0; // Kerning/boundingBox multipliers
 wchar_t *worddelimiters = L" "; // More advanced example: L" `'\"()[]{}"
@@ -2669,7 +2669,7 @@ xinit(int cols, int rows)
     NULL, ximinstantiate, NULL);
 
   // white cursor, black outline
-  cursor = XCreateFontCursor(xw.dpy, mouseshape);
+  cursor = XCreateFontCursor(xw.dpy, XC_xterm);
   XDefineCursor(xw.dpy, xw.win, cursor);
 
   //printf("win.w %i\n", win.w);
