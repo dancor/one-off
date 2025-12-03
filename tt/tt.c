@@ -10,7 +10,7 @@
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
 */
-#include <xcb/xcb_keysyms.h>
+#include <xcb/xcb_keysymss.h>
 #include <cairo/cairo-xlib.h>
 #include <cairo/cairo.h>
 #include <ctype.h>
