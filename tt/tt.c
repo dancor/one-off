@@ -2746,12 +2746,7 @@ focus(XEvent *ev)
 char*
 kmap(KeySym k, uint state)
 {
-  return NULL;
-  Key *kp; int i;
-  // Check for mapped keys out of X11 function keys.
-  for (i = 0; i < LEN(mappedkeys); i++) if (mappedkeys[i] == k) break;
-  if (i == LEN(mappedkeys) && (k & 0xFFFF) < 0xFD00) return NULL;
-  for (kp = key; kp < key + LEN(key); kp++) {
+  for (Key *kp = key; kp < key + LEN(key); kp++) {
     if (kp->k != k || !match(kp->mask, state)) continue;
     if (IS_SET(MODE_APPKEYPAD) ? kp->appkey < 0 : kp->appkey > 0) continue;
     if (IS_SET(MODE_NUMLOCK) && kp->appkey == 2) continue;
