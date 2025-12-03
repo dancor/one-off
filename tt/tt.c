@@ -1,5 +1,7 @@
+#include "i.h"
+#include "ascii.h"
 // for setenv(), unsetenv() & pselect() from stdlib.h:
-#define _POSIX_C_SOURCE 200112L
+//#define _POSIX_C_SOURCE 200112L
 #include <X11/XKBlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
