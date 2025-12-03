@@ -268,8 +268,7 @@ uint blinktimeout = 800, // ms. 0 to disable. blinking attribute
   cols = 80, rows = 37,
   cursorthickness = 2, // thickness of underline and bar cursors
   doubleclicktimeout = 300, tripleclicktimeout = 600, // ms
-  , mousefg = 7, mousebg = 0, forcemousemod = ShiftMask;
-  //defaultattr = 11
+  mousefg = 7, mousebg = 0, forcemousemod = ShiftMask;
 float cwscale = 1.0, chscale = 1.0; // Kerning/boundingBox multipliers
 wchar_t *worddelimiters = L" "; // More advanced example: L" `'\"()[]{}"
 // draw latency range: from new content/keypress/etc until drawing
