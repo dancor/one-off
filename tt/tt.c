@@ -2626,27 +2626,15 @@ xinit(int cols, int rows)
   xw.scr = XDefaultScreen(xw.dpy);
   xw.vis = XDefaultVisual(xw.dpy, xw.scr);
 
-  // adjust fixed window geometry
   win.w = 2 * borderpx + cols * win.cw;
   win.h = 2 * borderpx + rows * win.ch;
-  //if (xw.gm & XNegative) xw.l += DisplayWidth(xw.dpy, xw.scr) - win.w - 2;
-  //if (xw.gm & YNegative) xw.t += DisplayHeight(xw.dpy, xw.scr) - win.h - 2;
-
-  //xw.attrs.background_pixel = BlackPixel(xw.dpy, xw.scr);
-  //xw.attrs.border_pixel = BlackPixel(xw.dpy, xw.scr);
-  //xw.attrs.bit_gravity = NorthWestGravity;
   xw.attrs.event_mask = FocusChangeMask | KeyPressMask | KeyReleaseMask |
     ExposureMask | VisibilityChangeMask | StructureNotifyMask |
     ButtonMotionMask | ButtonPressMask | ButtonReleaseMask;
-  //xw.attrs.colormap = DefaultColormap(xw.dpy, xw.scr);
   root = XRootWindow(xw.dpy, xw.scr);
   xw.win = XCreateWindow(xw.dpy, root, xw.l, xw.t, win.w, win.h, 0,
     XDefaultDepth(xw.dpy, xw.scr), InputOutput, xw.vis, CWBackPixel |
     CWBorderPixel | CWBitGravity | CWEventMask | CWColormap, &xw.attrs);
-  //root = XRootWindow(xw.dpy, xw.scr);
-  //xw.win = XCreateWindow(xw.dpy, root, 0, 0, 100, 100, 0, CopyFromParent,
-  //  CopyFromParent, CopyFromParent, 0, NULL);
-
   memset(&gcvalues, 0, sizeof(gcvalues));
   gcvalues.graphics_exposures = False;
   dc.gc = XCreateGC(xw.dpy, xw.win, GCGraphicsExposures, &gcvalues);
@@ -2664,13 +2652,6 @@ xinit(int cols, int rows)
   // white cursor, black outline
   cursor = XCreateFontCursor(xw.dpy, XC_xterm);
   XDefineCursor(xw.dpy, xw.win, cursor);
-
-  //printf("win.w %i\n", win.w);
-  //printf("win.h %i\n", win.h);
-  //printf("cols %i\n", cols);
-  //printf("rows %i\n", rows);
-  //printf("xw.dpy %p\n", xw.dpy);
-  //printf("xw.win %lu\n", xw.win);
 
   xw.xembed = XInternAtom(xw.dpy, "_XEMBED", False);
   xw.wmdeletewin = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
