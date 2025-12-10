@@ -122,13 +122,14 @@ typedef struct {xcb_connection_t *c; Display *dpy; xcb_screen_t *scr;
   cairo_surface_t *cairoSurf; cairo_t *cairo; PangoLayout *layout;
   PangoFontDescription *fontD; xcb_visualtype_t *vis;
   xcb_key_symbols_t *keysyms;
-  struct {xcb_xim_t *xim; xcb_xic_t xic; xcb_point_t spot; xcb_xim_nested_list *spotlist;} ime;
+  struct {xcb_xim_t *xim; xcb_xic_t xic; xcb_point_t spot;
+    xcb_xim_nested_list *spotlist;} ime;
   uint32_t evMask; xcb_window_t win;
   int isBold, isItalic, isfixed, l, t, gm; // is fontD set to bold, to italic,
     // is fixed geometry meaning cannot be resized by user, left and top
     // offset, geometry mask
   struct {xcb_atom_t clipboard, targets, text, utf8string,
-  wmDeleteWindow, wmIconName, wmName, wmProtocols, xembed;} atom;
+    wmDeleteWindow, wmIconName, wmName, wmProtocols, xembed;} atom;
 } XWindow; XWindow xw;
 void
 die(const char *errstr, ...) {
@@ -1305,18 +1306,21 @@ xdrawcursor(int cx, int cy, int ox, int oy) {
   cairo_rectangle(xw.cairo, borderpx + cx * win.cw,
     borderpx + (cy + 1) * win.ch - 1, win.cw, 1); cairo_fill(xw.cairo);
 }
-/*void
+void
 xximspot(int x, int y) {
   if (!xw.ime.xic) return;
   xw.ime.spot.x = borderpx + x * win.cw;
   xw.ime.spot.y = borderpx + (y + 1) * win.ch;
-  XSetICValues(xw.ime.xic, XNPreeditAttributes, xw.ime.spotlist, NULL);
-}*/
-
+  xcb_xim_nested_list new_nest = xcb_xim_create_nested_list(xw.ime.xim,
+    XCB_XIM_XNSpotLocation, &xw.ime.spot, NULL);
+  if (!xcb_xim_set_ic_values(xw.ime.xim, xw.ime.xic, NULL, NULL,
+    XCB_XIM_XNPreeditAttributes, &new_nest, NULL))
+    fprintf(stderr, "xximspot xcb_xim_set_ic_values failed\n");
+  free(new_nest.data);
+}
 void
 draw(void) {
-  int cx = term.c.x;
-  //int cx = term.c.x, ocx = term.ocx, ocy = term.ocy;
+  int cx = term.c.x, ocx = term.ocx, ocy = term.ocy;
   if (!IS_SET(MODE_VISIBLE)) return;
   LIMIT(term.ocx, 0, term.col - 1); // adjust cursor position
   LIMIT(term.ocy, 0, term.row - 1);
@@ -1327,7 +1331,7 @@ draw(void) {
   term.ocx = cx; term.ocy = term.c.y;
   // if do double-buffer:
   //XCopyArea(xw.dpy, xw.pbuf, xw.win, dc.gc, 0, 0, win.w, win.h, 0, 0);
-  //if (ocx != term.ocx || ocy != term.ocy) xximspot(term.ocx, term.ocy);
+  if (ocx != term.ocx || ocy != term.ocy) xximspot(term.ocx, term.ocy);
 }
 void
 redraw(void) {
