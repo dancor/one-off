@@ -2,11 +2,7 @@
 #include "ascii.h"
 // for setenv(), unsetenv() & pselect() from stdlib.h:
 //#define _POSIX_C_SOURCE 200112L
-#include <X11/XKBlib.h>
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/cursorfont.h>
 #include <X11/keysym.h>
 #include <cairo/cairo-xcb.h>
 #include <cairo/cairo.h>
@@ -122,8 +118,7 @@ typedef struct {xcb_connection_t *c; Display *dpy; xcb_screen_t *scr;
   cairo_surface_t *cairoSurf; cairo_t *cairo; PangoLayout *layout;
   PangoFontDescription *fontD; xcb_visualtype_t *vis;
   xcb_key_symbols_t *keysyms;
-  struct {xcb_xim_t *xim; xcb_xic_t xic; xcb_point_t spot;
-    xcb_xim_nested_list *spotlist;} ime;
+  struct {xcb_xim_t *xim; xcb_xic_t xic; xcb_xim_nested_list spotL;} ime;
   uint32_t evMask; xcb_window_t win;
   int isBold, isItalic, isfixed, l, t, gm; // is fontD set to bold, to italic,
     // is fixed geometry meaning cannot be resized by user, left and top
@@ -1309,28 +1304,22 @@ xdrawcursor(int cx, int cy, int ox, int oy) {
 void
 xximspot(int x, int y) {
   if (!xw.ime.xic) return;
-  xw.ime.spot.x = borderpx + x * win.cw;
-  xw.ime.spot.y = borderpx + (y + 1) * win.ch;
-  xcb_xim_nested_list new_nest = xcb_xim_create_nested_list(xw.ime.xim,
-    XCB_XIM_XNSpotLocation, &xw.ime.spot, NULL);
-  if (!xcb_xim_set_ic_values(xw.ime.xim, xw.ime.xic, NULL, NULL,
-    XCB_XIM_XNPreeditAttributes, &new_nest, NULL))
-    fprintf(stderr, "xximspot xcb_xim_set_ic_values failed\n");
-  free(new_nest.data);
+  uint16_t *p = (uint16_t*)(xw.ime.spotL.data);
+  p[2] = borderpx + x * win.cw; p[3] = borderpx + (y + 1) * win.ch;
+  xcb_xim_set_ic_values(xw.ime.xim, xw.ime.xic, NULL, NULL,
+    XCB_XIM_XNPreeditAttributes, &xw.ime.spotL, NULL);
 }
 void
 draw(void) {
   int cx = term.c.x, ocx = term.ocx, ocy = term.ocy;
   if (!IS_SET(MODE_VISIBLE)) return;
-  LIMIT(term.ocx, 0, term.col - 1); // adjust cursor position
+  LIMIT(term.ocx, 0, term.col - 1);
   LIMIT(term.ocy, 0, term.row - 1);
   if (term.line[term.ocy][term.ocx].mode & ATTR_WDUMMY) term.ocx--;
   if (term.line[term.c.y][cx].mode & ATTR_WDUMMY) cx--;
   drawregion(0, 0, term.col, term.row);
   xdrawcursor(cx, term.c.y, term.ocx, term.ocy);
   term.ocx = cx; term.ocy = term.c.y;
-  // if do double-buffer:
-  //XCopyArea(xw.dpy, xw.pbuf, xw.win, dc.gc, 0, 0, win.w, win.h, 0, 0);
   if (ocx != term.ocx || ocy != term.ocy) xximspot(term.ocx, term.ocy);
 }
 void
@@ -1366,9 +1355,8 @@ tswapscreen(void) {
 }
 void
 tsetmode(int priv, int set, const int *args, int narg) {
-  int alt; const int *lim;
-
-  for (lim = args + narg; args < lim; ++args) {
+  int alt;
+  for (const int *lim = args + narg; args < lim; ++args) {
     if (priv) {
       switch (*args) {
       case 1: xsetmode(set, MODE_APPCURSOR); break; // DECCKM: Cursor key
@@ -2009,47 +1997,6 @@ cresize(int width, int height) {
   xresize(col, row);
   ttyresize(win.tw, win.th);
 }
-int
-xgeommasktogravity(int mask) {
-  switch (mask & (XNegative|YNegative)) {
-  case 0:
-    return NorthWestGravity;
-  case XNegative:
-    return NorthEastGravity;
-  case YNegative:
-    return SouthWestGravity;
-  }
-
-  return SouthEastGravity;
-}
-/*void
-xhints(void) {
-  XWMHints wm = {.flags = InputHint, .input = 1};
-  XSizeHints *sizeh = XAllocSizeHints();
-  sizeh->flags = PSize | PResizeInc | PBaseSize | PMinSize;
-  sizeh->height = win.h;
-  sizeh->width = win.w;
-  sizeh->height_inc = win.ch;
-  sizeh->width_inc = win.cw;
-  sizeh->base_height = 2 * borderpx;
-  sizeh->base_width = 2 * borderpx;
-  sizeh->min_height = win.ch + 2 * borderpx;
-  sizeh->min_width = win.cw + 2 * borderpx;
-  if (xw.isfixed) {
-    sizeh->flags |= PMaxSize;
-    sizeh->min_width = sizeh->max_width = win.w;
-    sizeh->min_height = sizeh->max_height = win.h;
-  }
-  if (xw.gm & (XValue|YValue)) {
-    sizeh->flags |= USPosition | PWinGravity;
-    sizeh->x = xw.l;
-    sizeh->y = xw.t;
-    sizeh->win_gravity = xgeommasktogravity(xw.gm);
-  }
-  XSetWMProperties(xw.dpy, xw.win, NULL, NULL, NULL, 0, sizeh, &wm, NULL);
-  XFree(sizeh);
-}*/
-
 void
 ttysend(const Arg *arg) {
   tellShell(arg->s, strlen(arg->s), 1);
@@ -2498,13 +2445,12 @@ xicCreateCb(xcb_xim_t *xim, xcb_xic_t newXic, void *userData) {
 void
 ximOpenCb(xcb_xim_t *xim, void *user_data) {
   uint32_t input_style = XCB_IM_PreeditPosition | XCB_IM_StatusArea;
-  xcb_point_t spot; spot.x = 0; spot.y = 0;
-  xcb_xim_nested_list nested =
-    xcb_xim_create_nested_list(xim, XCB_XIM_XNSpotLocation, &spot, NULL);
+  xcb_point_t p = {0};
+  xw.ime.spotL = xcb_xim_create_nested_list(xim, XCB_XIM_XNSpotLocation, &p,
+    NULL);
   xcb_xim_create_ic(xim, xicCreateCb, NULL, XCB_XIM_XNInputStyle,
     &input_style, XCB_XIM_XNClientWindow, &xw.win, XCB_XIM_XNFocusWindow,
-    &xw.win, XCB_XIM_XNPreeditAttributes, &nested, NULL);
-  free(nested.data);
+    &xw.win, XCB_XIM_XNPreeditAttributes, &xw.ime.spotL, NULL);
 }
 void
 xinit(int cols, int rows) {
