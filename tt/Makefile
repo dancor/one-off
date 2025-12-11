@@ -10,8 +10,8 @@ tt: tt.c printXev.h
 		-I/usr/include/sysprof-6 -pthread -I/usr/include/cairo \
 		-I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/pixman-1 \
 		-lpangocairo-1.0 -lpango-1.0 -lharfbuzz -lgobject-2.0 -lglib-2.0 -lcairo \
-		-lXext -lX11 -lXft $X -lfontconfig -o $@ $<
-rF: f
+		-lXext -lX11 -lXft $X -lfontconfig -lxcb-shm -o $@ $<
+rMa: ma
 	./$^
-f: flicker.c
-	$C -o $@ $^ -lxcb
+ma: makeAsciiH.c
+	$C -o $@ $^

@@ -37,6 +37,9 @@
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
+#include <sys/shm.h>
+#include <xcb/shm.h>
+#include <xcb/xcb_image.h>
 #if defined(__linux)
  #include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -125,6 +128,7 @@ typedef struct {xcb_connection_t *c; Display *dpy; xcb_screen_t *scr;
     // offset, geometry mask
   struct {xcb_atom_t clipboard, targets, text, utf8string,
     wmDeleteWindow, wmIconName, wmName, wmProtocols, xembed;} atom;
+  uint8_t *shm; xcb_gcontext_t gc; xcb_shm_seg_t seg;
 } XWindow; XWindow xw;
 void
 die(const char *errstr, ...) {
@@ -457,7 +461,6 @@ char **opt_cmd  = NULL, *opt_class = NULL, *opt_embed = NULL, *opt_line = NULL,
   *opt_name = NULL, *opt_title = NULL;
 uint buttons; // bit field of pressed buttons
 
-typedef struct {size_t collen; GC gc;} DC; DC dc; // Drawing Context
 typedef struct { // Purely graphic info
   int tw, th, // tty width and height
   w, h, // window width and height
@@ -1135,16 +1138,41 @@ xclear(void) {
   cairo_set_source_rgb(xw.cairo, b.r*oneDiv255, b.g*oneDiv255, b.b*oneDiv255);
   cairo_rectangle(xw.cairo, 0, 0, win.w, win.h);
 }
+#define shmN 16
+int shmI = 0;
 void
-xPrintUtf8seg(char *utf8, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
+xPrintUtf8seg(char *u, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
     int isBold, int isItalic, int width) {
-  //printf("utf8seg[%s]\n", utf8);
   Rgb f, b; if (likely(!IS_TRUECOL(fg))) f = palette[fg];
   else {f.r = TRUERED(fg); f.g = TRUEGREEN(fg); f.b = TRUEBLUE(fg);}
   if (likely(!IS_TRUECOL(bg))) b = palette[bg];
   else {b.r = TRUERED(bg); b.g = TRUEGREEN(bg); b.b = TRUEBLUE(bg);}
   int rectX = borderpx + x1 * win.cw, rectY = borderpx + y * win.ch,
       rectW = width * win.cw;
+  //if (likely(!u[1] && *u >= 32 && *u <= 126)) {
+  if (likely(!u[1] && *u >= 48 && *u <= 57)) {
+    const u1t *f = aFont + 16 * (*u - 32);
+    u1t *p = xw.shm + 512 * shmI; int v;
+    for (int y = 0; y < 16; y++) {
+      v = (*f & 128) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++; // RGB_
+      v = (*f &  64) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
+      v = (*f &  32) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
+      v = (*f &  16) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
+      v = (*f &   8) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
+      v = (*f &   4) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
+      v = (*f &   2) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
+      v = (*f &   1) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++; f++;
+    }
+    //printf("p - xw.shm: %zi\n", p - xw.shm);
+    printf("rectX:%i rectY:%i\n", rectX, rectY);
+    xcb_shm_put_image(xw.c, xw.win, xw.gc, 8, 16*shmN, 0, 16*shmI, 8, 16,
+      rectX, rectY, 24, XCB_IMAGE_FORMAT_Z_PIXMAP, 0, xw.seg, 0);
+    xcb_flush(xw.c);
+    shmI = (shmI + 1) % 16;
+    return;
+    //xcb_shm_put_image(xw.c, xw.win, xw.gc, 8, 16, 0, 0, 8, 16, rectX, rectY,
+    //  24, XCB_IMAGE_FORMAT_Z_PIXMAP, 0, xw.seg, 0); xcb_flush(xw.c);
+  }
   cairo_save(xw.cairo);
   cairo_set_source_rgb(xw.cairo, b.r*oneDiv255, b.g*oneDiv255, b.b*oneDiv255);
   cairo_rectangle(xw.cairo, rectX, rectY, rectW, win.ch);
@@ -1152,7 +1180,7 @@ xPrintUtf8seg(char *utf8, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
   cairo_rectangle(xw.cairo, rectX, rectY, rectW, win.ch);
   cairo_clip(xw.cairo);
   cairo_set_source_rgb(xw.cairo, f.r*oneDiv255, f.g*oneDiv255, f.b*oneDiv255);
-  pango_layout_set_text(xw.layout, utf8, -1);
+  pango_layout_set_text(xw.layout, u, -1);
   if (unlikely(isBold && !xw.isBold)) {xw.isBold = 1;
     pango_font_description_set_weight(xw.fontD, PANGO_WEIGHT_BOLD);}
   if (unlikely(!isBold && xw.isBold)) {xw.isBold = 0;
@@ -1164,7 +1192,6 @@ xPrintUtf8seg(char *utf8, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
   pango_layout_set_font_description(xw.layout, xw.fontD);
   int textH; pango_layout_get_size(xw.layout, NULL, &textH); textH /= 1024;
   cairo_move_to(xw.cairo, rectX, rectY + win.ch/2 - textH/2);
-  //cairo_move_to(xw.cairo, rectX, rectY);
   pango_cairo_show_layout(xw.cairo, xw.layout);
   cairo_restore(xw.cairo);
 }
@@ -1977,10 +2004,6 @@ void
 xresize(int col, int row) {
   win.tw = col * win.cw; win.th = row * win.ch; cairo_destroy(xw.cairo);
   cairo_surface_destroy(xw.cairoSurf);
-  //XFreePixmap(xw.dpy, xw.pbuf);
-  //xw.pbuf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h, DefaultDepth(xw.dpy,
-  //  xw.scr));
-  //xclear();
   xw.cairoSurf = cairo_xcb_surface_create(xw.c, xw.win, xw.vis, win.w, win.h);
   xw.cairo = cairo_create(xw.cairoSurf);
   xw.layout = pango_cairo_create_layout(xw.cairo);
@@ -2452,11 +2475,12 @@ ximOpenCb(xcb_xim_t *xim, void *user_data) {
     &input_style, XCB_XIM_XNClientWindow, &xw.win, XCB_XIM_XNFocusWindow,
     &xw.win, XCB_XIM_XNPreeditAttributes, &xw.ime.spotL, NULL);
 }
+#define chW 8
+#define chH 16
 void
 xinit(int cols, int rows) {
   xcb_compound_text_init(); // For me fcitx5 likes compound, not direct utf8.
   xcb_cursor_t cursor;
-  //pid_t thispid = getpid();
   int scrDefN; xw.c = eoz(xcb_connect(NULL, &scrDefN));
   xcb_screen_t *screen = xcb_aux_get_screen(xw.c, scrDefN); eoz(screen);
   const xcb_setup_t *setup = xcb_get_setup(xw.c);
@@ -2484,6 +2508,12 @@ xinit(int cols, int rows) {
   xcb_create_window(xw.c, xw.scr->root_depth, xw.win, xw.scr->root, 0, 0,
     win.w, win.h, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, xw.vis->visual_id,
     XCB_CW_EVENT_MASK, (uint32_t[]){xw.evMask});
+  
+  int shmId = shmget(IPC_PRIVATE, 8192, IPC_CREAT | 0600); // 8*16*4*16
+  xw.shm = shmat(shmId, NULL, 0); xw.seg = xcb_generate_id(xw.c);
+  xcb_shm_attach(xw.c, xw.seg, shmId, 0); xw.gc = xcb_generate_id(xw.c);
+  xcb_create_gc(xw.c, xw.gc, xw.scr->root, XCB_GC_GRAPHICS_EXPOSURES, 
+    (u4t[]){0}); xcb_flush(xw.c);
 
   xw.ime.xim = xcb_xim_create(xw.c, scrDefN, NULL);
   xcb_xim_set_im_callback(xw.ime.xim, &callback, NULL);
@@ -2515,9 +2545,6 @@ xinit(int cols, int rows) {
   xw.atom.wmDeleteWindow = atom_ptrs[4]; xw.atom.wmIconName = atom_ptrs[5];
   xw.atom.wmName = atom_ptrs[6]; xw.atom.wmProtocols = atom_ptrs[7];
   xw.atom.xembed = atom_ptrs[8];
-  xcb_gcontext_t gc = xcb_generate_id(xw.c);
-  xcb_create_gc(xw.c, gc, xw.win, XCB_GC_GRAPHICS_EXPOSURES, (uint32_t[]){0});
-    // 0 means don't generate GraphicsExpose events
 
   xw.cairoSurf = cairo_xcb_surface_create(xw.c, xw.win, xw.vis, win.w, win.h);
   xw.cairo = cairo_create(xw.cairoSurf);
