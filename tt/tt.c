@@ -1138,7 +1138,8 @@ xclear(void) {
   cairo_set_source_rgb(xw.cairo, b.r*oneDiv255, b.g*oneDiv255, b.b*oneDiv255);
   cairo_rectangle(xw.cairo, 0, 0, win.w, win.h);
 }
-#define shmN 16
+//#define shmN 256 // seems to get hangs if page nvim up and down ~20times
+#define shmN 4095
 int shmI = 0;
 void
 xPrintUtf8seg(char *u, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
@@ -1149,26 +1150,36 @@ xPrintUtf8seg(char *u, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
   else {b.r = TRUERED(bg); b.g = TRUEGREEN(bg); b.b = TRUEBLUE(bg);}
   int rectX = borderpx + x1 * win.cw, rectY = borderpx + y * win.ch,
       rectW = width * win.cw;
-  //if (likely(!u[1] && *u >= 32 && *u <= 126)) {
-  if (likely(!u[1] && *u >= 48 && *u <= 57)) {
-    const u1t *f = aFont + 16 * (*u - 32);
-    u1t *p = xw.shm + 512 * shmI; int v;
+  if (likely(!u[1] && *u >= 32 && *u <= 126)) {
+  //if (likely(!u[1] && *u >= 48 && *u <= 57)) {
+    const u1t *a = aFont + 16 * (*u - 32);
+    u1t *p = xw.shm + 512 * shmI;
     for (int y = 0; y < 16; y++) {
-      v = (*f & 128) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++; // RGB_
-      v = (*f &  64) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
-      v = (*f &  32) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
-      v = (*f &  16) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
-      v = (*f &   8) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
-      v = (*f &   4) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
-      v = (*f &   2) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++;
-      v = (*f &   1) ? 0 : 255; *p++ = v; *p++ = v; *p++ = v; p++; f++;
+      //*p++ = (*a & 128) ? f.r : b.r; *p++ = (*a & 128) ? f.g : b.g;
+      //*p++ = (*a & 128) ? f.b : b.b; p++;
+      if (*a & 128) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &  64) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &  32) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &  16) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &   8) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &   4) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &   2) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
+      if (*a &   1) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
+      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++; a++;
     }
-    //printf("p - xw.shm: %zi\n", p - xw.shm);
-    printf("rectX:%i rectY:%i\n", rectX, rectY);
+    //debug("p - xw.shm: %zi\n", p - xw.shm);
+    //debug("rectX:%i rectY:%i\n", rectX, rectY);
     xcb_shm_put_image(xw.c, xw.win, xw.gc, 8, 16*shmN, 0, 16*shmI, 8, 16,
       rectX, rectY, 24, XCB_IMAGE_FORMAT_Z_PIXMAP, 0, xw.seg, 0);
     xcb_flush(xw.c);
-    shmI = (shmI + 1) % 16;
+    shmI = (shmI + 1) % shmN;
     return;
     //xcb_shm_put_image(xw.c, xw.win, xw.gc, 8, 16, 0, 0, 8, 16, rectX, rectY,
     //  24, XCB_IMAGE_FORMAT_Z_PIXMAP, 0, xw.seg, 0); xcb_flush(xw.c);
@@ -2509,7 +2520,7 @@ xinit(int cols, int rows) {
     win.w, win.h, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, xw.vis->visual_id,
     XCB_CW_EVENT_MASK, (uint32_t[]){xw.evMask});
   
-  int shmId = shmget(IPC_PRIVATE, 8192, IPC_CREAT | 0600); // 8*16*4*16
+  int shmId = shmget(IPC_PRIVATE, 8*16*4*shmN, IPC_CREAT | 0600);
   xw.shm = shmat(shmId, NULL, 0); xw.seg = xcb_generate_id(xw.c);
   xcb_shm_attach(xw.c, xw.seg, shmId, 0); xw.gc = xcb_generate_id(xw.c);
   xcb_create_gc(xw.c, xw.gc, xw.scr->root, XCB_GC_GRAPHICS_EXPOSURES, 
