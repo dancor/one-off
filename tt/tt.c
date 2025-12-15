@@ -1,8 +1,9 @@
 #include "i.h"
 #include "ascii.h"
-// for setenv(), unsetenv() & pselect() from stdlib.h:
-//#define _POSIX_C_SOURCE 200112L
-#include <X11/Xutil.h>
+#include <X11/Xutil.h> // KeySym via X.h, Display, XKeyEvent, True, False,
+  // DefaultRootWindow(), XLookupString(), XOpenDisplay(), XParseGeometry(),
+  // XSetLocaleModifiers()
+#include <X11/X.h>
 #include <X11/keysym.h>
 #include <cairo/cairo-xcb.h>
 #include <cairo/cairo.h>
@@ -2266,40 +2267,6 @@ handleMouseNotify(xcb_generic_event_t *e) {
     mousereport(e); return;}
   mousesel(e, 0);
 }
-/*int
-xicdestroy(XIC xim, XPointer client, XPointer call) {
-  xw.ime.xic = NU; return 1;
-}
-int ximopen(Display *dpy); // -> ximdestroy -> ximinstantiate -> ximopen
-
-void
-ximinstantiate(Display *dpy, XPointer client, XPointer call) {
-  if (ximopen(dpy)) XUnregisterIMInstantiateCallback(xw.dpy, NULL, NULL, NULL,
-    ximinstantiate, NULL);
-}
-void
-ximdestroy(XIM xim, XPointer client, XPointer call) {
-  xw.ime.xim = NULL;
-  XRegisterIMInstantiateCallback(xw.dpy, NULL, NULL, NULL, ximinstantiate,
-    NULL);
-  XFree(xw.ime.spotlist);
-}
-int
-ximopen(Display *dpy) {
-  XIMCallback imdestroy = {.client_data = NULL, .callback = ximdestroy};
-  XICCallback icdestroy = {.client_data = NULL, .callback = xicdestroy};
-  xw.ime.xim = XOpenIM(xw.dpy, NULL, NULL, NULL);
-  if (xw.ime.xim == NULL) {fprintf(stderr, "XOpenIM failed\n"); return 0;}
-  if (XSetIMValues(xw.ime.xim, XNDestroyCallback, &imdestroy, NULL))
-    fprintf(stderr, "XSetIMValues: Could not set XNDestroyCallback.\n");
-  xw.ime.spotlist = XVaCreateNestedList(0, XNSpotLocation, &xw.ime.spot, NULL);
-  if (!xw.ime.xic) xw.ime.xic = XCreateIC(xw.ime.xim, XNInputStyle,
-    XIMPreeditNothing | XIMStatusNothing, XNClientWindow, xw.win,
-    XNFocusWindow, xw.win, XNDestroyCallback, &icdestroy, NULL);
-    // added XNFocusWindow, xw.win trying to get XIM to work
-  if (!xw.ime.xic) fprintf(stderr, "XCreateIC failed\n");
-  return 1;
-}*/
 void
 xsetenv(void) {
   char buf[sizeof(long) * 8 + 1]; snprintf(buf, sizeof(buf), "%u", xw.win);
@@ -2441,7 +2408,7 @@ ximDebugLogger(const char *fmt, ...) {
 }*/
 void
 ximForwardEvCb(xcb_xim_t*, xcb_xic_t, xcb_key_press_event_t *e, void*) {
-  //debug("ximForwardEvCb calling kpress\n");
+  debug("ximForwardEvCb calling kpress\n");
   kpress((xcb_generic_event_t*)e);
 }
 void

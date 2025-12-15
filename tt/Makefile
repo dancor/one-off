@@ -1,18 +1,14 @@
 .phony: rF
 C=gcc -O3 -Wall -Werror -ffast-math -fmax-errors=1 -fomit-frame-pointer \
 	-march=native
-X=-lxcb -lxcb-cursor -lxcb-keysyms -lxcb-imdkit -lxcb-util
 d: d.c
 	$C -I/usr/include/drm -ldrm -lxcb -lxcb-dri3 -lxcb-present -o $@ $<
 tt: tt.c printXev.h
-	$C "-L$HOME/.local/lib" "-Wl,-rpath,$HOME/.local/lib" \
-		-lunistring -I/usr/include/pango-1.0 -I/usr/include/libmount \
-		-I/usr/include/blkid -I/usr/include/fribidi -I/usr/include/harfbuzz \
-		-I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include \
-		-I/usr/include/sysprof-6 -pthread -I/usr/include/cairo \
-		-I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/pixman-1 \
-		-lpangocairo-1.0 -lpango-1.0 -lharfbuzz -lgobject-2.0 -lglib-2.0 -lcairo \
-		-lXext -lX11 -lXft $X -lfontconfig -lxcb-shm -o $@ $<
+	$C -I/usr/include/cairo -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include\
+		-I/usr/include/harfbuzz -I/usr/include/pango-1.0 "-L${HOME}/.local/lib"\
+		"-Wl,-rpath,${HOME}/.local/lib" -lX11 -lXext -lcairo -lharfbuzz\
+		-lpango-1.0 -lpangocairo-1.0 -lunistring -lxcb -lxcb-cursor -lxcb-imdkit\
+		-lxcb-keysyms -lxcb-shm -lxcb-util -o $@ $<
 rMa: ma
 	./$^
 ma: makeAsciiH.c
