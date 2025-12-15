@@ -1,20 +1,4 @@
-/*static void
-hexdump_event(const xcb_generic_event_t *ev, FILE *out)
-{
-  return;
-  const uint32_t *words = (const uint32_t *)ev;
-  int nBytes = words[1] * 4;
-  const uint8_t *p = (const uint8_t *)ev;
-  fprintf(out, "  raw (%d bytes):", nBytes);
-  for (int i = 0; i < nBytes; ++i) {
-    if (i % 8 == 0) fprintf(out, "\n    ");
-    fprintf(out, "%02x ", p[i]);
-  }
-  fprintf(out, "\n");
-}*/
-
-void
-printXev(const xcb_generic_event_t *ev, FILE *out) {
+void fprintXev(const xcb_generic_event_t *ev, FILE *out) {
   if (!ev || !out) return;
   uint8_t evTyp = ev->response_type & 0x7f;
   switch (evTyp) {
@@ -492,3 +476,4 @@ printXev(const xcb_generic_event_t *ev, FILE *out) {
     break;}
   default: fprintf(out, "Unknown core event (opcode %u)\n", evTyp);}
 }
+void printXev(const xcb_generic_event_t *e) {fprintXev(e, stdout);}
