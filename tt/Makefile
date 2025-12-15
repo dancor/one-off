@@ -2,6 +2,8 @@
 C=gcc -O3 -Wall -Werror -ffast-math -fmax-errors=1 -fomit-frame-pointer \
 	-march=native
 X=-lxcb -lxcb-cursor -lxcb-keysyms -lxcb-imdkit -lxcb-util
+d: d.c
+	$C -I/usr/include/drm -ldrm -lxcb -lxcb-dri3 -lxcb-present -o $@ $<
 tt: tt.c printXev.h
 	$C "-L$HOME/.local/lib" "-Wl,-rpath,$HOME/.local/lib" \
 		-lunistring -I/usr/include/pango-1.0 -I/usr/include/libmount \

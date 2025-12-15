@@ -250,8 +250,7 @@ getsel(void) {
   *ptr = 0;
   return str;
 }
-char *font = "Liberation Mono:pixelsize=14:antialias=true:autohint=true",
-  *shell = "/bin/sh", // if not in -e nor $SHELL nor /etc/passwd
+char *shell = "/bin/sh", // if not in -e nor $SHELL nor /etc/passwd
   *stty_args = "stty raw pass8 nl -echo -iexten -cstopb 38400",
   *termname = "st-256color", // $TERM
   *sayMy2027mode = "\x1b[?2027;3$y",
@@ -1150,7 +1149,8 @@ xPrintUtf8seg(char *u, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
   else {b.r = TRUERED(bg); b.g = TRUEGREEN(bg); b.b = TRUEBLUE(bg);}
   int rectX = borderpx + x1 * win.cw, rectY = borderpx + y * win.ch,
       rectW = width * win.cw;
-  if (likely(!u[1] && *u >= 32 && *u <= 126)) {
+  if (0) {
+  //if (likely(!isBold && !isItalic && !u[1] && *u >= 32 && *u <= 126)) {
   //if (likely(!u[1] && *u >= 48 && *u <= 57)) {
     const u1t *a = aFont + 16 * (*u - 32);
     u1t *p = xw.shm + 512 * shmI;
@@ -2012,23 +2012,21 @@ numlock(const Arg *dummy) {
   win.mode ^= MODE_NUMLOCK;
 }
 void
-xresize(int col, int row) {
-  win.tw = col * win.cw; win.th = row * win.ch; cairo_destroy(xw.cairo);
-  cairo_surface_destroy(xw.cairoSurf);
-  xw.cairoSurf = cairo_xcb_surface_create(xw.c, xw.win, xw.vis, win.w, win.h);
-  xw.cairo = cairo_create(xw.cairoSurf);
-  xw.layout = pango_cairo_create_layout(xw.cairo);
-  xw.fontD = pango_font_description_from_string("Liberation Mono 10.5");
-  xw.isBold = 0; xw.isItalic = 0;
-}
-void
 cresize(int width, int height) {
   if (width != 0) win.w = width;
   if (height != 0) win.h = height;
   int col = MAX(1, (win.w - 2 * borderpx) / win.cw),
       row = MAX(1, (win.h - 2 * borderpx) / win.ch);
   tresize(col, row);
-  xresize(col, row);
+  
+  win.tw = col * win.cw; win.th = row * win.ch; cairo_destroy(xw.cairo);
+  cairo_surface_destroy(xw.cairoSurf);
+  xw.cairoSurf = cairo_xcb_surface_create(xw.c, xw.win, xw.vis, win.w, win.h);
+  xw.cairo = cairo_create(xw.cairoSurf);
+  xw.layout = pango_cairo_create_layout(xw.cairo);
+  xw.fontD = pango_font_description_from_string("Liberation Mono 10.5");
+  xw.isBold = 0; xw.isItalic = 0; // why does resize reset these?
+  
   ttyresize(win.tw, win.th);
 }
 void
