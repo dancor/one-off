@@ -3,7 +3,6 @@
 #include <X11/Xutil.h> // KeySym via X.h, Display, XKeyEvent, True, False,
   // DefaultRootWindow(), XLookupString(), XOpenDisplay(), XParseGeometry(),
   // XSetLocaleModifiers()
-#include <X11/X.h>
 #include <X11/keysym.h>
 #include <cairo/cairo-xcb.h>
 #include <cairo/cairo.h>
@@ -24,6 +23,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
+#include <sys/shm.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -34,13 +34,12 @@
 #include <uniwidth.h>
 #include <xcb-imdkit/encoding.h>
 #include <xcb-imdkit/imclient.h>
+#include <xcb/shm.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_cursor.h>
-#include <xcb/xcb_keysyms.h>
-#include <sys/shm.h>
-#include <xcb/shm.h>
 #include <xcb/xcb_image.h>
+#include <xcb/xcb_keysyms.h>
 #if defined(__linux)
  #include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -107,14 +106,6 @@ typedef struct {KeySym k; uint mask; char *s; signed char appkey, appcursor;}
   Key; // application keypad and cursor: 0 indifferent, 1 on, -1 off
 void tputc(char*); // twrite calls tputc calls tcontrolcode calls strhandle
   // calls osc_color_response calls tellShell calls twrite
-
-// X modifiers
-#define XK_ANY_MOD UINT_MAX
-#define XK_NO_MOD 0
-#define XK_SWITCH_MOD (1<<13|1<<14)
-
-const uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
-const uchar utfmask[UTF_SIZ + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
 
 typedef struct {Atom xtarget; char *primary, *clipboard;
   struct timespec tclick1, tclick2;} XSelection; XSelection xsel;
@@ -286,16 +277,18 @@ char *argv0;
      (argv[0][i_+1] != '\0') ? (&argv[0][i_+1]) : (argc--, argv++, argv[0])))
 #define ARGEND }}
 
-// State bits to ignore when matching key or button events.  By default,
-// numlock (Mod2Mask) and keyboard layout (XK_SWITCH_MOD) are ignored
-uint ignoremod = Mod2Mask | XK_SWITCH_MOD;
+// State bits to ignore when matching key or button events:
+// numlock (Mod2Mask) and keyboard layout (1 << 13 | 1 << 14)
+uint ignoremod = Mod2Mask | 1 << 13 | 1 << 14;
 
 // changing any of these breaks things with the linux world & you have to
 // recompile tt.info accordingly. they are searched sequentially so XK_ANY_MOD
-// must last. Use XK_ANY_MOD mask to match the key no matter modifiers state.
-// Use XK_NO_MOD mask to match the key alone (no modifiers).
+// must be last. XK_ANY_MOD matches a key no matter the modifiers state.
+// Use XK_NO_MOD mask to only match the key with no modifiers.
 // key pad application mode: 0 no value, >0 enabled (2: numlock=1), <0 disabled
 // cursor application mode: 0 no values, 1 enabled, -1 disabled
+#define XK_NO_MOD 0
+#define XK_ANY_MOD UINT_MAX
 Key ksymsFunnyInTerms[] = {
 {XK_KP_Home,ShiftMask,"\x1b[2J",0,-1},{XK_KP_Home,ShiftMask,"\x1b[1;2H",0,1},
 {XK_KP_Home,XK_ANY_MOD,"\x1b[H",0,-1},{XK_KP_Home,XK_ANY_MOD,"\x1b[1~",0,1},
@@ -1150,9 +1143,9 @@ xPrintUtf8seg(char *u, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
   else {b.r = TRUERED(bg); b.g = TRUEGREEN(bg); b.b = TRUEBLUE(bg);}
   int rectX = borderpx + x1 * win.cw, rectY = borderpx + y * win.ch,
       rectW = width * win.cw;
-  if (0) {
-  //if (likely(!isBold && !isItalic && !u[1] && *u >= 32 && *u <= 126)) {
+  //if (0) {
   //if (likely(!u[1] && *u >= 48 && *u <= 57)) {
+  if (likely(!isBold && !isItalic && !u[1] && *u >= 32 && *u <= 126)) {
     const u1t *a = aFont + 16 * (*u - 32);
     u1t *p = xw.shm + 512 * shmI;
     for (int y = 0; y < 16; y++) {
@@ -2408,7 +2401,7 @@ ximDebugLogger(const char *fmt, ...) {
 }*/
 void
 ximForwardEvCb(xcb_xim_t*, xcb_xic_t, xcb_key_press_event_t *e, void*) {
-  debug("ximForwardEvCb calling kpress\n");
+  //debug("ximForwardEvCb calling kpress\n");
   kpress((xcb_generic_event_t*)e);
 }
 void
