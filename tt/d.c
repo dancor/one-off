@@ -9,7 +9,6 @@ const uint winW = 720, winH = 800;
 const uint8_t bpp = 32;
 uint32_t drmPitch;
 void *pixBuf;
-int primeFd;
 uint8_t xcbDepth;
 xcb_connection_t *xcbC;
 xcb_window_t win;
@@ -35,6 +34,7 @@ void prepDrm() {
     map.offset);
   if (MAP_FAILED == pixBuf) die("mmap dumb buffer");
   
+  int primeFd;
   if (drmPrimeHandleToFD(drmFd, map.handle, DRM_CLOEXEC, &primeFd) < 0)
     die("drmPrimeHandleToFD");
   

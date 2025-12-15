@@ -23,7 +23,6 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
-#include <sys/shm.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -34,12 +33,13 @@
 #include <uniwidth.h>
 #include <xcb-imdkit/encoding.h>
 #include <xcb-imdkit/imclient.h>
-#include <xcb/shm.h>
+#include <xcb/present.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_image.h>
 #include <xcb/xcb_keysyms.h>
+#include <xf86drm.h>
 #if defined(__linux)
  #include <pty.h>
 #elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
@@ -85,6 +85,7 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef unsigned short ushort;
 typedef struct {uint8_t r, g, b;} Rgb;
+const int bpp = 32;
 Rgb palette[260] = {
   {  0,  0,  0},{205,  0,  0},{  0,205,  0},{205,205,  0},
   {  0,  0,205},{205,  0,205},{  0,205,205},{229,229,229},
@@ -120,7 +121,7 @@ typedef struct {xcb_connection_t *c; Display *dpy; xcb_screen_t *scr;
     // offset, geometry mask
   struct {xcb_atom_t clipboard, targets, text, utf8string,
     wmDeleteWindow, wmIconName, wmName, wmProtocols, xembed;} atom;
-  uint8_t *shm; xcb_gcontext_t gc; xcb_shm_seg_t seg;
+  xcb_gcontext_t gc; u2t stride; u4t *pixBuf; xcb_pixmap_t pixmap;
 } XWindow; XWindow xw;
 void
 die(const char *errstr, ...) {
@@ -1126,57 +1127,33 @@ tinsertblankline(int n) {
   if (BETWEEN(term.c.y, term.top, term.bot)) tscrolldown(term.c.y, n);
 }
 void
-xclear(void) {
-  Rgb b = palette[bgPalI];
-  cairo_set_source_rgb(xw.cairo, b.r*oneDiv255, b.g*oneDiv255, b.b*oneDiv255);
-  cairo_rectangle(xw.cairo, 0, 0, win.w, win.h);
-}
-//#define shmN 256 // seems to get hangs if page nvim up and down ~20times
-#define shmN 4095
-int shmI = 0;
-void
 xPrintUtf8seg(char *u, int x1, int xOver, int y, uint32_t fg, uint32_t bg,
-    int isBold, int isItalic, int width) {
+    int isBold, int isItalic, int chWidth1or2) {
   Rgb f, b; if (likely(!IS_TRUECOL(fg))) f = palette[fg];
   else {f.r = TRUERED(fg); f.g = TRUEGREEN(fg); f.b = TRUEBLUE(fg);}
   if (likely(!IS_TRUECOL(bg))) b = palette[bg];
   else {b.r = TRUERED(bg); b.g = TRUEGREEN(bg); b.b = TRUEBLUE(bg);}
   int rectX = borderpx + x1 * win.cw, rectY = borderpx + y * win.ch,
-      rectW = width * win.cw;
+      rectW = chWidth1or2 * win.cw;
   //if (0) {
   //if (likely(!u[1] && *u >= 48 && *u <= 57)) {
   if (likely(!isBold && !isItalic && !u[1] && *u >= 32 && *u <= 126)) {
     const u1t *a = aFont + 16 * (*u - 32);
-    u1t *p = xw.shm + 512 * shmI;
+    u4t *p = xw.pixBuf + rectX + xw.stride * rectY;
+    const u4t fC = 256 * (256 * f.r + f.g) + f.b,
+      bC = 256 * (256 * b.r + b.g) + b.b;
     for (int y = 0; y < 16; y++) {
-      //*p++ = (*a & 128) ? f.r : b.r; *p++ = (*a & 128) ? f.g : b.g;
-      //*p++ = (*a & 128) ? f.b : b.b; p++;
-      if (*a & 128) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &  64) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &  32) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &  16) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &   8) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &   4) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &   2) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++;
-      if (*a &   1) {*p++ = f.r; *p++ = f.g; *p++ = f.b;}
-      else {*p++ = b.r; *p++ = b.g; *p++ = b.b;} p++; a++;
+      *p++ = (*a & 128) ? fC : bC;
+      *p++ = (*a &  64) ? fC : bC;
+      *p++ = (*a &  32) ? fC : bC;
+      *p++ = (*a &  16) ? fC : bC;
+      *p++ = (*a &   8) ? fC : bC;
+      *p++ = (*a &   4) ? fC : bC;
+      *p++ = (*a &   2) ? fC : bC;
+      *p++ = (*a++ & 1) ? fC : bC;
+      p += xw.stride - 8;
     }
-    //debug("p - xw.shm: %zi\n", p - xw.shm);
-    //debug("rectX:%i rectY:%i\n", rectX, rectY);
-    xcb_shm_put_image(xw.c, xw.win, xw.gc, 8, 16*shmN, 0, 16*shmI, 8, 16,
-      rectX, rectY, 24, XCB_IMAGE_FORMAT_Z_PIXMAP, 0, xw.seg, 0);
-    xcb_flush(xw.c);
-    shmI = (shmI + 1) % shmN;
     return;
-    //xcb_shm_put_image(xw.c, xw.win, xw.gc, 8, 16, 0, 0, 8, 16, rectX, rectY,
-    //  24, XCB_IMAGE_FORMAT_Z_PIXMAP, 0, xw.seg, 0); xcb_flush(xw.c);
   }
   cairo_save(xw.cairo);
   cairo_set_source_rgb(xw.cairo, b.r*oneDiv255, b.g*oneDiv255, b.b*oneDiv255);
@@ -1255,7 +1232,10 @@ xPrintLine(int x, int xOver, int y, Glyph g) // assumes xOver > x1
   for (;; xCur++) {
     if (unlikely(xCur >= xOver)) { // print the final segment
       *utf8p = 0; xPrintUtf8seg(utf8, x, xOver, y, gFg, gBg, gIsBold,
-        gIsItalic, width); return;
+        gIsItalic, width);
+      xcb_present_pixmap(xw.c, xw.win, xw.pixmap, 0, 0, 0, 0, 0, 0, 0, 0,
+        XCB_PRESENT_OPTION_ASYNC_MAY_TEAR, 0, 0, 0, 0, 0); xcb_flush(xw.c);
+      return;
     }
     Glyph gCur = line[xCur];
     // skip the dummy spacer after a wide character
@@ -2474,15 +2454,44 @@ xinit(int cols, int rows) {
     XCB_EVENT_MASK_VISIBILITY_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
     XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_BUTTON_PRESS |
     XCB_EVENT_MASK_BUTTON_RELEASE;
-  xcb_create_window(xw.c, xw.scr->root_depth, xw.win, xw.scr->root, 0, 0,
+  uint8_t xcbDepth = screen->root_depth;
+  xcb_create_window(xw.c, xcbDepth, xw.win, xw.scr->root, 0, 0,
     win.w, win.h, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, xw.vis->visual_id,
     XCB_CW_EVENT_MASK, (uint32_t[]){xw.evMask});
   
-  int shmId = shmget(IPC_PRIVATE, 8*16*4*shmN, IPC_CREAT | 0600);
-  xw.shm = shmat(shmId, NULL, 0); xw.seg = xcb_generate_id(xw.c);
-  xcb_shm_attach(xw.c, xw.seg, shmId, 0); xw.gc = xcb_generate_id(xw.c);
+  // DRI3
+  int drmFd = open("/dev/dri/card1", O_RDWR | O_CLOEXEC);
+  if (drmFd < 0) die("open /dev/dri/card1");
+  struct drm_mode_create_dumb bufDat = {0};
+  bufDat.width = win.w;
+  bufDat.height = win.h;
+  bufDat.bpp = bpp;
+  if (drmIoctl(drmFd, DRM_IOCTL_MODE_CREATE_DUMB, &bufDat) < 0)
+    die("DRM_IOCTL_MODE_CREATE_DUMB");
+  struct drm_mode_map_dumb map = {0};
+  map.handle = bufDat.handle;
+  if (drmIoctl(drmFd, DRM_IOCTL_MODE_MAP_DUMB, &map) < 0)
+    die("DRM_IOCTL_MODE_MAP_DUMB");
+  xw.pixBuf = mmap(0, bufDat.size, PROT_READ | PROT_WRITE, MAP_SHARED, drmFd,
+    map.offset);
+  if (MAP_FAILED == xw.pixBuf) die("mmap dumb buffer");
+  int primeFd;
+  if (drmPrimeHandleToFD(drmFd, map.handle, DRM_CLOEXEC, &primeFd) < 0)
+    die("drmPrimeHandleToFD");
+  xw.pixmap = xcb_generate_id(xw.c);
+  uint16_t stride = (uint16_t)bufDat.pitch;
+  xcb_void_cookie_t pixmapCoo = xcb_dri3_pixmap_from_buffer(xw.c, xw.pixmap,
+    xw.win, win.w * win.h * bpp, win.w, win.h, stride, xcbDepth, bpp, primeFd);
+  xcb_generic_error_t *err = xcb_request_check(xw.c, pixmapCoo);
+  if (err) {
+    fprintf(stderr, "DRI3 pixmap_from_buffers failed (error %d)\n",
+      err->error_code);
+    die("");
+  }
   xcb_create_gc(xw.c, xw.gc, xw.scr->root, XCB_GC_GRAPHICS_EXPOSURES, 
-    (u4t[]){0}); xcb_flush(xw.c);
+    (u4t[]){0});
+  xcb_flush(xw.c);
+  xw.stride = stride / 4;
 
   xw.ime.xim = xcb_xim_create(xw.c, scrDefN, NULL);
   xcb_xim_set_im_callback(xw.ime.xim, &callback, NULL);
