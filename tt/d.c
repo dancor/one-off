@@ -68,6 +68,10 @@ int main(void) {
   xcb_create_window(xcbC, xcbDepth, win, xcbS->root, 0, 0, winW, winH, 0,
     XCB_WINDOW_CLASS_INPUT_OUTPUT, xcbS->root_visual, XCB_CW_EVENT_MASK,
     (uint32_t[]){XCB_EVENT_MASK_EXPOSURE});
+  /*xcb_create_window(xcbC, xcbDepth, win, xcbS->root, 0, 0, winW, winH, 0,
+    XCB_WINDOW_CLASS_INPUT_OUTPUT, xcbS->root_visual, XCB_CW_BACK_PIXEL |
+    XCB_CW_EVENT_MASK, (uint32_t[]){xcbS->white_pixel, XCB_EVENT_MASK_EXPOSURE}
+    );*/
   xcb_map_window(xcbC, win); xcb_flush(xcbC);
   prepDrm();
   // If your window isn't visible at all, no need to xcb_present_pixmap().
