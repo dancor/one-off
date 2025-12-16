@@ -11,9 +11,9 @@ def doLig(lig, gly1cp):
     grapheme = "".join(map(chr, codepointSeq))
     u = "".join([f"\\u{c:04X}" for c in codepointSeq])
     print(f"{len(grapheme.encode('utf-8'))} {u} {grapheme}")
-for lookup_idx, lookup in enumerate(font['GSUB'].table.LookupList.Lookup):
+for lookup in font['GSUB'].table.LookupList.Lookup:
     if lookup.LookupType == 4: # Ligature Substitution
-        for subtable_idx, subtable in enumerate(lookup.SubTable):
+        for subtable in lookup.SubTable:
             if not hasattr(subtable, 'ligatures'): continue
             for name, ligList in subtable.ligatures.items():
                 if name not in revCmap: continue
