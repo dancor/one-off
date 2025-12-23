@@ -54,6 +54,8 @@
 #define DIVCEIL(n, d) (((n) + ((d) - 1)) / (d))
 #define ESC_ARG_SIZ 16
 #define ESC_BUF_SIZ (128*UTF_SIZ)
+#define ISCONTROL(c) (BETWEEN(c, 0, 0x1f) || (c) == 0x7f)
+#define IS_SET(flag) ((win.mode & (flag)) != 0)
 #define IS_TRUECOL(x) (1 << 24 & (x))
 #define LEN(a) (sizeof(a) / sizeof(a)[0])
 #define LIMIT(x, a, b) (x) = (x) < (a) ? (a) : (x) > (b) ? (b) : (x)
@@ -61,13 +63,17 @@
 #define STR_ARG_SIZ ESC_ARG_SIZ
 #define STR_BUF_SIZ ESC_BUF_SIZ
 #define TIMEDIFF(t1,t2)((t1.tv_sec-t2.tv_sec)*1000+(t1.tv_nsec-t2.tv_nsec)/1E6)
+#define TRUEBLUE(x) ((x) & 0xff)
 #define TRUECOLOR(r,g,b) (1 << 24 | (r) << 16 | (g) << 8 | (b))
+#define TRUEGREEN(x) (((x) & 0xff00) >> 8)
+#define TRUERED(x) (((x) & 0xff0000) >> 16)
+#define T_IS_SET(flag) ((term.mode & (flag)) != 0)
 #define UTF_INVALID 0xFFFD
 #define UTF_SIZ 4
+#define chH 16
+#define chW 8
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
-#define chW 8
-#define chH 16
 i4t drmFd;
 struct drm_mode_create_dumb dri3BufDat = {0};
 enum winMode {MODE_VISIBLE = 1, MODE_FOCUSED = 2, MODE_APPKEYPAD = 4,
@@ -124,126 +130,6 @@ typedef struct {xcb_connection_t *c; Display *dpy; xcb_screen_t *scr;
     wmDeleteWindow, wmIconName, wmName, wmProtocols, xembed;} atom;
   u2t stride; u4t *pixBuf; u4t pixBufByteN; xcb_pixmap_t pixmap;
 } XWindow; XWindow xw;
-void
-die(const char *errstr, ...) {
-  va_list ap; va_start(ap, errstr); vfprintf(stderr, errstr, ap); va_end(ap);
-  exit(1);
-}
-void
-debug(const char *errstr, ...) {
-  va_list ap; va_start(ap, errstr); vfprintf(stderr, errstr, ap); va_end(ap);
-}
-char*
-xstrdup(const char *s) {
-  char *p = strdup(s); if (!p) die("strdup: %s\n", strerror(errno));
-  return p;
-}
-void
-clipcopy(const Arg *dummy) {
-  free(xsel.clipboard); xsel.clipboard = NULL;
-  if (!xsel.primary) return;
-  xsel.clipboard = xstrdup(xsel.primary);
-  xcb_set_selection_owner(xw.c, xw.win, xw.atom.clipboard, XCB_CURRENT_TIME);
-  xcb_flush(xw.c);
-  xcb_get_selection_owner_cookie_t cookie = xcb_get_selection_owner(xw.c,   
-    xw.atom.clipboard);
-  xcb_get_selection_owner_reply_t *reply = xcb_get_selection_owner_reply(
-    xw.c, cookie, NULL);
-  if (!reply || reply->owner != xw.win)
-    fprintf(stderr, "clipcopy: Failed to become selection owner\n");
-  free(reply);
-}
-typedef struct {
-  Glyph attr; // current char attributes
-  i4t x, y; char state;} TCursor;
-typedef struct { // internal representation of the screen
-  i4t row; // number of rows
-  i4t col; // number of columns
-  Line *line; // screen
-  Line *alt; // alternate screen
-  i4t *dirty; // dirtyness of lines
-  TCursor c; // cursor
-  i4t ocx; // old cursor column
-  i4t ocy; // old cursor row
-  i4t top; // top scroll limit
-  i4t bot; // bottom scroll limit
-  i4t mode; // terminal mode flags
-  i4t esc; // escape state flags
-  char trantbl[4]; // charset table translation
-  i4t charset;  // current charset
-  i4t icharset; // selected charset for sequence
-} Term; Term term;
-enum termMode {MODE_WRAP=1, MODE_INSERT=2, MODE_ALTSCREEN=4, MODE_CRLF=8,
-  MODE_ECHO=16, MODE_PRINT=32};
-typedef struct {i4t mode, type, snap, alt; struct {i4t x, y;} nb, ne, ob, oe;
-  // nb: normalized coords of beginning of selection
-  // ne: normalized coords of end of selection
-  // ob: original coords of beginning of selection
-  // oe: original coords of end of selection
-} Selection; Selection sel;
-i4t
-isBlank(const char *c) {
-  return ' '==*c && !c[1];
-}
-void
-setBlank(char *u) {
-  *u = ' '; u[1] = 0;
-}
-i4t
-tlinelen(i4t y) {
-  i4t i = term.col; if (term.line[y][i - 1].mode & ATTR_WRAP) return i;
-  while (i > 0 && isBlank(term.line[y][i - 1].u)) i--;
-  return i;
-}
-ssize_t
-xwrite(i4t fd, const char *s, size_t len) {
-  size_t aux = len; ssize_t r;
-  while (len > 0) {
-    r = write(fd, s, len); if (r < 0) return r;
-    len -= r; s += r;
-  }
-  return aux;
-}
-void*
-xmalloc(size_t len) {
-  void *p = malloc(len);
-  if (!p) die("malloc: %s\n", strerror(errno));
-  return p;
-}
-char*
-getsel(void) {
-  char *str, *ptr;
-  i4t y, bufsize, lastx, linelen;
-  const Glyph *gp, *last;
-  if (sel.ob.x == -1) return NULL;
-  bufsize = (term.col + 1) * (sel.ne.y-sel.nb.y + 1) * UTF_SIZ;
-  ptr = str = xmalloc(bufsize);
-  // append every set & selected glyph to the selection
-  for (y = sel.nb.y; y <= sel.ne.y; y++) {
-    if ((linelen = tlinelen(y)) == 0) {*ptr++ = '\n'; continue;}
-    if (sel.type == SEL_RECTANGULAR) {
-      gp = &term.line[y][sel.nb.x]; lastx = sel.ne.x;
-    } else {
-      gp = &term.line[y][sel.nb.y == y ? sel.nb.x : 0];
-      lastx = sel.ne.y == y ? sel.ne.x : term.col - 1;
-    }
-    last = &term.line[y][MIN(lastx, linelen-1)];
-    while (last >= gp && isBlank(last->u)) --last;
-    for (; gp <= last; ++gp) {
-      if (gp->mode & ATTR_WDUMMY) continue;
-      if (likely(!gp->u[1])) *ptr++ = *gp->u;
-      else {const char *gpu = gp->u; do {*ptr++ = *gpu++;} while (*gpu);}
-    }
-    // Copy and pasting of line endings is inconsistent in the inconsistent
-    // terminal and GUI world. The best solution seems like to produce '\n'
-    // when something is copied from st and convert '\n' to '\r', when
-    // something to be pasted is received by st
-    if ((y < sel.ne.y || lastx >= linelen) && (!(last->mode & ATTR_WRAP) ||
-        sel.type == SEL_RECTANGULAR)) *ptr++ = '\n';
-  }
-  *ptr = 0;
-  return str;
-}
 char *shell = "/bin/sh", // if not in -e nor $SHELL nor /etc/passwd
   *stty_args = "stty raw pass8 nl -echo -iexten -cstopb 38400",
   *termname = "st-256color", // $TERM
@@ -417,11 +303,6 @@ Key ksymsFunnyInTerms[] = {
 // ButtonRelease and MotionNotify.
 // If no match is found, regular selection is used
 u4t selmasks[] = {[SEL_RECTANGULAR] = Mod1Mask};
-
-// macros
-#define T_IS_SET(flag) ((term.mode & (flag)) != 0)
-#define ISCONTROL(c) (BETWEEN(c, 0, 0x1f) || (c) == 0x7f)
-
 enum cursor_movement {CURSOR_SAVE, CURSOR_LOAD};
 enum cursor_state {CURSOR_DEFAULT, CURSOR_WRAPNEXT, CURSOR_ORIGIN};
 enum charset {CS_GRAPHIC0, CS_GRAPHIC1, CS_UK, CS_USA, CS_MULTI, CS_GER,
@@ -466,6 +347,126 @@ typedef struct { // Purely graphic info
 } TermWindow; TermWindow win;
 pid_t pid;
 
+void
+die(const char *errstr, ...) {
+  va_list ap; va_start(ap, errstr); vfprintf(stderr, errstr, ap); va_end(ap);
+  exit(1);
+}
+void
+debug(const char *errstr, ...) {
+  va_list ap; va_start(ap, errstr); vfprintf(stderr, errstr, ap); va_end(ap);
+}
+char*
+xstrdup(const char *s) {
+  char *p = strdup(s); if (!p) die("strdup: %s\n", strerror(errno));
+  return p;
+}
+void
+clipcopy(const Arg *dummy) {
+  free(xsel.clipboard); xsel.clipboard = NULL;
+  if (!xsel.primary) return;
+  xsel.clipboard = xstrdup(xsel.primary);
+  xcb_set_selection_owner(xw.c, xw.win, xw.atom.clipboard, XCB_CURRENT_TIME);
+  xcb_flush(xw.c);
+  xcb_get_selection_owner_cookie_t cookie = xcb_get_selection_owner(xw.c,   
+    xw.atom.clipboard);
+  xcb_get_selection_owner_reply_t *reply = xcb_get_selection_owner_reply(
+    xw.c, cookie, NULL);
+  if (!reply || reply->owner != xw.win)
+    fprintf(stderr, "clipcopy: Failed to become selection owner\n");
+  free(reply);
+}
+typedef struct {
+  Glyph attr; // current char attributes
+  i4t x, y; char state;} TCursor;
+typedef struct { // internal representation of the screen
+  i4t row; // number of rows
+  i4t col; // number of columns
+  Line *line; // screen
+  Line *alt; // alternate screen
+  i4t *dirty; // dirtyness of lines
+  TCursor c; // cursor
+  i4t ocx; // old cursor column
+  i4t ocy; // old cursor row
+  i4t top; // top scroll limit
+  i4t bot; // bottom scroll limit
+  i4t mode; // terminal mode flags
+  i4t esc; // escape state flags
+  char trantbl[4]; // charset table translation
+  i4t charset;  // current charset
+  i4t icharset; // selected charset for sequence
+} Term; Term term;
+enum termMode {MODE_WRAP=1, MODE_INSERT=2, MODE_ALTSCREEN=4, MODE_CRLF=8,
+  MODE_ECHO=16, MODE_PRINT=32};
+typedef struct {i4t mode, type, snap, alt; struct {i4t x, y;} nb, ne, ob, oe;
+  // nb: normalized coords of beginning of selection
+  // ne: normalized coords of end of selection
+  // ob: original coords of beginning of selection
+  // oe: original coords of end of selection
+} Selection; Selection sel;
+i4t
+isBlank(const char *c) {
+  return ' '==*c && !c[1];
+}
+void
+setBlank(char *u) {
+  *u = ' '; u[1] = 0;
+}
+i4t
+tlinelen(i4t y) {
+  i4t i = term.col; if (term.line[y][i - 1].mode & ATTR_WRAP) return i;
+  while (i > 0 && isBlank(term.line[y][i - 1].u)) i--;
+  return i;
+}
+ssize_t
+xwrite(i4t fd, const char *s, size_t len) {
+  size_t aux = len; ssize_t r;
+  while (len > 0) {
+    r = write(fd, s, len); if (r < 0) return r;
+    len -= r; s += r;
+  }
+  return aux;
+}
+void*
+xmalloc(size_t len) {
+  void *p = malloc(len);
+  if (!p) die("malloc: %s\n", strerror(errno));
+  return p;
+}
+char*
+getsel(void) {
+  char *str, *ptr;
+  i4t y, bufsize, lastx, linelen;
+  const Glyph *gp, *last;
+  if (sel.ob.x == -1) return NULL;
+  bufsize = (term.col + 1) * (sel.ne.y-sel.nb.y + 1) * UTF_SIZ;
+  ptr = str = xmalloc(bufsize);
+  // append every set & selected glyph to the selection
+  for (y = sel.nb.y; y <= sel.ne.y; y++) {
+    if ((linelen = tlinelen(y)) == 0) {*ptr++ = '\n'; continue;}
+    if (sel.type == SEL_RECTANGULAR) {
+      gp = &term.line[y][sel.nb.x]; lastx = sel.ne.x;
+    } else {
+      gp = &term.line[y][sel.nb.y == y ? sel.nb.x : 0];
+      lastx = sel.ne.y == y ? sel.ne.x : term.col - 1;
+    }
+    last = &term.line[y][MIN(lastx, linelen-1)];
+    while (last >= gp && isBlank(last->u)) --last;
+    for (; gp <= last; ++gp) {
+      if (gp->mode & ATTR_WDUMMY) continue;
+      if (likely(!gp->u[1])) *ptr++ = *gp->u;
+      else {const char *gpu = gp->u; do {*ptr++ = *gpu++;} while (*gpu);}
+    }
+    // Copy and pasting of line endings is inconsistent in the inconsistent
+    // terminal and GUI world. The best solution seems like to produce '\n'
+    // when something is copied from st and convert '\n' to '\r', when
+    // something to be pasted is received by st
+    if ((y < sel.ne.y || lastx >= linelen) && (!(last->mode & ATTR_WRAP) ||
+        sel.type == SEL_RECTANGULAR)) *ptr++ = '\n';
+  }
+  *ptr = 0;
+  return str;
+}
 void *
 xrealloc(void *p, size_t len) {
   if ((p = realloc(p, len)) == NULL) die("realloc: %s\n", strerror(errno));
@@ -1002,13 +1003,8 @@ strhandle(void) {
   case '^': // PM: Privacy Message
     return;
   }
-  fprintf(stderr, "erresc: unknown str "); strdump();
+  //debug(stderr, "erresc: unhandled str-type esc-seq: "); strdump();
 }
-#define IS_SET(flag) ((win.mode & (flag)) != 0)
-#define TRUERED(x) (((x) & 0xff0000) >> 16)
-#define TRUEGREEN(x) (((x) & 0xff00) >> 8)
-#define TRUEBLUE(x) ((x) & 0xff)
-
 void
 csireset(void) {
   memset(&csiEsc, 0, sizeof(csiEsc));
@@ -1435,7 +1431,7 @@ tsetmode(i4t priv, i4t set, const i4t *args, i4t narg) {
                  // for other control codes
         break;
       default:
-        fprintf(stderr, "erresc: unknown private set/reset mode %d\n", *args);
+        //debug(stderr, "erresc: unknown private set/reset mode %d\n", *args);
         break;
       }
     } else {
@@ -1449,7 +1445,7 @@ tsetmode(i4t priv, i4t set, const i4t *args, i4t narg) {
       case 20: // LNM: Linefeed/new line
         MODBIT(term.mode, set, MODE_CRLF); break;
       default:
-        fprintf(stderr, "erresc: unknown set/reset mode %d\n", *args); break;
+        //debug(stderr, "erresc: unknown set/reset mode %d\n", *args); break;
       }
     }
   }
@@ -1466,8 +1462,7 @@ tdeletechar(i4t n) {
   memmove(&line[dst], &line[src], size * sizeof(Glyph));
   tclearregion(term.col - n, term.c.y, term.col - 1, term.c.y);
 }
-// Returns the color.
-int32_t
+int32_t // Returns the color.
 tdefcolor(const i4t *attr, i4t *npar, i4t l) {
   int32_t idx = -1; u4t r, g, b;
   switch (attr[*npar + 1]) {
@@ -1495,12 +1490,7 @@ tdefcolor(const i4t *attr, i4t *npar, i4t l) {
       fprintf(stderr, "erresc: bad fgcolor %d\n", attr[*npar]);
     else idx = attr[*npar];
     break;
-  case 0: // implemented defined (only foreground)
-  case 1: // transparent
-  case 3: // direct color in CMY space
-  case 4: // direct color in CMYK space
-  default: fprintf(stderr, "erresc(38): gfx attr %d unknown\n", attr[*npar]);
-    break;
+  //default: debug(stderr, "erresc(38): gfx attr %d unknown\n", attr[*npar]);
   }
   return idx;
 }
@@ -1541,8 +1531,9 @@ tsetattr(const i4t *attr, i4t l) {
     else if (BETWEEN(attr[i], 90, 97)) term.c.attr.fg = attr[i] - 90 + 8;
     else if (BETWEEN(attr[i], 100, 107)) term.c.attr.bg = attr[i] - 100 + 8;
     else {
-      fprintf(stderr, "erresc(default): gfx attr %d unknown\n", attr[i]);
-      csidump();}
+      //debug(stderr, "erresc(default): gfx attr %d unknown\n", attr[i]);
+      //csidump();
+    }
     break;
   }
 }
@@ -1702,7 +1693,7 @@ csihandle(void) {
   case ' ': if ('q' == csiEsc.mode[1] && !xsetcursor(csiEsc.arg[0])) return;
   case 'I': case 'Z': case 'b': case 'g': return;
   }
-  fprintf(stderr, "erresc: unknown csi "); csidump();
+  //debug(stderr, "erresc: unknown csi "); csidump();
 }
 void
 treset(void) {
@@ -1754,8 +1745,8 @@ eschandle(u1t ascii) {
   case '8': tcursor(CURSOR_LOAD); break; // DECRC: Restore Cursor
   case '\\': if (term.esc & ESC_STR_END) strhandle(); // ST: String Terminator
     break;
-  default: fprintf(stderr, "erresc: unknown sequence ESC 0x%02X '%c'\n",
-      (u1t)ascii, isprint(ascii) ? ascii : '.'); break;
+  default: //debug(stderr, "erresc: unknown sequence ESC 0x%02X '%c'\n",
+    //  (u1t)ascii, isprint(ascii) ? ascii : '.');
   }
   return 1;
 }
@@ -2193,7 +2184,6 @@ MouseShortcut mshortcuts[] = { // Overloading Button1 disables selection.
   { ShiftMask,  Button5, ttysend,  {.s = "\x1b[6;2~"}   },
   { XK_ANY_MOD, Button5, ttysend,  {.s = "\005"}        },
 };
-
 i4t
 mouseaction(xcb_generic_event_t *e, u4t release) {
   xcb_button_press_event_t *ev = (xcb_button_press_event_t *)e;
